@@ -1,4 +1,4 @@
-struct Variable{V}
+mutable struct Variable{V}
     value::V
     deriv::V
     Variable(value::V) where {V} = new{V,V}(value, initderiv(value))
