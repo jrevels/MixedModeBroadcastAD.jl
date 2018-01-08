@@ -21,7 +21,7 @@ end
 # Tape #
 ########
 
-struct Tape{T}
+struct Tape{tag}
     instructions::Vector{Instruction}
 end
 
@@ -33,7 +33,7 @@ Base.empty!(t::Tape) = (empty!(t.instructions); t)
 
 function backward!(tape::Tape)
     for instr in Iterators.reverse(tape.instructions)
-        backward!(instr)::Void
+        backward!(instr)::Nothing
     end
     return nothing
 end

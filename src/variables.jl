@@ -1,18 +1,19 @@
 mutable struct Variable{V}
     value::V
     deriv::V
-    Variable(value::V) where {V} = new{V,V}(value, initderiv(value))
+    Variable(value::V) where {V} = new{V}(value, initderiv(value))
 end
 
-struct Record{T,V,D}
-    tape::Tape{T}
-    variable::Variable{V,D}
+struct Record{tag,V}
+    tape::Tape{tag}
+    variable::Variable{V}
 end
 
 function Record(tape::Tape, f, input...)
-    output = tuplemap(Variable, f(map(value, input...)...))
-    push!(tape, Instruction(f, input, output))
-    return Record(tape, output)
+    input_variables = map(i -> isa(i, Record) ? i.variable : i, input)
+    output = tuplemap(Variable, f(map(value, input_variables)...))
+    push!(tape, Instruction(f, input_variables, output))
+    return tuplemap(x -> Record(tape, x), output)
 end
 
 macro propagate!(x, Δ)
@@ -26,8 +27,12 @@ initderiv(x) = zero(x)
 
 incrderiv!(v::Variable, x) = (v.deriv .+= x; nothing)
 
+seed!(v::Variable) = (v.deriv = one(v.deriv); nothing)
+seed!(r::Record) = seed!(r.variable)
+
 value(x) = x
 value(v::Variable) = v.value
 value(r::Record) = value(r.variable)
 
 deriv(v::Variable) = v.deriv
+deriv(r::Record) = deriv(r.variable)

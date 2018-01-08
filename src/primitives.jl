@@ -4,7 +4,7 @@
 
 #=== auto-defined methods ===#
 
-const FORWARD_METHODS = [(Base.sum, 1), (Base.:+, 2), (Base.:*, 3)]
+const FORWARD_METHODS = [(:(Base.sum), 1), (:(Base.:*), 2)]
 
 for (f, arity) in FORWARD_METHODS
     if arity == 1
@@ -13,9 +13,9 @@ for (f, arity) in FORWARD_METHODS
         end
     elseif arity == 2
         @eval begin
-            $(f)(x::Record{T}, y::Record{T}) where {T} = Record(x.tape, $f, x, y)
-            $(f)(x::Record{T}, y) where {T}            = Record(x.tape, $f, x, y)
-            $(f)(x, y::Record{T}) where {T}            = Record(y.tape, $f, x, y)
+            $(f)(x::Record{tag}, y::Record{tag}) where {tag} = Record(x.tape, $f, x, y)
+            $(f)(x::Record{tag}, y) where {tag}            = Record(x.tape, $f, x, y)
+            $(f)(x, y::Record{tag}) where {tag}            = Record(y.tape, $f, x, y)
         end
     else
         error("unsupported arity $arity for method $f")
@@ -30,7 +30,7 @@ function Broadcast.broadcast(f,
                              ::Broadcast.Style{Record},
                              ::Nothing,
                              ::Nothing,
-                             args::Vararg{Union{AbstractArray,Record{T}},N}) where {N,T}
+                             args::Vararg{Union{AbstractArray,Record{tag}},N}) where {N,tag}
     # Get the tape, underlying values, and output element type from `args`
     tape = first(arg.tape for arg in args if isa(arg, Record))
     values = map(value, args)
