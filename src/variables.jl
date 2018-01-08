@@ -18,7 +18,7 @@ end
 
 macro propagate!(x, Δ)
     return esc(quote
-        (typeof($x) <: $Variable) && $incrderiv!($x, $Δ)
+        isa($x, $Variable) && $incrderiv!($x, $Δ)
     end)
 end
 

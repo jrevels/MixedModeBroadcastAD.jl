@@ -43,19 +43,34 @@ function Broadcast.broadcast(f,
     df = (y...) -> ForwardDiff.gradient!(template, x -> f(x...), SVector(y...))
 
     # Apply `df` elementwise to the underlying values
-    results = broadcast(df, values...)
-    output = Variable(map(DiffResults.value, results))
+    allresults = broadcast(df, values...)
+    output_variable = Variable(map(DiffResults.value, allresults))
 
     # Record the instruction manually to the tape so that we can save `results`
-    # along with `output`, since `results` contains the intermediate derivatives
+    # along with `output`, since `allresults` contains the intermediate derivatives
     # that we'll propagate in the backwards pass.
-    push!(tape, Instruction(broadcast, (f, args), (output, results)))
-    return Record(tape, output)
+    input_variables = map(x -> isa(x, Record) ? x.variable : x, args)
+    push!(tape, Instruction(broadcast, (f, input_variables), (output_variable, allresults)))
+    return Record(tape, output_variable)
 end
 
 ##################
 # Backwards Pass #
 ##################
+
+getpartial(x, i) = DiffResults.derivative(x)[i]
+
+# This broadcast `backward!` implementation is actually incomplete, but it doesn't matter
+# for our performance experiment. Specifically, it doesn't implement the proper reduction
+# and expansion semantics encountered when the arguments have different shapes. In
+# words, this implementation only works when all broadcast arguments are arrays of
+# the same shape (which is what we're benchmarking anyway).
+function backward!(::typeof(broadcast), f, input, output_and_allresults)
+    output, allresults = output_and_allresults
+    for i in 1:length(input)
+        @propagate!(input[i], getpartial.(allresults, i) .* deriv(output))
+    end
+end
 
 backward!(::typeof(sum), x, y) = @propagate!(x, deriv(y))
 
