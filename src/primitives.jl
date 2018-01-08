@@ -60,6 +60,6 @@ end
 backward!(::typeof(sum), x, y) = @propagate!(x, deriv(y))
 
 function backward!(::typeof(*), x, y, z)
-    @propagate!(x, A_mul_Bc(deriv(z), value(y)))
-    @propagate!(y, Ac_mul_B(value(x), deriv(z)))
+    @propagate!(x, deriv(z) * value(y)')
+    @propagate!(y, value(x)' * deriv(z))
 end
