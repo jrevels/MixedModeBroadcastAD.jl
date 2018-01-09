@@ -42,6 +42,20 @@ z, (dx, dy) = autograd(tape, smoketest, x, y)
 @test dx == ones(3, 3) * y'
 @test dy == x' * ones(3, 3)
 
+###########################
+# Smoke Test with CuArray #
+###########################
+
+cu_x = CuArray(x)
+cu_y = CuArray(y)
+
+tape = Tape()
+cu_z, (cu_dx, cu_dy) = autograd(tape, smoketest, cu_x, cu_y)
+
+@test cu_z ≈ z
+@test Array(cu_dx) ≈ dx
+@test Array(cu_dy) ≈ dy
+
 ####################
 # LSTM-like kernel #
 ####################

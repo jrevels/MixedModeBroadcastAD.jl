@@ -17,6 +17,17 @@ function backward!(instr::Instruction)
     return nothing
 end
 
+function Base.show(io::IO, inst::Instruction)
+    print(io, typeof(inst.func).name.mt.name, "(")
+    for (i, x) in enumerate(inst.input)
+        print(io, x)
+        if i < length(inst.input)
+            print(io, ", ")
+        end
+    end
+    print(io, ") = $(inst.output)")
+end
+
 ########
 # Tape #
 ########
@@ -36,4 +47,18 @@ function backward!(tape::Tape)
         backward!(instr)::Nothing
     end
     return nothing
+end
+
+function Base.show(io::IO, tape::Tape)
+    print(io, "Tape(")
+    if length(tape.instructions) > 0
+        for (i, inst) in enumerate(tape.instructions)
+            if i > 1
+                println(io)
+                print(io, "     ")
+            end
+            print(io, inst)
+        end
+    end
+    print(io, ")")
 end
