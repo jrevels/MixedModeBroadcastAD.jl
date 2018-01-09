@@ -1,6 +1,20 @@
-using MixedModeBroadcastAD: Tape, Variable, Record, value, deriv, backward!, seed!
+using MixedModeBroadcastAD: Tape, Variable, Record, value, deriv, backward!, seed!, CuArray
 using ForwardDiff
 using Test
+
+###########
+# CuArray #
+###########
+
+f(x) = x .* 2
+
+input = rand(3,3)
+output = f(input)
+
+input_dev = CuArray(input)
+output_dev = f(input_dev)
+
+@test output == Array(output_dev)
 
 ############
 # autograd #

@@ -14,5 +14,6 @@ include("utilities.jl")
 include("tape.jl")
 include("variables.jl")
 include("primitives.jl")
+include("gpu.jl")
 
 end # module
