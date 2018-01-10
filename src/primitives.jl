@@ -64,7 +64,7 @@ end
 # Backwards Pass #
 ##################
 
-getpartial(x, i) = DiffResults.derivative(x)[i]
+Base.@propagate_inbounds getpartial(x, i) = DiffResults.derivative(x)[i]
 
 # This broadcast `backward!` implementation is actually incomplete, but it doesn't matter
 # for our performance experiment. Specifically, it doesn't implement the proper reduction
@@ -74,7 +74,8 @@ getpartial(x, i) = DiffResults.derivative(x)[i]
 function backward!(::typeof(broadcast), f, input, output_and_allresults)
     output, allresults = output_and_allresults
     for i in 1:length(input)
-        @propagate!(input[i], getpartial.(allresults, i) .* deriv(output))
+        # FIXME: these @inbounds don't seem to work; bug in SVector's getindex?
+        @inbounds @propagate!(input[i], getpartial.(allresults, i) .* deriv(output))
     end
 end
 
