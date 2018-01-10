@@ -1,5 +1,6 @@
 using MixedModeBroadcastAD: Tape, Variable, Record, value, deriv, backward!, seed!, CuArray
 using ForwardDiff
+using CUDAnative
 using Test
 
 ###########
@@ -83,3 +84,22 @@ output, grads = autograd(tape, example, input...)
 @test grads[6] ≈ ForwardDiff.gradient(x -> example(input[1:5]..., x, input[7:8]...), input[6])
 @test grads[7] ≈ ForwardDiff.gradient(x -> example(input[1:6]..., x, input[8]), input[7])
 @test grads[8] ≈ ForwardDiff.gradient(x -> example(input[1:7]..., x), input[8])
+
+#################################
+# LSTM-like kernel with CuArray #
+#################################
+
+@inline function cu_example(a1, a2, b1, b2, c1, c2, d1, d2)
+    a = a1 * a2
+    b = b1 * b2
+    c = c1 * c2
+    d = d1 * d2
+    return sum(CUDAnative.sin.(a) .+ CUDAnative.log.(b) .+ CUDAnative.exp.(c) .+ CUDAnative.cos.(d))
+end
+
+tape = Tape()
+cu_input = Tuple(CuArray(rand(Float32, 2, 2)) for i in 1:8)
+cu_output, cu_grads = autograd(tape, cu_example, cu_input...)
+
+@test cu_output == example(input...)
+@test grads ≈ Array(cu_grads)

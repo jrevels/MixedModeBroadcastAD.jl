@@ -81,7 +81,7 @@ end
 Base.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
 
 function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
-    @assert isleaftype(T)
+    @assert isleaftype(T) "$T is not a leaf type"
     similar(CuArray{T}, inds)
 end
 
@@ -153,6 +153,19 @@ end
 
 ## high-level operations
 
+function Base.fill!(xs::CuArray, x)
+    function _fill!(xs::CuDeviceArray, x)
+        I = @cuda_index xs
+        @inbounds xs[I] = x
+        return
+    end
+    blk, thr = cuda_dimensions(xs)
+    @cuda (blk, thr) _fill!(xs, convert(eltype(xs), x))
+    return xs
+end
+
+Base.map(f, y::CuArray, xs::CuArray...) = f.(y, xs...)
+
 ### matrix operations
 
 include("CUBLAS/CUBLAS.jl")
@@ -171,17 +184,6 @@ Base.LinAlg.mul!(C::CuMatrix, A::CuMatrix, adjB::Adjoint{<:Any,<:CuMatrix}) =
     cublas_gemm!(C, 'N', 'C', A, adjB.parent)
 Base.LinAlg.mul!(C::CuMatrix, adjA::Adjoint{<:Any,<:CuMatrix}, B::CuMatrix) =
     cublas_gemm!(C, 'C', 'N', adjA.parent, B)
-
-function Base.fill!(xs::CuArray, x)
-    function _fill!(xs::CuDeviceArray, x)
-        I = @cuda_index xs
-        @inbounds xs[I] = x
-        return
-    end
-    blk, thr = cuda_dimensions(xs)
-    @cuda (blk, thr) _fill!(xs, convert(eltype(xs), x))
-    return xs
-end
 
 ### reductions
 
@@ -252,3 +254,13 @@ function reduce_grid(op, v0::T, input::CuDeviceArray{T}, output::CuDeviceArray{T
   end
   return
 end
+
+
+## diff rules
+
+using DiffRules: @define_diffrule
+
+# @define_diffrule CUDAnative.sin(x) = :( CUDAnative.cos($x) )
+# @define_diffrule CUDAnative.log(x) = :( CUDAnative.inv($x) )
+# @define_diffrule CUDAnative.exp(x) = :( CUDAnative.exp($x) )
+# @define_diffrule CUDAnative.cos(x) = :(-CUDAnative.sin($x) )
