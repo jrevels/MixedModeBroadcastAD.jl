@@ -42,7 +42,7 @@ function Broadcast.broadcast(f,
     template = DiffResults.GradientResult(zeros(SVector{N,S}))
     nargs = length(values)
     df = if nargs == 4
-        (y1, y2, y3, y4) -> ForwardDiff.gradient!(template, x -> f(x[1], x[2], x[3], x[4]), SVector(y1, y2, y3, y4))
+        (y...) -> ForwardDiff.gradient!(template, x -> f(x[1], x[2], x[3], x[4]), SVector(y[1], y[2], y[3], y[4]))
     else
         warn("$nargs-arg splat not optimized; this will yield a GPU-incompatible apply")
         (y...) -> ForwardDiff.gradient!(template, x -> f(x...), SVector(y...))
