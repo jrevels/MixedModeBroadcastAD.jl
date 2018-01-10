@@ -101,5 +101,12 @@ tape = Tape()
 cu_input = Tuple(CuArray(rand(Float32, 2, 2)) for i in 1:8)
 cu_output, cu_grads = autograd(tape, cu_example, cu_input...)
 
-@test cu_output == example(input...)
-@test grads ≈ Array(cu_grads)
+@test cu_output ≈ output
+@test Array(cu_grads[1]) ≈ grads[1]
+@test Array(cu_grads[2]) ≈ grads[2]
+@test Array(cu_grads[3]) ≈ grads[3]
+@test Array(cu_grads[4]) ≈ grads[4]
+@test Array(cu_grads[5]) ≈ grads[5]
+@test Array(cu_grads[6]) ≈ grads[6]
+@test Array(cu_grads[7]) ≈ grads[7]
+@test Array(cu_grads[8]) ≈ grads[8]
