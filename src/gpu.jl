@@ -254,13 +254,3 @@ function reduce_grid(op, v0::T, input::CuDeviceArray{T}, output::CuDeviceArray{T
   end
   return
 end
-
-
-## diff rules
-
-using DiffRules: @define_diffrule
-
-# @define_diffrule CUDAnative.sin(x) = :( CUDAnative.cos($x) )
-# @define_diffrule CUDAnative.log(x) = :( CUDAnative.inv($x) )
-# @define_diffrule CUDAnative.exp(x) = :( CUDAnative.exp($x) )
-# @define_diffrule CUDAnative.cos(x) = :(-CUDAnative.sin($x) )
