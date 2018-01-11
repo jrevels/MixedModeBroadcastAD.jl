@@ -41,12 +41,7 @@ function Broadcast.broadcast(f,
     # from a single elementwise application.
     template = DiffResults.GradientResult(zeros(SVector{N,S}))
     nargs = length(values)
-    df = if nargs == 4
-        (y...) -> ForwardDiff.gradient!(template, x -> f(x[1], x[2], x[3], x[4]), SVector(y[1], y[2], y[3], y[4]))
-    else
-        warn("$nargs-arg splat not optimized; this will yield a GPU-incompatible apply")
-        (y...) -> ForwardDiff.gradient!(template, x -> f(x...), SVector(y...))
-    end
+    df = (y...) -> ForwardDiff.gradient!(template, x -> @fastsplat(f(x...)), @fastsplat(SVector(y...)))
 
     # Apply `df` elementwise to the underlying values
     allresults = broadcast(df, values...)
