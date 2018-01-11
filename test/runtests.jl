@@ -98,7 +98,7 @@ function cu_example(a1, a2, b1, b2, c1, c2, d1, d2)
 end
 
 tape = Tape()
-cu_input = Tuple(CuArray(rand(Float32, 2, 2)) for i in 1:8)
+cu_input = Tuple(CuArray(input[i]) for i in 1:8)
 cu_output, cu_grads = autograd(tape, cu_example, cu_input...)
 
 @test cu_output ≈ output
