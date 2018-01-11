@@ -9,6 +9,7 @@ are derived from the prototypical AD package Capstan
 using ForwardDiff
 using DiffResults
 using StaticArrays
+using FastSplat
 
 include("utilities.jl")
 include("tape.jl")
