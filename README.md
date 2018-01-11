@@ -9,11 +9,8 @@ maintained for any practical usage.
 
 ## CUDA support
 
-For this code to work with CUDAnative, some external changes are required.
-
-1. Differentiation rules for CUDAnative intrinsics
-
-Add the following to `DiffRules/src/rules.jl`:
+For this code to work with CUDAnative, appropriate differentiation rules need to
+be added to `DiffRules/src/rules.jl`:
 
 ```julia
 @define_diffrule CUDAnative.log(x) = :(  CUDAnative.inv($x) )
@@ -27,7 +24,3 @@ Add the following to `ForwardDiff/src/ForwardDiff.jl`:
 ```julia
 using CUDAnative
 ```
-
-2. Disable bounds checking
-
-Invoke julia with `--check-bounds=no`.
