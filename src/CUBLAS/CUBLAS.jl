@@ -4,7 +4,8 @@ import Base: one, zero
 using CUDAapi, CUDAdrv
 using ..MixedModeBroadcastAD: CuArray, CuVector, CuMatrix, CuVecOrMat
 
-const libcublas = CUDAapi.find_cuda_library("cublas")
+const toolkit = CUDAapi.find_toolkit()
+const libcublas = CUDAapi.find_cuda_library("cublas", toolkit)
 @assert libcublas != nothing
 
 include("libcublas_types.jl")
