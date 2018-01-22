@@ -1,6 +1,6 @@
-################
-# Forward Pass #
-################
+###############
+# Record Pass #
+###############
 
 #=== auto-defined methods ===#
 
@@ -14,8 +14,8 @@ for (f, arity) in FORWARD_METHODS
     elseif arity == 2
         @eval begin
             $(f)(x::Record{tag}, y::Record{tag}) where {tag} = Record(x.tape, $f, x, y)
-            $(f)(x::Record{tag}, y) where {tag}            = Record(x.tape, $f, x, y)
-            $(f)(x, y::Record{tag}) where {tag}            = Record(y.tape, $f, x, y)
+            $(f)(x::Record{tag}, y) where {tag}              = Record(x.tape, $f, x, y)
+            $(f)(x, y::Record{tag}) where {tag}              = Record(y.tape, $f, x, y)
         end
     else
         error("unsupported arity $arity for method $f")
@@ -31,35 +31,49 @@ function Broadcast.broadcast(f,
                              ::Nothing,
                              ::Nothing,
                              args::Vararg{Union{AbstractArray,Record{tag}},N}) where {N,tag}
-    # Get the tape, underlying values, and output element type from `args`
     tape = first(arg.tape for arg in args if isa(arg, Record))
-    values = map(value, args)
-    S = promote_type(map(eltype, values)...)
+    return Record(tape, broadcast, f, args...)
+end
 
-    # Construct a broadcast kernel from `f` that uses ForwardDiff to calculate
-    # `f(args[1][i], args[2][i], ...)` and `∇f(args[1][i], args[2][i], ...)`
-    # from a single elementwise application.
-    template = DiffResults.GradientResult(zeros(SVector{N,S}))
-    nargs = length(values)
-    df = (y...) -> ForwardDiff.gradient!(template, x -> @fastsplat(f(x...)), @fastsplat(SVector(y...)))
+################
+# Forward Pass #
+################
 
-    # Apply `df` elementwise to the underlying values
-    allresults = broadcast(df, values...)
-    output_variable = Variable(map(DiffResults.value, allresults))
+function forward!(i::Instruction)
+    i.output.value = i.func(map(value, i.input)...)
+    return nothing
+end
 
-    # Record the instruction manually to the tape so that we can save `results`
-    # along with `output`, since `allresults` contains the intermediate derivatives
-    # that we'll propagate in the backwards pass.
-    input_variables = map(x -> isa(x, Record) ? x.variable : x, args)
-    push!(tape, Instruction(broadcast, (f, input_variables), (output_variable, allresults)))
-    return Record(tape, output_variable)
+function forward!(i::Instruction{typeof(broadcast)})
+    output_variable = isa(output, Variable) ? i.output : first(i.output)
+    f, values = first(i.input), value.(i.input[2:end])
+    N, T = length(args), eltype(value(output_variable))
+    gradient_template = DiffResults.GradientResult(zeros(SVector{N,T}))
+    i.output = _forward_broadcast!(f, output_variable, values, gradient_template)
+    return nothing
+end
+
+@noinline function _forward_broadcast!(f, output_variable, values, gradient_template)
+    # Use ForwardDiff to calculate `f(values[1][i], values[2][i], ...)` and
+    # `∇f(values[1][i], values[2][i], ...)` from a single elementwise application.
+    df = (y...) -> ForwardDiff.gradient!(gradient_template,
+                                         x -> @fastsplat(f(x...)),
+                                         @fastsplat(SVector(y...)))
+    df_results = df.(values...)
+
+    # `df_results` is a `AbstractArray{DiffResults.DiffResult}`, i.e. each element of
+    # `df_results` corresponds to a primal value and intermediate gradient. We record
+    # both the values and the gradients back to the tape, which will be used in the
+    # backwards pass.
+    map!(DiffResults.value, output_variable.value, df_results)
+    return (output_variable, df_results)
 end
 
 ##################
 # Backwards Pass #
 ##################
 
-# FIXME: this `@inbounds` is wrongly placed, but it doesn't seem to have any impact
+# FIXME: this `@inbounds` is incorrectly placed, but it doesn't seem to have any impact
 #        when placed at the `getpartial` call site
 Base.@propagate_inbounds getpartial(x, i) = @inbounds DiffResults.derivative(x)[i]
 
@@ -68,16 +82,22 @@ Base.@propagate_inbounds getpartial(x, i) = @inbounds DiffResults.derivative(x)[
 # and expansion semantics encountered when the arguments have different shapes. In
 # words, this implementation only works when all broadcast arguments are arrays of
 # the same shape (which is what we're benchmarking anyway).
-function backward!(::typeof(broadcast), f, input, output_and_allresults)
-    output, allresults = output_and_allresults
+function backward!(i::Instruction{typeof(broadcast)} #, f, input, output_and_allresults)
+    f, input = i.func, i.input
+    output, df_results = i.output
     for i in 1:length(input)
-        @propagate!(input[i], getpartial.(allresults, i) .* deriv(output))
+        @propagate!(input[i], getpartial.(df_results, i) .* deriv(output))
     end
+    return nothing
 end
 
-backward!(::typeof(sum), x, y) = @propagate!(x, deriv(y))
+function backward!(::typeof(sum), x, y)
+    @propagate!(x, deriv(y))
+    return nothing
+end
 
 function backward!(::typeof(*), x, y, z)
     @propagate!(x, deriv(z) * value(y)')
     @propagate!(y, value(x)' * deriv(z))
+    return nothing
 end

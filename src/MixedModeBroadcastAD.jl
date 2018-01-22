@@ -11,10 +11,25 @@ using DiffResults
 using StaticArrays
 using FastSplat
 
+include("kernels.jl")
 include("utilities.jl")
 include("tape.jl")
 include("variables.jl")
 include("primitives.jl")
 include("gpu.jl")
+
+function record(f, input...)
+    tape = Tape()
+    recorded_input = map(x -> Record(tape, Variable(x)), input)
+    recorded_output = f(recorded_input...)
+    return tape, recorded_output, recorded_input
+end
+
+function autograd(f, input...)
+    tape, recorded_output, recorded_input = record(f, input...)
+    seed!(recorded_output)
+    backward!(tape)
+    return (value(recorded_output), map(deriv, recorded_input))
+end
 
 end # module

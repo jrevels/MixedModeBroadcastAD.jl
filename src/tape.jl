@@ -1,20 +1,11 @@
-# originally copied from https://github.com/JuliaDiff/Capstan.jl
-
 ###############
 # Instruction #
 ###############
 
-struct Instruction{F,I<:Tuple,O}
+mutable struct Instruction{F}
     func::F
-    input::I
-    output::O
-end
-
-Instruction(f, input, output) = Instruction(f, tuplize(input), output)
-
-function backward!(instr::Instruction)
-    backward!(instr.func, instr.input..., instr.output)
-    return nothing
+    input::Tuple
+    output::Any
 end
 
 ########
@@ -31,9 +22,16 @@ Base.push!(t::Tape, i::Instruction) = push!(t.instructions, i)
 
 Base.empty!(t::Tape) = (empty!(t.instructions); t)
 
+function forward!(tape::Tape)
+    for i in tape.instructions
+        forward!(i)::Nothing
+    end
+    return nothing
+end
+
 function backward!(tape::Tape)
-    for instr in Iterators.reverse(tape.instructions)
-        backward!(instr)::Nothing
+    for i in Iterators.reverse(tape.instructions)
+        backward!(i)::Nothing
     end
     return nothing
 end
