@@ -79,9 +79,9 @@ Base.@propagate_inbounds getpartial(x, i) = @inbounds DiffResults.derivative(x)[
 
 # This broadcast `backward!` implementation is actually incomplete, but it doesn't matter
 # for our performance experiment. Specifically, it doesn't implement the proper reduction
-# and expansion semantics encountered when the arguments have different shapes. In
-# words, this implementation only works when all broadcast arguments are arrays of
-# the same shape (which is what we're benchmarking anyway).
+# and expansion semantics encountered when the arguments have different shapes. In other
+# words, this implementation only works when all broadcast arguments are arrays of the same
+# shape (which is what we're benchmarking anyway).
 function backward!(i::Instruction{typeof(broadcast)})
     f, input = i.func, i.input
     output, df_results = i.output
@@ -92,7 +92,7 @@ function backward!(i::Instruction{typeof(broadcast)})
 end
 
 function backward!(i::Instruction{typeof(sum)})
-    x = i.input[1]
+    x = first(i.input)
     y = i.output
     @propagate!(x, deriv(y))
     return nothing

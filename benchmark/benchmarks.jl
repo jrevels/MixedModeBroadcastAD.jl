@@ -9,18 +9,21 @@ benchmarking code below pre-records the tape in order to avoid timing irrelevant
 overhead due to tape construction.
 =#
 
-function benchmark(n)
+function benchmark_lstm_update_c(n::Int, usegpu::Bool)
+    f = usegpu ? MixedModeBroadcastAD.cuda_lstm_update_c : MixedModeBroadcastAD.lstm_update_c
     c = rand(n)
     Wxs = (rand(n) for _ in 1:4)
     Rhs = (rand(n) for _ in 1:4)
     bs  = (rand(n) for _ in 1:4)
-    tape, _, _ = record(MixedModeBroadcastAD.lstm_update, c, Wxs..., Rhs..., bs...)
+    tape, _, _ = record(f, c, Wxs..., Rhs..., bs...)
     println("---------------------------------------------------------")
+    println("using GPU: ", usegpu)
     println("size: ", n)
     println("forward pass time: ", @elapsed(forward!(tape)), " seconds")
     println("backward pass time: ", @elapsed(backward!(tape)), " seconds")
 end
 
 for n in (2^i for i in 9:11)
-    benchmark(n)
+    benchmark(n, false)
+    benchmark(n, true)
 end
