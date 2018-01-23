@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: record, autograd, lstm_update, cuda_lstm_update
+using MixedModeBroadcastAD: record, autograd, lstm_update, cuda_lstm_update, CuArray
 using ForwardDiff
 using CUDAnative
 using Test
