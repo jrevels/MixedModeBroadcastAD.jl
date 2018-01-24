@@ -20,7 +20,7 @@ end
 
 @testset "LSTM-like kernel" begin
     tests = Dict(Array => lstm_update_c, CuArray => cuda_lstm_update_c)
-    input = Tuple(rand(Float32, 2, 2) for i in 1:13)
+    input = Tuple(rand(Float32, 2, 2) for i in 1:10)
     @testset for T in TEST_TYPES
         _test = tests[T]
         test = (args...) -> sum(_test(args...)) # reduce the output so we can test via autograd

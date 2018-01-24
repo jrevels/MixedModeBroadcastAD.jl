@@ -12,9 +12,9 @@ overhead due to tape construction.
 function benchmark_lstm_update_c(n::Int, usegpu::Bool)
     f = usegpu ? MixedModeBroadcastAD.cuda_lstm_update_c : MixedModeBroadcastAD.lstm_update_c
     c = rand(n)
-    Wxs = (rand(n) for _ in 1:4)
-    Rhs = (rand(n) for _ in 1:4)
-    bs  = (rand(n) for _ in 1:4)
+    Wxs = (rand(n) for _ in 1:3)
+    Rhs = (rand(n) for _ in 1:3)
+    bs  = (rand(n) for _ in 1:3)
     tape, _, _ = record(f, c, Wxs..., Rhs..., bs...)
     println("---------------------------------------------------------")
     println("using GPU: ", usegpu)

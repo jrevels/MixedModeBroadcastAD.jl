@@ -11,15 +11,15 @@ demonstration of the broadcast technique.
 cuda_σ(x) = 1 / (1 + CUDANative.exp(-x))
 
 function lstm_update_c(c,
-                       Wx_f, Wx_i, Wx_c, Wx_o,
-                       Rh_f, Rh_i, Rh_c, Rh_o,
-                       b_f,  b_i,  b_c,  b_o)
+                       Wx_f, Wx_i, Wx_c,
+                       Rh_f, Rh_i, Rh_c,
+                       b_f,  b_i,  b_c)
     return σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
 end
 
 function cuda_lstm_update_c(c,
-                            Wx_f, Wx_i, Wx_c, Wx_o,
-                            Rh_f, Rh_i, Rh_c, Rh_o,
-                            b_f,  b_i,  b_c,  b_o)
+                            Wx_f, Wx_i, Wx_c,
+                            Rh_f, Rh_i, Rh_c,
+                            b_f,  b_i,  b_c)
     return cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
 end
