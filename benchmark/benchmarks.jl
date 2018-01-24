@@ -9,21 +9,26 @@ benchmarking code below pre-records the tape in order to avoid timing irrelevant
 overhead due to tape construction.
 =#
 
+const TEST_TYPES = [Array, CuArray]
+
 function benchmark(::Type{Array}, n::Int)
-    input = Tuple(rand(Float32, n, n) for i in 1:10)
+    input = Tuple(Array{Float32}((n,n)) for i in 1:10)
     tape, _, _ = record(lstm_update_c, input...)
     @elapsed(forward!(tape)), @elapsed(backward!(tape))
 end
 
 function benchmark(::Type{CuArray}, n::Int)
-    input = Tuple(rand(Float32, n, n) for i in 1:10)
-    tape, _, _ = record(cuda_lstm_update_c, CuArray.(input)...)
+    input = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
+    tape, _, _ = record(cuda_lstm_update_c, input...)
     CUDAdrv.@elapsed(forward!(tape)), CUDAdrv.@elapsed(backward!(tape))
 end
 
+info("Warming up...")
+benchmark.(TEST_TYPES, 1)
+
+info("Benchmarking...")
 rows = Any[["size", "type", "forwards", "backwards"]]
-for n in (2^i for i in 9:11), T in [Array, CuArray]
-    benchmark(T, n) # warm-up
+for n in (2^i for i in 9:11), T in TEST_TYPES
     fwd, bwd = benchmark(T, n)
     push!(rows, [T, "$(n)x$(n)", "$fwd s", "$bwd s"])
 end
