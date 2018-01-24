@@ -8,7 +8,7 @@ demonstration of the broadcast technique.
 =#
 
 σ(x) = 1 / (1 + exp(-x))
-cuda_σ(x) = 1 / (1 + CUDANative.exp(-x))
+cuda_σ(x) = 1 / (1 + CUDAnative.exp(-x))
 
 function lstm_update_c(c,
                        Wx_f, Wx_i, Wx_c,
