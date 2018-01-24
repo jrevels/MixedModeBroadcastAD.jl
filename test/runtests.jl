@@ -23,7 +23,7 @@ end
     input = Tuple(rand(Float32, 2, 2) for i in 1:13)
     @testset for T in TEST_TYPES
         _test = tests[T]
-        test = (args...) -> sum(*(_test(args...)...)) # reduce the output so we can test via autograd
+        test = (args...) -> sum(_test(args...)) # reduce the output so we can test via autograd
         output, grads = autograd(test, T.(input)...)
         @test output ≈ test(input...)
         for i in 1:length(input)
