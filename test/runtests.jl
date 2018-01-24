@@ -21,13 +21,21 @@ end
 @testset "LSTM-like kernel" begin
     tests = Dict(Array => lstm_update_c, CuArray => cuda_lstm_update_c)
     input = Tuple(rand(Float32, 2, 2) for i in 1:10)
+
+    # reduce the output so we can test via autograd
+    for (key,val) in tests
+        test = tests[key]
+        tests[key] = (args...) -> sum(test(args...))
+    end
+
     @testset for T in TEST_TYPES
-        _test = tests[T]
-        test = (args...) -> sum(_test(args...)) # reduce the output so we can test via autograd
+        test = tests[T]
         output, grads = autograd(test, T.(input)...)
-        @test output ≈ test(input...)
+        @test output ≈ test(T.(input)...)
+
+        reference = tests[Array]
         for i in 1:length(input)
-            testarg = x -> test(input[1:(i - 1)]...,  x, input[(i + 1):end]...)
+            testarg = x -> reference(input[1:(i - 1)]...,  x, input[(i + 1):end]...)
             @test Array(grads[i]) ≈ ForwardDiff.gradient(testarg, input[i])
         end
     end
