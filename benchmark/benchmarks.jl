@@ -20,7 +20,8 @@ end
 function benchmark(::Type{CuArray}, n::Int)
     input = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
     tape, _, _ = record(cuda_lstm_update_c, input...)
-    CUDAdrv.@elapsed(forward!(tape)), CUDAdrv.@elapsed(backward!(tape))
+    @elapsed((forward!(tape), CUDAdrv.synchronize())),
+    @elapsed((backward!(tape), CUDAdrv.synchronize()))
 end
 
 info("Warming up...")
