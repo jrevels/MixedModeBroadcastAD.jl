@@ -47,7 +47,7 @@ end
 function forward!(i::Instruction{typeof(broadcast)})
     output_variable = isa(i.output, Variable) ? i.output : first(i.output)
     f, values = first(i.input), value.(i.input[2:end])
-    N, T = length(args), eltype(value(output_variable))
+    N, T = length(values), eltype(value(output_variable))
     gradient_template = DiffResults.GradientResult(zeros(SVector{N,T}))
     i.output = _forward_broadcast!(f, output_variable, values, gradient_template)
     return nothing
