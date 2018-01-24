@@ -166,6 +166,14 @@ end
 
 Base.map(f, y::CuArray, xs::CuArray...) = f.(y, xs...)
 
+Base.map!(f, y::CuArray, xs::CuArray...) = y .= f.(xs...)
+Base.map!(f, y::CuArray) =
+  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y)
+Base.map!(f, y::CuArray, x::CuArray) =
+  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y, x)
+Base.map!(f, y::CuArray, x1::CuArray, x2::CuArray) =
+  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y, x1, x2)
+
 ### matrix operations
 
 include("CUBLAS/CUBLAS.jl")
