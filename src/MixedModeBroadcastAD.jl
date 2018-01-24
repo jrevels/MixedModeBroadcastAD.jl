@@ -27,6 +27,7 @@ end
 
 function autograd(f, input...)
     tape, recorded_output, recorded_input = record(f, input...)
+    forward!(tape)
     seed!(recorded_output)
     backward!(tape)
     return (value(recorded_output), map(deriv, recorded_input))
