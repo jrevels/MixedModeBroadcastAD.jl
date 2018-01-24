@@ -83,10 +83,10 @@ Base.@propagate_inbounds getpartial(x, i) = @inbounds DiffResults.derivative(x)[
 # words, this implementation only works when all broadcast arguments are arrays of the same
 # shape (which is what we're benchmarking anyway).
 function backward!(i::Instruction{typeof(broadcast)})
-    f, input = i.func, i.input
+    f, args = first(i.input), i.input[2:end]
     output, df_results = i.output
-    for i in 1:length(input)
-        @propagate!(input[i], getpartial.(df_results, i) .* deriv(output))
+    for i in 1:length(args)
+        @propagate!(args[i], getpartial.(df_results, i) .* deriv(output))
     end
     return nothing
 end
