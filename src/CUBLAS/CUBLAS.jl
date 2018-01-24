@@ -10,7 +10,7 @@ const libcublas = CUDAapi.find_cuda_library("cublas", toolkit)
 
 include("libcublas_types.jl")
 include("error.jl")
-const cudaStream_t = Ptr{Void}
+const cudaStream_t = Ptr{Nothing}
 include("libcublas.jl")
 
 const libcublas_handle = Ref{cublasHandle_t}()
