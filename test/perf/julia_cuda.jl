@@ -1,9 +1,11 @@
 # limited version of julia.jl with extra annotations, for ease of profiling & analysis
 
-using MixedModeBroadcastAD: record, forward!, backward!, CuArray, cuda_lstm_update_c
+using MixedModeBroadcastAD: record, forward!, backward!, CuArray
 import CUDAdrv
 import NVTX
 NVTX.stop()
+
+include("../kernels.jl")
 
 # NOTE: use with `--profile-from-start off`
 

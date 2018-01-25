@@ -11,7 +11,6 @@ using DiffResults
 using StaticArrays
 using FastSplat
 
-include("kernels.jl")
 include("utilities.jl")
 include("tape.jl")
 include("variables.jl")

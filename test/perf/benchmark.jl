@@ -1,6 +1,7 @@
-using MixedModeBroadcastAD: record, forward!, backward!, CuArray, lstm_update_c, cuda_lstm_update_c
+using MixedModeBroadcastAD: record, forward!, backward!, CuArray
 import CUDAdrv
 include("util.jl")
+include("../kernels.jl")
 
 function benchmark(::Type{Array}, n)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)

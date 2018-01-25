@@ -1,9 +1,10 @@
-using MixedModeBroadcastAD: record, autograd, CuArray, lstm_update_c, cuda_lstm_update_c
+using MixedModeBroadcastAD: record, autograd, CuArray
 using ForwardDiff
 using CUDAnative
 using Test
 
 const TEST_TYPES = [Array, CuArray]
+include("kernels.jl")
 
 @testset "smoke test" begin
     smoketest(x, y) = sum(x * y)
