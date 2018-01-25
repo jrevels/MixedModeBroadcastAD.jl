@@ -38,7 +38,7 @@ for fused in [true, false], n in (2^i for i in 9:11)
     # Julia arrays
     for T in [Array, CuArray]
         benchmark(T, n, fused) # warm-up
-        @show elapsed = benchmark(T, n, fused)
+        elapsed = benchmark(T, n, fused)
         push!(rows, ["Julia $T", "$(n)x$(n)", fused, timedelta(elapsed)])
     end
 
