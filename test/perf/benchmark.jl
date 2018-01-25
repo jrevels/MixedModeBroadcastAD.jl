@@ -27,10 +27,16 @@ function benchmark(::Type{CuArray}, n, fused)
     end
 end
 
+lib = Libdl.dlopen(joinpath(@__DIR__, "cuda.so"))
+fun = Libdl.dlsym(lib, "execute")
+
 function benchmark_cuda(n, fused)
-    lib = Libdl.dlopen(joinpath(@__DIR__, "cuda.so"))
-    fun = Libdl.dlsym(lib, "benchmark")
-    ccall(fun, Cfloat, (Cint, Cint), n, fused)
+    inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
+    output = CuArray{Float32}((n,n))
+    @elapsed begin
+        ccall(fun, Void, (Cint, Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}), n*n, fused, output, inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10])
+        CUDAdrv.synchronize()
+    end
 end
 
 rows = Any[["environment", "size", "fused", "elapsed"]]

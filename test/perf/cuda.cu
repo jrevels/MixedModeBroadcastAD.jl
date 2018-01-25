@@ -105,6 +105,24 @@ void unfused_lstm_update_c(int numElements, float* out,
 // Entry-points
 //
 
+extern "C" void execute(int numElements, int fused, float* out,
+                        const float* c,
+                        const float* Wx_f, const float* Wx_i, const float* Wx_c,
+                        const float* Rh_f, const float* Rh_i, const float* Rh_c,
+                        const float* b_f,  const float* b_i,  const float* b_c) {
+    if (fused) {
+        dim3 blockDim;
+        dim3 gridDim;
+
+        blockDim.x = 256;
+        gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
+
+        fused_lstm_update_c<<<gridDim, blockDim>>>(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
+    } else {
+        unfused_lstm_update_c(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
+    }
+}
+
 extern "C" float benchmark(int n, int fused) {
     int numElements = n*n;
 
@@ -128,11 +146,7 @@ extern "C" float benchmark(int n, int fused) {
     gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
 
     auto start = std::chrono::system_clock::now();
-    if (fused) {
-        fused_lstm_update_c<<<gridDim, blockDim>>>(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
-    } else {
-        unfused_lstm_update_c(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
-    }
+    execute(numElements, fused, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
     cudaDeviceSynchronize();
     auto end = std::chrono::system_clock::now();
 
