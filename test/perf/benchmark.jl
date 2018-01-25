@@ -8,7 +8,7 @@ function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
     output = Array{Float32}((n,n))
     @elapsed if fused
-        lstm_update_c.(inputs...)
+        lstm_update_c(inputs...)
     else
         unfused_lstm_update_c(output, inputs...)
     end
@@ -19,7 +19,7 @@ function benchmark(::Type{CuArray}, n, fused)
     output = CuArray{Float32}((n,n))
     @elapsed begin
         if fused
-            cuda_lstm_update_c.(inputs...)
+            cuda_lstm_update_c(inputs...)
         else
             unfused_cuda_lstm_update_c(output, inputs...)
         end
