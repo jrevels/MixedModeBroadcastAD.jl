@@ -1,3 +1,5 @@
+# limited version of julia.jl with extra annotations, for ease of profiling
+
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray, cuda_lstm_update_c
 import CUDAdrv
 import NVTX
