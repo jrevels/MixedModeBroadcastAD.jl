@@ -63,22 +63,18 @@ __global__ void pw_vecMul(float *y, const float *a, const float *b,
     y[i] = a[i] * b[i];
 }
 
-void unfused_lstm_update_c(int numElements, float *out, const float *c,
-                           const float *Wx_f, const float *Wx_i,
-                           const float *Wx_c, const float *Rh_f,
-                           const float *Rh_i, const float *Rh_c,
-                           const float *b_f, const float *b_i,
-                           const float *b_c) {
+void unfused_lstm_update_c(int numElements, float *out, float *tmp1,
+                           float *tmp2, const float *c, const float *Wx_f,
+                           const float *Wx_i, const float *Wx_c,
+                           const float *Rh_f, const float *Rh_i,
+                           const float *Rh_c, const float *b_f,
+                           const float *b_i, const float *b_c) {
 
   dim3 blockDim;
   dim3 gridDim;
 
   blockDim.x = 256;
   gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
-
-  float *tmp1, *tmp2;
-  cudaErrCheck(cudaMalloc((void **)&tmp1, numElements * sizeof(float)));
-  cudaErrCheck(cudaMalloc((void **)&tmp2, numElements * sizeof(float)));
 
   // sigmoid(Wx_f + Rh_f + b_f) * c
   pw_vecAdd<<<gridDim, blockDim>>>(tmp1, Wx_f, Rh_f, numElements);
@@ -101,19 +97,17 @@ void unfused_lstm_update_c(int numElements, float *out, const float *c,
 
   // sigmoid(...) + sigmoid(...) * tanh(...)
   pw_vecAdd<<<gridDim, blockDim>>>(out, out, tmp1, numElements);
-
-  cudaErrCheck(cudaFree(tmp1));
-  cudaErrCheck(cudaFree(tmp2));
 }
 
 //
 // Entry-points
 //
 
-extern "C" void execute(int numElements, int fused, float *out, const float *c,
-                        const float *Wx_f, const float *Wx_i, const float *Wx_c,
-                        const float *Rh_f, const float *Rh_i, const float *Rh_c,
-                        const float *b_f, const float *b_i, const float *b_c) {
+extern "C" void execute(int numElements, int fused, float *out, float *tmp1,
+                        float *tmp2, const float *c, const float *Wx_f,
+                        const float *Wx_i, const float *Wx_c, const float *Rh_f,
+                        const float *Rh_i, const float *Rh_c, const float *b_f,
+                        const float *b_i, const float *b_c) {
   if (fused) {
     dim3 blockDim;
     dim3 gridDim;
@@ -124,7 +118,7 @@ extern "C" void execute(int numElements, int fused, float *out, const float *c,
     fused_lstm_update_c<<<gridDim, blockDim>>>(
         numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
   } else {
-    unfused_lstm_update_c(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i,
-                          Rh_c, b_f, b_i, b_c);
+    unfused_lstm_update_c(numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c,
+                          Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
   }
 }

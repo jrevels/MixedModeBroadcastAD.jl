@@ -27,14 +27,14 @@ function cuda_lstm_update_c(c,
 end
 
 # NOTE: unfused kernels work with an explicit out param cfr. the CUDA implementation,
-#       only including the time to allocate two temporaries
+#       as well as two pre-allocated arrays for temporaries
 
-function unfused_lstm_update_c(out, c,
+function unfused_lstm_update_c(out, tmp1, tmp2, c,
                                Wx_f, Wx_i, Wx_c,
                                Rh_f, Rh_i, Rh_c,
                                b_f,  b_i,  b_c)
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
-    tmp1 = Wx_f .+ Rh_f
+    tmp1 .= Wx_f .+ Rh_f
     tmp1 .= tmp1 .+ b_f
     tmp1 .= σ.(tmp1)
     tmp1 .= tmp1 .* c
@@ -53,17 +53,17 @@ function unfused_lstm_update_c(out, c,
     out .= out .* tmp2
 
     # σ.(...) + σ.(...) * tanh.(...)
-    out = out .+ tmp1
+    out .= out .+ tmp1
 
     return
 end
 
-function unfused_cuda_lstm_update_c(out, c,
+function unfused_cuda_lstm_update_c(out, tmp1, tmp2, c,
                                     Wx_f, Wx_i, Wx_c,
                                     Rh_f, Rh_i, Rh_c,
                                     b_f,  b_i,  b_c)
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
-    tmp1 = Wx_f .+ Rh_f
+    tmp1 .= Wx_f .+ Rh_f
     tmp1 .= tmp1 .+ b_f
     tmp1 .= σ.(tmp1)
     tmp1 .= tmp1 .* c
@@ -82,7 +82,7 @@ function unfused_cuda_lstm_update_c(out, c,
     out .= out .* tmp2
 
     # σ.(...) + σ.(...) * tanh.(...)
-    out = out .+ tmp1
+    out .= out .+ tmp1
 
     return
 end
