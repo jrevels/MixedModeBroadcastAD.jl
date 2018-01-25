@@ -1,13 +1,12 @@
-# limited version of julia.jl with extra annotations, for ease of profiling & analysis
-
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray
+using CUDAnative
 import CUDAdrv
 import NVTX
-NVTX.stop()
-
 include("../kernels.jl")
 
+# limited version of julia.jl with extra annotations, for ease of profiling & analysis
 # NOTE: use with `--profile-from-start off`
+NVTX.stop()
 
 const N = 2048
 

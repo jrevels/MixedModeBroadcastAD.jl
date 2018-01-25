@@ -1,4 +1,5 @@
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray
+using CUDAnative
 import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
@@ -27,13 +28,13 @@ function benchmark(::Type{CuArray}, n, fused)
 end
 
 function benchmark_cuda(n, fused)
-    lib = Libdl.dlopen("./cuda.so")
+    lib = Libdl.dlopen(joinpath(@__DIR__, "cuda.so"))
     fun = Libdl.dlsym(lib, "benchmark")
     ccall(fun, Cfloat, (Cint, Cint), n, fused)
 end
 
 rows = Any[["environment", "size", "fused", "elapsed"]]
-for n in (2^i for i in 9:11), fused in [true, false]
+for fused in [true, false], n in (2^i for i in 9:11)
     # Julia arrays
     for T in [Array, CuArray]
         benchmark(T, n, fused) # warm-up

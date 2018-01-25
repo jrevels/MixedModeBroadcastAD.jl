@@ -1,4 +1,5 @@
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray
+using CUDAnative
 import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
