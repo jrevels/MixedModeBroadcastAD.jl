@@ -16,12 +16,6 @@ function Record(tape::Tape, f, input...)
     return tuplemap(x -> Record(tape, x), output)
 end
 
-for f in (:+, :*)
-    @eval function Base.$f(A::Record, B::Record)
-        broadcast($f, A, B)
-    end
-end
-
 macro propagate!(x, Δ)
     return esc(quote
         isa($x, $Variable) && $incrderiv!($x, $Δ)

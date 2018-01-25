@@ -1,7 +1,4 @@
-#include <cstdlib>
 #include <iostream>
-#include <chrono>
-
 #include <cuda.h>
 
 #define cudaErrCheck(stat) { cudaErrCheck_((stat), __FILE__, __LINE__); }
@@ -121,51 +118,4 @@ extern "C" void execute(int numElements, int fused, float* out,
     } else {
         unfused_lstm_update_c(numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
     }
-}
-
-extern "C" float benchmark(int n, int fused) {
-    int numElements = n*n;
-
-    float *out, *c, *Wx_f, *Wx_i, *Wx_c, *Rh_f, *Rh_i, *Rh_c, *b_f, *b_i, *b_c;
-    cudaErrCheck(cudaMalloc((void**)&c, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Wx_f, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Rh_f, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&b_f, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Wx_i, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Rh_i, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&b_i, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Wx_c, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&Rh_c, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&b_c, numElements * sizeof(float)));
-    cudaErrCheck(cudaMalloc((void**)&out, numElements * sizeof(float)));
-
-    dim3 blockDim;
-    dim3 gridDim;
-
-    blockDim.x = 256;
-    gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
-
-    auto start = std::chrono::system_clock::now();
-    execute(numElements, fused, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
-    cudaDeviceSynchronize();
-    auto end = std::chrono::system_clock::now();
-
-    std::chrono::duration<float> elapsed = end - start;
-    return elapsed.count();
-}
-
-
-//
-// Main
-//
-
-int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " N" << std::endl;
-        return EXIT_FAILURE;
-    }
-    int n = atoi(argv[1]);
-    std::cout << "Fused: " << benchmark(n, 1) << std::endl;
-    std::cout << "Unfused: " << benchmark(n, 0) << std::endl;
-    return EXIT_SUCCESS;
 }

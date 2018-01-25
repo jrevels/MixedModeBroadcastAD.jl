@@ -35,9 +35,9 @@ function unfused_lstm_update_c(out, c,
                                b_f,  b_i,  b_c)
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
     tmp1 = Wx_f .+ Rh_f
-    tmp1 .= tmp1 .+ b_f
+    tmp1 += b_f
     tmp1 .= σ.(tmp1)
-    tmp1 *= c
+    tmp1 += c
 
     # σ.(Wx_i .+ Rh_i .+ b_i)
     tmp2 = Wx_i .+ Rh_i
@@ -66,7 +66,7 @@ function unfused_cuda_lstm_update_c(out, c,
     tmp1 = Wx_f .+ Rh_f
     tmp1 += b_f
     tmp1 .= cuda_σ.(tmp1)
-    tmp1 *= c
+    tmp1 += c
 
     # σ.(Wx_i .+ Rh_i .+ b_i)
     tmp2 = Wx_i .+ Rh_i
