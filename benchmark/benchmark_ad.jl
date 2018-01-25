@@ -1,15 +1,6 @@
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray, lstm_update_c, cuda_lstm_update_c
 import CUDAdrv
-#=
-Kernels benchmarked here are implemented in `src/kernels` and tested for correctness
-in `test/runtests.jl`.
-
-Since our technique is agnostic to a framework's method of tape construction, the
-benchmarking code below pre-records the tape in order to avoid timing irrelevant
-overhead due to tape construction.
-=#
-
-const TEST_TYPES = [Array, CuArray]
+include("util.jl")
 
 kernel(::Type{Array}) = lstm_update_c
 kernel(::Type{CuArray}) = cuda_lstm_update_c
@@ -29,11 +20,11 @@ function benchmark(::Type{CuArray}, tape)
     @elapsed((backward!(tape), CUDAdrv.synchronize()))
 end
 
-rows = Any[["size", "type", "forwards", "backwards"]]
-for n in (2^i for i in 9:11), T in TEST_TYPES
+rows = Any[["environment", "size", "forwards", "backwards"]]
+for n in (2^i for i in 9:11), T in [Array, CuArray]
     tape = prepare(T, n)
     benchmark(T, tape) # warm-up
     fwd, bwd = benchmark(T, tape)
-    push!(rows, [T, "$(n)x$(n)", "$fwd s", "$bwd s"])
+    push!(rows, ["Julia $T", "$(n)x$(n)", timedelta(fwd), timedelta(bwd)])
 end
-show(STDOUT, Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))
+println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))
