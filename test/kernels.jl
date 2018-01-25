@@ -14,12 +14,75 @@ function lstm_update_c(c,
                        Wx_f, Wx_i, Wx_c,
                        Rh_f, Rh_i, Rh_c,
                        b_f,  b_i,  b_c)
-    return σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
+    return σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
+           σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
 end
 
 function cuda_lstm_update_c(c,
                             Wx_f, Wx_i, Wx_c,
                             Rh_f, Rh_i, Rh_c,
                             b_f,  b_i,  b_c)
-    return cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
+    return cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
+           cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
+end
+
+# NOTE: unfused kernels work with an explicit out param cfr. the CUDA implementation,
+#       only including the time to allocate two temporaries
+
+function unfused_lstm_update_c(out, c,
+                               Wx_f, Wx_i, Wx_c,
+                               Rh_f, Rh_i, Rh_c,
+                               b_f,  b_i,  b_c)
+    # σ.(Wx_f .+ Rh_f .+ b_f) .* c
+    tmp1 = Wx_f .+ Rh_f
+    tmp1 += b_f
+    tmp1 .= σ.(tmp1)
+    tmp1 += c
+
+    # σ.(Wx_i .+ Rh_i .+ b_i)
+    tmp2 = Wx_i .+ Rh_i
+    tmp2 += b_i
+    tmp2 .= σ.(tmp2)
+
+    # tanh.(Wx_c .+ Rh_c .+ b_c)
+    out .= Wx_c .+ Rh_c
+    out += b_c
+    out .= tanh.(out)
+
+    # σ.(...) * tanh.(...)
+    out *= tmp2
+
+    # σ.(...) + σ.(...) * tanh.(...)
+    out += tmp1
+
+    return
+end
+
+function unfused_cuda_lstm_update_c(out, c,
+                                    Wx_f, Wx_i, Wx_c,
+                                    Rh_f, Rh_i, Rh_c,
+                                    b_f,  b_i,  b_c)
+    # σ.(Wx_f .+ Rh_f .+ b_f) .* c
+    tmp1 = Wx_f .+ Rh_f
+    tmp1 += b_f
+    tmp1 .= cuda_σ.(tmp1)
+    tmp1 += c
+
+    # σ.(Wx_i .+ Rh_i .+ b_i)
+    tmp2 = Wx_i .+ Rh_i
+    tmp2 += b_i
+    tmp2 .= cuda_σ.(tmp2)
+
+    # tanh.(Wx_c .+ Rh_c .+ b_c)
+    out .= Wx_c .+ Rh_c
+    out += b_c
+    out .= CUDAnative.tanh.(out)
+
+    # σ.(...) * tanh.(...)
+    out *= tmp2
+
+    # σ.(...) + σ.(...) * tanh.(...)
+    out += tmp1
+
+    return
 end
