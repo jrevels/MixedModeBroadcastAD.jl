@@ -11,26 +11,29 @@ overhead due to tape construction.
 
 const TEST_TYPES = [Array, CuArray]
 
-function benchmark(::Type{Array}, n::Int)
-    input = Tuple(Array{Float32}((n,n)) for i in 1:10)
-    tape, _, _ = record(lstm_update_c, input...)
+kernel(::Type{Array}) = lstm_update_c
+kernel(::Type{CuArray}) = cuda_lstm_update_c
+
+function prepare(::Type{T}, n::Int) where {T<:AbstractArray}
+    input = Tuple(T{Float32}((n,n)) for i in 1:10)
+    tape, _, _ = record(kernel(T), input...)
+    tape
+end
+
+function benchmark(::Type{Array}, tape)
     @elapsed(forward!(tape)), @elapsed(backward!(tape))
 end
 
-function benchmark(::Type{CuArray}, n::Int)
-    input = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
-    tape, _, _ = record(cuda_lstm_update_c, input...)
+function benchmark(::Type{CuArray}, tape)
     @elapsed((forward!(tape), CUDAdrv.synchronize())),
     @elapsed((backward!(tape), CUDAdrv.synchronize()))
 end
 
-info("Warming up...")
-benchmark.(TEST_TYPES, 1)
-
-info("Benchmarking...")
 rows = Any[["size", "type", "forwards", "backwards"]]
 for n in (2^i for i in 9:11), T in TEST_TYPES
-    fwd, bwd = benchmark(T, n)
+    tape = prepare(T, n)
+    benchmark(T, tape) # warm-up
+    fwd, bwd = benchmark(T, tape)
     push!(rows, [T, "$(n)x$(n)", "$fwd s", "$bwd s"])
 end
 show(STDOUT, Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))
