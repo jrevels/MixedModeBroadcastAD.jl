@@ -95,14 +95,16 @@ function unfused_cuda_lstm_update_c(c,
                                     Rh_f, Rh_i, Rh_c,
                                     b_f,  b_i,  b_c)
     out = similar(c)
-    tmp1 = similar(c)
-    tmp2 = similar(c)
+    temporaries = Tuple(similar(c) for i in 1:8)
     numElements = length(out)
     ccall(cuda_fun_unfused, Void,
           (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
-          numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
+          numElements, out, temporaries[1], temporaries[2], temporaries[3], temporaries[4],
+          temporaries[5], temporaries[6], temporaries[7], temporaries[8],
+          c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
 
     CUDAdrv.synchronize()
     return out
