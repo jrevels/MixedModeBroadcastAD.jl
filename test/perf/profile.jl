@@ -18,13 +18,7 @@ gc()
 
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
-    NVTX.@range "CUDA" begin
-        cuda_lstm_update_c(inputs...)
-        CUDAdrv.synchronize()
-    end
-    NVTX.@range "CuArray" begin
-        cudanative_lstm_update_c(inputs...)
-        CUDAdrv.synchronize()
-    end
+    NVTX.@range "CUDA" cuda_lstm_update_c(inputs...)
+    NVTX.@range "CuArray" cudanative_lstm_update_c(inputs...)
     ccall(:jl_dump_compiles, Void, (Ptr{Void},), C_NULL)
 end

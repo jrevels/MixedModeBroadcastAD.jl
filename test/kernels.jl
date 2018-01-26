@@ -6,6 +6,8 @@ AD framework which are not necessarily performant and only exist to facilitate t
 demonstration of the broadcast technique.
 =#
 
+import CUDAdrv
+
 
 #
 # Primitives
@@ -33,8 +35,10 @@ function cudanative_lstm_update_c(c,
                                   Wx_f, Wx_i, Wx_c,
                                   Rh_f, Rh_i, Rh_c,
                                   b_f,  b_i,  b_c)
-    return cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
+    out =  cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
            cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
+    CUDAdrv.synchronize()
+    return out
 end
 
 const cuda_fun = Libdl.dlsym(cuda_lib, "lstm_update_c")
@@ -49,6 +53,7 @@ function cuda_lstm_update_c(c,
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}),
           numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+    CUDAdrv.synchronize()
     return out
 end
 
@@ -116,7 +121,8 @@ function unfused_cudanative_lstm_update_c(tmp1, tmp2, c,
     # σ.(...) + σ.(...) * tanh.(...)
     out .= out .+ tmp1
 
-    return
+    CUDAdrv.synchronize()
+    return out
 end
 
 const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")
@@ -131,5 +137,7 @@ function unfused_cuda_lstm_update_c(tmp1, tmp2, c,
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
           numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+
+    CUDAdrv.synchronize()
     return out
 end

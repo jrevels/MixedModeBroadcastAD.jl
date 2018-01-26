@@ -16,8 +16,8 @@ function prepare()
 end
 
 function benchmark(tape)
-    NVTX.@range "forward pass"      (forward!(tape), CUDAdrv.synchronize())
-    NVTX.@range "backward pass"     (backward!(tape), CUDAdrv.synchronize())
+    NVTX.@range "forward pass"  (forward!(tape), CUDAdrv.synchronize())
+    NVTX.@range "backward pass" (backward!(tape), CUDAdrv.synchronize())
 end
 
 # warm-up
