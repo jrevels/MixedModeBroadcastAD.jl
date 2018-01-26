@@ -16,6 +16,7 @@ include("tape.jl")
 include("variables.jl")
 include("primitives.jl")
 include("gpu.jl")
+include("unfused.jl")
 
 function record(f, input...)
     tape = Tape()
