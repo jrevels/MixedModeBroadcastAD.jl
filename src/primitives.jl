@@ -65,12 +65,12 @@ end
 
 # multiple dispatch selects these implementations for the unfused benchmarks
 
-forward!(i::BroadcastInstruction{typeof(σ)}) = invoke(forward!, Instruction, i)
-forward!(i::BroadcastInstruction{typeof(cuda_σ)}) = invoke(forward!, Instruction, i)
-forward!(i::BroadcastInstruction{typeof(tanh)}) = invoke(forward!, Instruction, i)
-forward!(i::BroadcastInstruction{typeof(cuda_tanh)}) = invoke(forward!, Instruction, i)
-forward!(i::BroadcastInstruction{typeof(+)}) = invoke(forward!, Instruction, i)
-forward!(i::BroadcastInstruction{typeof(*)}) = invoke(forward!, Instruction, i)
+forward!(i::BroadcastInstruction{typeof(σ)}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{typeof(cuda_σ)}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{typeof(tanh)}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{typeof(cuda_tanh)}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{typeof(+)}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{typeof(*)}) = invoke(forward!, Tuple{Instruction}, i)
 
 #=== mixed-mode broadcast optimization ===#
 
