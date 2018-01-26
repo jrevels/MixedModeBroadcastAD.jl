@@ -74,68 +74,39 @@ function CUDAnative.cudaconvert(a::CuArray{T,N}) where {T,N}
     CuDeviceArray{T,N,AS.Global}(a.shape, devptr)
 end
 
+import Base.Broadcast
+# Pssh we are flattening the broadcast here, don't tell anyone
+function CUDAnative.cudaconvert(bc::Broadcast.Broadcasted{Style,ElType}) where {Style,ElType}
+    # concatenate the nested arguments into {a, b, c, d}
+    args = Broadcast.mapTupleLL(CUDAnative.cudaconvert, Broadcast.cat_nested(x->x.args, bc))
 
-## broadcast
-import Broadcast
-### base interface
-
-Broadcast.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
-
-function Broadcast.broadcast_similar(::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
-    @assert isleaftype(T) "$T is not a leaf type"
-    similar(CuArray{T}, inds)
-end
-
-@inline function Base.copyto!(dest::CuArray, bc::Broadcast.Broadcasted{Nothing})
-    _broadcast!(f, dest, As...)
-    return dest
-end
-
-Base.Broadcast.broadcast_indices(::Type{CuArray}, A::Ref) = ()
-Base.Broadcast.broadcast_indices(::Type{CuArray}, A) = indices(A)
-
-### internal implementation (mostly copied from Base)
-
-using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
-
-# This indirection allows size-dependent implementations.
-@inline function _broadcast!(f, C::CuArray, A, Bs::Vararg{Any,N}) where N
-    shape = broadcast_indices(C)
-    @boundscheck check_broadcast_indices(shape, A, Bs...)
-    keeps, Idefaults = map_newindexer(shape, A, Bs)
-    blk, thr = cuda_dimensions(C)
-    @cuda (blk, thr) _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
-    return C
-end
-
-using Base.Broadcast: newindex, _broadcast_getindex
-using Base.Cartesian: @nexprs, @ncall
-
-# nargs encodes the number of As arguments (which matches the number
-# of keeps). The first two type parameters are to ensure specialization.
-@generated function _broadcast!(f, B::CuDeviceArray, keeps::K, Idefaults::ID,
-                                A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
-    nargs = N + 1
-    quote
-        # destructure the keeps and As tuples
-        A_1 = A
-        @nexprs $N i->(A_{i+1} = Bs[i])
-        @nexprs $nargs i->(keep_i = keeps[i])
-        @nexprs $nargs i->(Idefault_i = Idefaults[i])
-        let I = @cuda_index(B)
-            # reverse-broadcast the indices
-            @nexprs $nargs i->(I_i = newindex(I, keep_i, Idefault_i))
-            # extract array values
-            @nexprs $nargs i->(@inbounds val_i = _broadcast_getindex(A_i, I_i))
-            # call the function and store the result
-            result = @ncall $nargs f val
-            @inbounds B[I] = result
+    # build a function `makeargs` that takes a "flat" argument list and
+    # and creates the appropriate input arguments for `f`, e.g.,
+    #          makeargs = (w, x, y, z) -> (w, g(x, y), z)
+    #
+    # `makeargs` is built recursively and looks a bit like this:
+    #     makeargs(w, x, y, z) = (w, makeargs1(x, y, z)...)
+    #                          = (w, g(x, y), makeargs2(z)...)
+    #                          = (w, g(x, y), z)
+    let makeargs = Broadcast.make_makeargs(bc)
+        newf = @inline function(args::Vararg{Any,N}) where N
+            bc.f(makeargs(args...)...)
         end
-        return
+        return Broadcast.Broadcasted{Style,ElType}(newf, args)
     end
 end
 
-### auxiliary functionality
+function CUDAnative.cudaconvert(bc::Broadcast.BroadcastedF{Style,ElType}) where {Style,ElType}
+    # Since bc is instantiated, let's preserve the instatiation in the result
+    args = Broadcast.mapTupleLL(CUDAnative.cudaconvert, Broadcast.cat_nested(x->x.args, bc))
+    indexing = Broadcast.cat_nested(x->x.indexing, bc)
+    let makeargs = Broadcast.make_makeargs(bc)
+        newf = @inline function(args::Vararg{Any,N}) where N
+            bc.f(makeargs(args...)...)
+        end
+        return Broadcast.Broadcasted{Style,ElType}(newf, args, axes(bc), indexing)
+    end
+end
 
 cuda_dimensions(a::AbstractArray) = cuda_dimensions(length(a))
 function cuda_dimensions(n::Integer)
@@ -149,6 +120,31 @@ macro cuda_index(A)
         i > length($A) && return
         @inbounds CartesianIndices($A)[i]
     end)
+end
+
+
+## broadcast
+### base interface
+
+Base.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
+
+function Base.broadcast_similar(::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
+    @assert isleaftype(T) "$T is not a leaf type"
+    similar(CuArray{T}, inds)
+end
+
+@inline function Base.copyto!(dest::CuArray, bc::Broadcast.Broadcasted{Nothing})
+    axes(dest) == axes(bc) || throwdm(axes(dest), axes(bc))
+    blk, thr = cuda_dimensions(dest)
+    @cuda (blk, thr) _copyto!(dest, bc)
+    return dest
+end
+
+function _copyto!(dest::CuDeviceArray, bc::Broadcast.Broadcasted{Nothing})
+    let I = @cuda_index(dest)
+        @inbounds dest[I] = Broadcast._broadcast_getindex(bc, I)
+    end
+    return
 end
 
 
