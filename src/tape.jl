@@ -8,7 +8,7 @@ mutable struct Instruction{F,I<:Tuple}
     output::Any
 end
 
-const BroadcastInstruction{F} = Instruction{typeof(broadcast),Tuple{F,Vararg{Any}}}
+const BroadcastInstruction{F} = Instruction{typeof(broadcast),T} where T <: Tuple{F,Vararg{Any}}
 
 ########
 # Tape #
