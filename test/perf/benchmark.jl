@@ -3,6 +3,8 @@ using CUDAnative
 import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
+lib = Libdl.dlopen(joinpath(@__DIR__, "..", "kernels.so"))
+fun = Libdl.dlsym(lib, "execute")
 
 function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
@@ -28,9 +30,6 @@ function benchmark(::Type{CuArray}, n, fused)
         CUDAdrv.synchronize()
     end
 end
-
-lib = Libdl.dlopen(joinpath(@__DIR__, "cuda.so"))
-fun = Libdl.dlsym(lib, "execute")
 
 function benchmark_cuda(n, fused)
     inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)

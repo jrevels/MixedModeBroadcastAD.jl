@@ -1,5 +1,5 @@
 .PHONY: all
-all: cuda.so
+all: kernels.so
 
 NVCC=nvcc
 %.so: %.cu
