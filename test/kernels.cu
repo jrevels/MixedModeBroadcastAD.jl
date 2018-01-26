@@ -65,11 +65,18 @@ __global__ void pw_sigmoid(float *y, const float *a, int numElements) {
     y[i] = sigmoidf(a[i]);
 }
 
-__global__ void pw_vecAdd(float *y, const float *a, const float *b,
-                          int numElements) {
+__global__ void pw_vecAdd2(float *y, const float *a, const float *b,
+                           int numElements) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < numElements)
     y[i] = a[i] + b[i];
+}
+
+__global__ void pw_vecAdd3(float *y, const float *a, const float *b,
+                           const float *c, int numElements) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < numElements)
+    y[i] = a[i] + b[i] + c[i];
 }
 
 __global__ void pw_vecMul(float *y, const float *a, const float *b,
@@ -79,13 +86,13 @@ __global__ void pw_vecMul(float *y, const float *a, const float *b,
     y[i] = a[i] * b[i];
 }
 
-extern "C" void unfused_lstm_update_c(int numElements, float *out, float *tmp1,
-                                      float *tmp2, const float *c,
-                                      const float *Wx_f, const float *Wx_i,
-                                      const float *Wx_c, const float *Rh_f,
-                                      const float *Rh_i, const float *Rh_c,
-                                      const float *b_f, const float *b_i,
-                                      const float *b_c) {
+extern "C" void
+unfused_lstm_update_c(int numElements, float *out, float *tmp1, float *tmp2,
+                      float *tmp3, float *tmp4, float *tmp5, float *tmp6,
+                      float *tmp7, float *tmp8, const float *c,
+                      const float *Wx_f, const float *Wx_i, const float *Wx_c,
+                      const float *Rh_f, const float *Rh_i, const float *Rh_c,
+                      const float *b_f, const float *b_i, const float *b_c) {
   dim3 blockDim;
   dim3 gridDim;
 
@@ -93,24 +100,21 @@ extern "C" void unfused_lstm_update_c(int numElements, float *out, float *tmp1,
   gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
 
   // sigmoid(Wx_f + Rh_f + b_f) * c
-  pw_vecAdd<<<gridDim, blockDim>>>(tmp1, Wx_f, Rh_f, numElements);
-  pw_vecAdd<<<gridDim, blockDim>>>(tmp1, tmp1, b_f, numElements);
-  pw_sigmoid<<<gridDim, blockDim>>>(tmp1, tmp1, numElements);
-  pw_vecMul<<<gridDim, blockDim>>>(tmp1, tmp1, c, numElements);
+  pw_vecAdd3<<<gridDim, blockDim>>>(tmp1, Wx_f, Rh_f, b_f, numElements);
+  pw_sigmoid<<<gridDim, blockDim>>>(tmp2, tmp1, numElements);
+  pw_vecMul<<<gridDim, blockDim>>>(tmp3, tmp2, c, numElements);
 
   // sigmoid(Wx_i + Rh_i + b_i)
-  pw_vecAdd<<<gridDim, blockDim>>>(tmp2, Wx_i, Rh_i, numElements);
-  pw_vecAdd<<<gridDim, blockDim>>>(tmp2, tmp2, b_i, numElements);
-  pw_sigmoid<<<gridDim, blockDim>>>(tmp2, tmp2, numElements);
+  pw_vecAdd3<<<gridDim, blockDim>>>(tmp4, Wx_i, Rh_i, b_i, numElements);
+  pw_sigmoid<<<gridDim, blockDim>>>(tmp5, tmp4, numElements);
 
   // tanh(Wx_c + Rh_c + b_c)
-  pw_vecAdd<<<gridDim, blockDim>>>(out, Wx_c, Rh_c, numElements);
-  pw_vecAdd<<<gridDim, blockDim>>>(out, out, b_c, numElements);
-  pw_tanh<<<gridDim, blockDim>>>(out, out, numElements);
+  pw_vecAdd3<<<gridDim, blockDim>>>(tmp6, Wx_c, Rh_c, b_c, numElements);
+  pw_tanh<<<gridDim, blockDim>>>(tmp7, tmp6, numElements);
 
   // sigmoid(...) * tanh(...)
-  pw_vecMul<<<gridDim, blockDim>>>(out, out, tmp2, numElements);
+  pw_vecMul<<<gridDim, blockDim>>>(tmp8, tmp5, tmp7, numElements);
 
   // sigmoid(...) + sigmoid(...) * tanh(...)
-  pw_vecAdd<<<gridDim, blockDim>>>(out, out, tmp1, numElements);
+  pw_vecAdd2<<<gridDim, blockDim>>>(out, tmp3, tmp8, numElements);
 }

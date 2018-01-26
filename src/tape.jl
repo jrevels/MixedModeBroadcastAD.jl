@@ -2,11 +2,13 @@
 # Instruction #
 ###############
 
-mutable struct Instruction{F}
+mutable struct Instruction{F,I<:Tuple}
     func::F
-    input::Tuple
+    input::I
     output::Any
 end
+
+const BroadcastInstruction{F} = Instruction{typeof(broadcast),T} where T <: Tuple{F,Vararg{Any}}
 
 ########
 # Tape #
