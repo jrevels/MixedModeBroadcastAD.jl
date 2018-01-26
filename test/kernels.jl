@@ -38,16 +38,18 @@ function cudanative_lstm_update_c(c,
 end
 
 const cuda_fun = Libdl.dlsym(cuda_lib, "lstm_update_c")
-function cuda_lstm_update_c(out, c,
+function cuda_lstm_update_c(c,
                             Wx_f, Wx_i, Wx_c,
                             Rh_f, Rh_i, Rh_c,
                             b_f,  b_i,  b_c)
+    out = similar(c)
     numElements = length(out)
-    return ccall(cuda_fun, Void,
-                 (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-                  Ptr{Float32}, Ptr{Float32}),
-                 numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+    ccall(cuda_fun, Void,
+          (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+           Ptr{Float32}, Ptr{Float32}),
+          numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+    return out
 end
 
 
@@ -55,10 +57,12 @@ end
 # Unfused
 #
 
-function unfused_lstm_update_c(out, tmp1, tmp2, c,
+function unfused_lstm_update_c(tmp1, tmp2, c,
                                Wx_f, Wx_i, Wx_c,
                                Rh_f, Rh_i, Rh_c,
                                b_f,  b_i,  b_c)
+    out = similar(c)
+
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
     tmp1 .= Wx_f .+ Rh_f
     tmp1 .= tmp1 .+ b_f
@@ -81,13 +85,15 @@ function unfused_lstm_update_c(out, tmp1, tmp2, c,
     # σ.(...) + σ.(...) * tanh.(...)
     out .= out .+ tmp1
 
-    return
+    return out
 end
 
-function unfused_cudanative_lstm_update_c(out, tmp1, tmp2, c,
+function unfused_cudanative_lstm_update_c(tmp1, tmp2, c,
                                           Wx_f, Wx_i, Wx_c,
                                           Rh_f, Rh_i, Rh_c,
                                           b_f,  b_i,  b_c)
+    out = similar(c)
+
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
     tmp1 .= Wx_f .+ Rh_f
     tmp1 .= tmp1 .+ b_f
@@ -114,14 +120,16 @@ function unfused_cudanative_lstm_update_c(out, tmp1, tmp2, c,
 end
 
 const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")
-function unfused_cuda_lstm_update_c(out, tmp1, tmp2, c,
+function unfused_cuda_lstm_update_c(tmp1, tmp2, c,
                                     Wx_f, Wx_i, Wx_c,
                                     Rh_f, Rh_i, Rh_c,
                                     b_f,  b_i,  b_c)
+    out = CuArray{Float32}(size(c))
     numElements = length(out)
-    return ccall(cuda_fun_unfused, Void,
-                 (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
-                 numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+    ccall(cuda_fun_unfused, Void,
+          (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
+          numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+    return out
 end

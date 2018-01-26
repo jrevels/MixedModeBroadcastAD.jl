@@ -6,24 +6,22 @@ include("../kernels.jl")
 
 function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
-    output = Array{Float32}((n,n))
     temps = Tuple(Array{Float32}((n,n)) for i in 1:2)
     @elapsed if fused
         lstm_update_c(inputs...)
     else
-        unfused_lstm_update_c(output, temps..., inputs...)
+        unfused_lstm_update_c(temps..., inputs...)
     end
 end
 
 function benchmark(::Type{CuArray}, n, fused)
     inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
-    output = CuArray{Float32}((n,n))
     temps = Tuple(CuArray{Float32}((n,n)) for i in 1:2)
     @elapsed begin
         if fused
             cudanative_lstm_update_c(inputs...)
         else
-            unfused_cudanative_lstm_update_c(output, temps..., inputs...)
+            unfused_cudanative_lstm_update_c(temps..., inputs...)
         end
         CUDAdrv.synchronize()
     end
@@ -31,13 +29,12 @@ end
 
 function benchmark_cuda(n, fused)
     inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
-    output = CuArray{Float32}((n,n))
     temps = Tuple(CuArray{Float32}((n,n)) for i in 1:2)
     @elapsed begin
         if fused
-            cuda_lstm_update_c(output, inputs...)
+            cuda_lstm_update_c(inputs...)
         else
-            unfused_cuda_lstm_update_c(output, temps..., inputs...)
+            unfused_cuda_lstm_update_c(temps..., inputs...)
         end
         CUDAdrv.synchronize()
     end
