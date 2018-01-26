@@ -110,23 +110,23 @@ end
 function backward!(i::Instruction{typeof(sum)})
     x = first(i.input)
     y = i.output
-    @propagate!(x, deriv(y))
+    x.deriv .+= deriv(y)
     return nothing
 end
 
 function backward!(i::Instruction{typeof(*)})
     x, y = i.input
     z = i.output
-    @propagate!(x, deriv(z) * value(y)')
-    @propagate!(y, value(x)' * deriv(z))
+    x.deriv .+= deriv(z) * value(y)'
+    y.deriv .+= value(x)' * deriv(z)
     return nothing
 end
 
 function backward!(i::Instruction{typeof(+)})
     x, y = i.input
     z = i.output
-    @propagate!(x, deriv(z))
-    @propagate!(y, deriv(z))
+    x.deriv .+= deriv(z)
+    y.deriv .+= deriv(z)
     return nothing
 end
 
@@ -135,7 +135,7 @@ for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
     @eval function backward!(i::BroadcastInstruction{typeof($f)})
         f, args = first(i.input), i.input[2:end]
         for j in 1:length(args)
-            @propagate!(args[j], $(df).(value(args[j])) .* deriv(i.output))
+            args[j].deriv .+= $(df).(value(args[j])) .* deriv(i.output)
         end
         return nothing
     end
@@ -144,16 +144,16 @@ end
 function backward!(i::BroadcastInstruction{typeof(*)})
     _, x, y = i.input
     z = i.output
-    @propagate!(x, value(y) .* deriv(z))
-    @propagate!(y, value(x) .* deriv(z))
+    x.deriv .+= value(y) .* deriv(z)
+    y.deriv .+= value(x) .* deriv(z)
     return nothing
 end
 
 function backward!(i::BroadcastInstruction{typeof(+)})
     _, x, y = i.input
     z = i.output
-    @propagate!(x, deriv(z))
-    @propagate!(y, deriv(z))
+    x.deriv .+= deriv(z)
+    y.deriv .+= deriv(z)
     return nothing
 end
 
@@ -172,7 +172,7 @@ function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output, df_results = i.output
     for i in 1:length(args)
-        @propagate!(args[i], getpartial.(df_results, i) .* deriv(output))
+        args[i].deriv .+= getpartial.(df_results, i) .* deriv(output)
     end
     return nothing
 end

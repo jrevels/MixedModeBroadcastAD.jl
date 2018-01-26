@@ -16,16 +16,8 @@ function Record(tape::Tape, f, input...)
     return tuplemap(x -> Record(tape, x), output)
 end
 
-macro propagate!(x, Δ)
-    return esc(quote
-        isa($x, $Variable) && $incrderiv!($x, $Δ)
-    end)
-end
-
 initderiv(x::AbstractArray) = fill!(similar(x), 0)
 initderiv(x) = zero(x)
-
-incrderiv!(v::Variable, x) = (v.deriv .+= x; nothing)
 
 seed!(v::Variable) = (v.deriv = one(v.deriv); nothing)
 seed!(r::Record) = seed!(r.variable)
