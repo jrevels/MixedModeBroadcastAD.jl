@@ -7,11 +7,13 @@ include("../kernels.jl")
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
-const N = 2048
+const N     = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 2048
+const fused = length(ARGS) >= 2 ? parse(Bool, ARGS[2]) : true
 
 function prepare()
     input = Tuple(CuArray{Float32}((N,N)) for i in 1:10)
-    tape, _, _ = record(cudanative_lstm_update_c, input...)
+    tape, _, _ = record(fused ? cudanative_lstm_update_c : unfused_cudanative_lstm_update_c,
+                        input...)
     tape
 end
 
