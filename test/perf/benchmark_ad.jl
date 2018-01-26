@@ -10,12 +10,7 @@ kernel(::Type{CuArray}, fused) = fused ? cudanative_lstm_update_c : unfused_cuda
 
 function prepare(::Type{T}, n::Int, fused) where {T<:AbstractArray}
     input = Tuple(T{Float32}((n,n)) for i in 1:10)
-    output = T{Float32}((n,n))
-    tape, _, _ = if fused
-        record(kernel(T, fused), input...)
-    else
-        record(kernel(T, fused), output, input...)
-    end
+    tape, _, _ = record(kernel(T, fused), input...)
     tape
 end
 
@@ -29,7 +24,7 @@ function benchmark(::Type{CuArray}, tape)
 end
 
 rows = Any[["environment", "size", "fused", "forwards", "backwards"]]
-for fused in [true, false], n in (2^i for i in 9:11), T in [Array, CuArray]
+for fused in [false, true], n in (2^i for i in 9:11), T in [Array, CuArray]
     tape = prepare(T, n, fused)
     benchmark(T, tape) # warm-up
     fwd, bwd = benchmark(T, tape)
