@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: σ, cuda_σ
+using MixedModeBroadcastAD: σ, cuda_σ, cuda_tanh
 import CUDAdrv
 
 const cuda_lib = Libdl.dlopen(joinpath(@__DIR__, "kernels.so"))
@@ -29,7 +29,7 @@ function cudanative_lstm_update_c(c,
                                   Rh_f, Rh_i, Rh_c,
                                   b_f,  b_i,  b_c)
     out =  cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
-           cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
+           cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* cuda_tanh.(Wx_c .+ Rh_c .+ b_c)
     CUDAdrv.synchronize()
     return out
 end
@@ -83,8 +83,8 @@ function unfused_cudanative_lstm_update_c(c,
                                broadcast(cuda_σ, broadcast(+, Wx_f, Rh_f, b_f)),
                                c),
                      broadcast(*,
-                               broadcast(cuda_σ, broadcast(+, Wx_i, Rh_i, b_i)),
-                               broadcast(CUDAnative.tanh, broadcast(+, Wx_c, Rh_c, b_c))))
+                               broadcast(cuda_σ,    broadcast(+, Wx_i, Rh_i, b_i)),
+                               broadcast(cuda_tanh, broadcast(+, Wx_c, Rh_c, b_c))))
 end
 
 const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")

@@ -10,6 +10,9 @@ d_cuda_σ(x) = (expx = CUDAnative.exp(x); expx / (1 + expx)^2)
 
 d_tanh(x) = sech(x)^2
 
+cuda_tanh(x) = CUDAnative.tanh(x)
+d_cuda_tanh(x) = 1 - CUDAnative.tanh(x)^2
+
 ###############
 # Record Pass #
 ###############
@@ -65,6 +68,7 @@ end
 forward!(i::BroadcastInstruction{typeof(σ)}) = invoke(forward!, Instruction, i)
 forward!(i::BroadcastInstruction{typeof(cuda_σ)}) = invoke(forward!, Instruction, i)
 forward!(i::BroadcastInstruction{typeof(tanh)}) = invoke(forward!, Instruction, i)
+forward!(i::BroadcastInstruction{typeof(cuda_tanh)}) = invoke(forward!, Instruction, i)
 
 #=== mixed-mode broadcast optimization ===#
 
@@ -124,7 +128,8 @@ function backward!(i::Instruction{typeof(+)})
     return nothing
 end
 
-for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ), (:tanh, :d_tanh)]
+for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
+                (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
     @eval function backward!(i::BroadcastInstruction{typeof($f)})
         f, args = first(i.input), i.input[2:end]
         for i in 1:length(args)
