@@ -78,21 +78,25 @@ function unfused_cudanative_lstm_update_c(c,
                                           Wx_f, Wx_i, Wx_c,
                                           Rh_f, Rh_i, Rh_c,
                                           b_f,  b_i,  b_c)
-    return broadcast(+,
-                     broadcast(*,
-                               broadcast(cuda_σ, broadcast(+, Wx_f, Rh_f, b_f)),
-                               c),
-                     broadcast(*,
-                               broadcast(cuda_σ,    broadcast(+, Wx_i, Rh_i, b_i)),
-                               broadcast(cuda_tanh, broadcast(+, Wx_c, Rh_c, b_c))))
+    out = broadcast(+,
+                    broadcast(*,
+                              broadcast(cuda_σ, broadcast(+, Wx_f, Rh_f, b_f)),
+                              c),
+                    broadcast(*,
+                              broadcast(cuda_σ,    broadcast(+, Wx_i, Rh_i, b_i)),
+                              broadcast(cuda_tanh, broadcast(+, Wx_c, Rh_c, b_c))))
+    CUDAdrv.synchronize()
+    return out
 end
 
 const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")
-function unfused_cuda_lstm_update_c(tmp1, tmp2, c,
+function unfused_cuda_lstm_update_c(c,
                                     Wx_f, Wx_i, Wx_c,
                                     Rh_f, Rh_i, Rh_c,
                                     b_f,  b_i,  b_c)
-    out = CuArray{Float32}(size(c))
+    out = similar(c)
+    tmp1 = similar(c)
+    tmp2 = similar(c)
     numElements = length(out)
     ccall(cuda_fun_unfused, Void,
           (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
