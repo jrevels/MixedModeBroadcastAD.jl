@@ -76,17 +76,17 @@ end
 
 
 ## broadcast
-
+import Broadcast
 ### base interface
 
-Base.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
+Broadcast.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
 
-function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
+function Broadcast.broadcast_similar(::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
     @assert isleaftype(T) "$T is not a leaf type"
     similar(CuArray{T}, inds)
 end
 
-@inline function Base.broadcast!(f, dest::CuArray, ::Nothing, As::Vararg{Any, N}) where N
+@inline function Base.copyto!(dest::CuArray, bc::Broadcast.Broadcasted{Nothing})
     _broadcast!(f, dest, As...)
     return dest
 end
