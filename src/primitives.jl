@@ -134,15 +134,15 @@ for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
                 (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
     @eval function backward!(i::BroadcastInstruction{typeof($f)})
         f, args = first(i.input), i.input[2:end]
-        for i in 1:length(args)
-            @propagate!(args[i], $(df).(value(args[i])) .* deriv(i.output))
+        for j in 1:length(args)
+            @propagate!(args[j], $(df).(value(args[j])) .* deriv(i.output))
         end
         return nothing
     end
 end
 
 function backward!(i::BroadcastInstruction{typeof(*)})
-    x, y = i.input
+    _, x, y = i.input
     z = i.output
     @propagate!(x, value(y) .* deriv(z))
     @propagate!(y, value(x) .* deriv(z))
@@ -150,7 +150,7 @@ function backward!(i::BroadcastInstruction{typeof(*)})
 end
 
 function backward!(i::BroadcastInstruction{typeof(+)})
-    x, y = i.input
+    _, x, y = i.input
     z = i.output
     @propagate!(x, deriv(z))
     @propagate!(y, deriv(z))
