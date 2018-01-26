@@ -3,8 +3,6 @@ using CUDAnative
 import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
-lib = Libdl.dlopen(joinpath(@__DIR__, "..", "kernels.so"))
-fun = Libdl.dlsym(lib, "execute")
 
 function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
@@ -23,9 +21,9 @@ function benchmark(::Type{CuArray}, n, fused)
     temps = Tuple(CuArray{Float32}((n,n)) for i in 1:2)
     @elapsed begin
         if fused
-            cuda_lstm_update_c(inputs...)
+            cudanative_lstm_update_c(inputs...)
         else
-            unfused_cuda_lstm_update_c(output, temps..., inputs...)
+            unfused_cudanative_lstm_update_c(output, temps..., inputs...)
         end
         CUDAdrv.synchronize()
     end
@@ -36,7 +34,11 @@ function benchmark_cuda(n, fused)
     output = CuArray{Float32}((n,n))
     temps = Tuple(CuArray{Float32}((n,n)) for i in 1:2)
     @elapsed begin
-        ccall(fun, Void, (Cint, Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}), n*n, fused, output, temps[1], temps[2], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10])
+        if fused
+            cuda_lstm_update_c(output, inputs...)
+        else
+            unfused_cuda_lstm_update_c(output, temps..., inputs...)
+        end
         CUDAdrv.synchronize()
     end
 end

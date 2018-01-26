@@ -1,4 +1,3 @@
-
 #=
 Since our technique only affects broadcast performance, we have limited our kernel to
 execute only a small part of the LSTM layer which stresses fused broadcast operations. This
@@ -7,8 +6,20 @@ AD framework which are not necessarily performant and only exist to facilitate t
 demonstration of the broadcast technique.
 =#
 
+
+#
+# Primitives
+#
+
+const cuda_lib = Libdl.dlopen(joinpath(@__DIR__, "kernels.so"))
+
 σ(x) = 1 / (1 + exp(-x))
 cuda_σ(x) = 1 / (1 + CUDAnative.exp(-x))
+
+
+#
+# Fused
+#
 
 function lstm_update_c(c,
                        Wx_f, Wx_i, Wx_c,
@@ -18,16 +29,31 @@ function lstm_update_c(c,
            σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
 end
 
-function cuda_lstm_update_c(c,
-                            Wx_f, Wx_i, Wx_c,
-                            Rh_f, Rh_i, Rh_c,
-                            b_f,  b_i,  b_c)
+function cudanative_lstm_update_c(c,
+                                  Wx_f, Wx_i, Wx_c,
+                                  Rh_f, Rh_i, Rh_c,
+                                  b_f,  b_i,  b_c)
     return cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
            cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* CUDAnative.tanh.(Wx_c .+ Rh_c .+ b_c)
 end
 
-# NOTE: unfused kernels work with an explicit out param cfr. the CUDA implementation,
-#       as well as two pre-allocated arrays for temporaries
+const cuda_fun = Libdl.dlsym(cuda_lib, "lstm_update_c")
+function cuda_lstm_update_c(out, c,
+                            Wx_f, Wx_i, Wx_c,
+                            Rh_f, Rh_i, Rh_c,
+                            b_f,  b_i,  b_c)
+    numElements = length(out)
+    return ccall(cuda_fun, Void,
+                 (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+                  Ptr{Float32}, Ptr{Float32}),
+                 numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
+end
+
+
+#
+# Unfused
+#
 
 function unfused_lstm_update_c(out, tmp1, tmp2, c,
                                Wx_f, Wx_i, Wx_c,
@@ -58,10 +84,10 @@ function unfused_lstm_update_c(out, tmp1, tmp2, c,
     return
 end
 
-function unfused_cuda_lstm_update_c(out, tmp1, tmp2, c,
-                                    Wx_f, Wx_i, Wx_c,
-                                    Rh_f, Rh_i, Rh_c,
-                                    b_f,  b_i,  b_c)
+function unfused_cudanative_lstm_update_c(out, tmp1, tmp2, c,
+                                          Wx_f, Wx_i, Wx_c,
+                                          Rh_f, Rh_i, Rh_c,
+                                          b_f,  b_i,  b_c)
     # σ.(Wx_f .+ Rh_f .+ b_f) .* c
     tmp1 .= Wx_f .+ Rh_f
     tmp1 .= tmp1 .+ b_f
@@ -85,4 +111,17 @@ function unfused_cuda_lstm_update_c(out, tmp1, tmp2, c,
     out .= out .+ tmp1
 
     return
+end
+
+const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")
+function unfused_cuda_lstm_update_c(out, tmp1, tmp2, c,
+                                    Wx_f, Wx_i, Wx_c,
+                                    Rh_f, Rh_i, Rh_c,
+                                    b_f,  b_i,  b_c)
+    numElements = length(out)
+    return ccall(cuda_fun_unfused, Void,
+                 (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
+                  Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
+                 numElements, out, tmp1, tmp2, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
 end

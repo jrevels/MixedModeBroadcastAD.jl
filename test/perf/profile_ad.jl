@@ -4,7 +4,6 @@ import CUDAdrv
 import NVTX
 include("../kernels.jl")
 
-# limited version of julia.jl with extra annotations, for ease of profiling & analysis
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
@@ -12,7 +11,7 @@ const N = 2048
 
 function prepare()
     input = Tuple(CuArray{Float32}((N,N)) for i in 1:10)
-    tape, _, _ = record(cuda_lstm_update_c, input...)
+    tape, _, _ = record(cudanative_lstm_update_c, input...)
     tape
 end
 

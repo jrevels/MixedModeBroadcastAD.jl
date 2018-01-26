@@ -21,7 +21,10 @@ end
 CuArray{T}(shape::NTuple{N,Integer}) where {T,N} = CuArray{T,N}(shape)
 
 function unsafe_free!(a::CuArray)
-    CUDAdrv.isvalid(a.buf.ctx) && Mem.free(a.buf)
+    if !isnull(a.buf)
+        CUDAdrv.isvalid(a.buf.ctx) && Mem.free(a.buf)
+        a.buf = Mem.Buffer(C_NULL, 0, CuContext(C_NULL))
+    end
 end
 
 CuVector{T} = CuArray{T,1}
