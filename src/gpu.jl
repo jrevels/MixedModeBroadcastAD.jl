@@ -3,6 +3,7 @@
 ##############
 
 using CUDAdrv, CUDAnative
+using LinearAlgebra
 
 mutable struct CuArray{T,N} <: AbstractArray{T,N}
     buf::Mem.Buffer
@@ -186,11 +187,11 @@ function cublas_gemm!(C::CuVecOrMat{T}, tA::Char, tB::Char,
     CUBLAS.gemm!(tA, tB, alpha, A, B, beta, C)
 end
 
-Base.LinAlg.mul!(C::CuMatrix{T}, A::CuMatrix{T}, B::CuMatrix{T}) where T<:CUBLAS.CublasFloat =
+LinearAlgebra.mul!(C::CuMatrix{T}, A::CuMatrix{T}, B::CuMatrix{T}) where T<:CUBLAS.CublasFloat =
     cublas_gemm!(C, 'N', 'N', A, B)
-Base.LinAlg.mul!(C::CuMatrix, A::CuMatrix, adjB::Adjoint{<:Any,<:CuMatrix}) =
+LinearAlgebra.mul!(C::CuMatrix, A::CuMatrix, adjB::Adjoint{<:Any,<:CuMatrix}) =
     cublas_gemm!(C, 'N', 'C', A, adjB.parent)
-Base.LinAlg.mul!(C::CuMatrix, adjA::Adjoint{<:Any,<:CuMatrix}, B::CuMatrix) =
+LinearAlgebra.mul!(C::CuMatrix, adjA::Adjoint{<:Any,<:CuMatrix}, B::CuMatrix) =
     cublas_gemm!(C, 'C', 'N', adjA.parent, B)
 
 ### reductions
