@@ -14,10 +14,17 @@ inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
 # warm-up
 cuda_lstm_update_c(inputs...)
 cudanative_lstm_update_c(inputs...)
+gc()
 
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
-    NVTX.@range "CUDA" cuda_lstm_update_c(inputs...)
-    NVTX.@range "CuArray" cudanative_lstm_update_c(inputs...)
+    NVTX.@range "CUDA" begin
+        cuda_lstm_update_c(inputs...)
+        CUDAdrv.synchronize()
+    end
+    NVTX.@range "CuArray" begin
+        cudanative_lstm_update_c(inputs...)
+        CUDAdrv.synchronize()
+    end
     ccall(:jl_dump_compiles, Void, (Ptr{Void},), C_NULL)
 end

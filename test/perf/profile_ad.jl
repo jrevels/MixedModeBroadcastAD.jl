@@ -20,8 +20,11 @@ function benchmark(tape)
     NVTX.@range "backward pass"     (backward!(tape), CUDAdrv.synchronize())
 end
 
+# warm-up
 tape = prepare()
 benchmark(tape)
+benchmark(tape) # re-run on existing tape triggers additional compilation
+
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
     benchmark(tape)
