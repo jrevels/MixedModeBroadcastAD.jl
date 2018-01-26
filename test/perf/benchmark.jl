@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: record, forward!, backward!, CuArray
+using MixedModeBroadcastAD: record, forward!, backward!, CuArray, Unfused
 using CUDAnative
 import CUDAdrv
 include("util.jl")
@@ -8,10 +8,11 @@ function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
     output = Array{Float32}((n,n))
     temps = Tuple(Array{Float32}((n,n)) for i in 1:2)
+
     @elapsed if fused
         lstm_update_c(inputs...)
     else
-        unfused_lstm_update_c(output, temps..., inputs...)
+        lstm_update_c(map(Unfused, inputs)...)
     end
 end
 

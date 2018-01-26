@@ -21,4 +21,7 @@ Broadcast.broadcast_similar(::UnfusedStyle{N}, ::Type{ElType}, inds::Base.Indice
 Broadcast.is_broadcast_incremental(::Broadcast.Broadcasted{<:UnfusedStyle}) = true
 
 import Base.Broadcast: broadcast
-broadcast(f::F, us::Unfused...) where F<:Function = (@info("Unfused $f"); Unfused(f(map(u->u.data, us)...)))
+# implement specific functions needed for test/kernels
+broadcast(::typeof(+), u::Unfused, v::Unfused) = (@info("Unfused +"); Unfused(u.data .+ v.data))
+broadcast(::typeof(*), u::Unfused, v::Unfused) = (@info("Unfused *"); Unfused(u.data .* v.data))
+broadcast(f::F, u::Unfused) where F <: Function = (@info("Unfused $f"); Unfused(f.(u.data)))
