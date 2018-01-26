@@ -18,12 +18,12 @@ __forceinline__ __device__ float sigmoidf(float in) {
   return 1.f / (1.f + expf(-in));
 }
 
-__global__ void lstm_update_c_kernel(int numElements, float *out, const float *c,
-                                    const float *Wx_f, const float *Wx_i,
-                                    const float *Wx_c, const float *Rh_f,
-                                    const float *Rh_i, const float *Rh_c,
-                                    const float *b_f, const float *b_i,
-                                    const float *b_c) {
+__global__ void lstm_update_c_kernel(int numElements, float *out,
+                                     const float *c, const float *Wx_f,
+                                     const float *Wx_i, const float *Wx_c,
+                                     const float *Rh_f, const float *Rh_i,
+                                     const float *Rh_c, const float *b_f,
+                                     const float *b_i, const float *b_c) {
   int index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index >= numElements)
     return;
@@ -33,21 +33,21 @@ __global__ void lstm_update_c_kernel(int numElements, float *out, const float *c
                    tanh(Wx_c[index] + Rh_c[index] + b_c[index]);
 }
 
-extern "C" void lstm_update_c(int numElements, float *out, const float *c, const float *Wx_f,
-                        const float *Wx_i, const float *Wx_c, const float *Rh_f,
-                        const float *Rh_i, const float *Rh_c, const float *b_f,
-                        const float *b_i, const float *b_c) {
-    dim3 blockDim;
-    dim3 gridDim;
+extern "C" void lstm_update_c(int numElements, float *out, const float *c,
+                              const float *Wx_f, const float *Wx_i,
+                              const float *Wx_c, const float *Rh_f,
+                              const float *Rh_i, const float *Rh_c,
+                              const float *b_f, const float *b_i,
+                              const float *b_c) {
+  dim3 blockDim;
+  dim3 gridDim;
 
-    blockDim.x = 256;
-    gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
+  blockDim.x = 256;
+  gridDim.x = (numElements + blockDim.x - 1) / blockDim.x;
 
-    lstm_update_c_kernel<<<gridDim, blockDim>>>(
-        numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
-
+  lstm_update_c_kernel<<<gridDim, blockDim>>>(
+      numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c);
 }
-
 
 //
 // Unfused
@@ -80,11 +80,12 @@ __global__ void pw_vecMul(float *y, const float *a, const float *b,
 }
 
 extern "C" void unfused_lstm_update_c(int numElements, float *out, float *tmp1,
-                                      float *tmp2, const float *c, const float *Wx_f,
-                                      const float *Wx_i, const float *Wx_c,
-                                      const float *Rh_f, const float *Rh_i,
-                                      const float *Rh_c, const float *b_f,
-                                      const float *b_i, const float *b_c) {
+                                      float *tmp2, const float *c,
+                                      const float *Wx_f, const float *Wx_i,
+                                      const float *Wx_c, const float *Rh_f,
+                                      const float *Rh_i, const float *Rh_c,
+                                      const float *b_f, const float *b_i,
+                                      const float *b_c) {
   dim3 blockDim;
   dim3 gridDim;
 
