@@ -176,7 +176,7 @@ function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output, input_derivs = i.output
     for i in 1:length(args)
-        args[i].deriv .+= input_derivs[:, :, i] .* deriv(output)
+        args[i].deriv .+= view(input_derivs, :, :, i) .* deriv(output)
     end
     return nothing
 end
