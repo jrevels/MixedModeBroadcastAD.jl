@@ -1,3 +1,4 @@
+import MixedModeBroadcastAD
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray
 using BenchmarkTools
 using CUDAnative
@@ -27,6 +28,7 @@ rows = Any[["environment", "size", "fused", "forwards", "backwards"]]
 for fused in [false, true], n in (2^i for i in 9:11), T in [Array, CuArray]
     tape = prepare(T, n, fused)
     benchmark(T, tape) # warm-up
+    MixedModeBroadcastAD.setcacheconfig(MixedModeBroadcastAD.CU_FUNC_CACHE_PREFER_L1)
     fwd, bwd = benchmark(T, tape)
     push!(rows, ["Julia $T", "$(n)x$(n)", fused, timedelta(fwd), timedelta(bwd)])
 end

@@ -1,3 +1,4 @@
+import MixedModeBroadcastAD
 using MixedModeBroadcastAD: record, forward!, backward!, CuArray
 using CUDAnative
 import CUDAdrv
@@ -26,6 +27,7 @@ end
 tape = prepare()
 benchmark(tape)
 benchmark(tape) # re-run on existing tape triggers additional compilation
+MixedModeBroadcastAD.setcacheconfig(MixedModeBroadcastAD.CU_FUNC_CACHE_PREFER_L1)
 
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
