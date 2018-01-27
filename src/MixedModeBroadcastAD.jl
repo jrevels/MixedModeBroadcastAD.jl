@@ -7,7 +7,6 @@ are derived from the prototypical AD package Capstan
 =#
 
 using ForwardDiff
-using DiffResults
 using StaticArrays
 using FastSplat
 
