@@ -80,7 +80,7 @@ function forward!(i::BroadcastInstruction)
     output_variable = isa(i.output, Variable) ? i.output : first(i.output)
     f, input_values = first(i.input), value.(i.input[2:end])
     output_value = value(output_variable)
-    input_derivs = similar(output_value, length(output_value), length(input_values))
+    input_derivs = similar(output_value, size(output_value, 1), size(output_value, 2), length(input_values))
     dual_eval_broadcast!(output_value, input_derivs, f, input_values)
     i.output = (output_variable, input_derivs)
     return nothing
@@ -93,12 +93,18 @@ end
 # encountered when the arguments have different shapes. In other words, this implementation
 # only works when all broadcast arguments are arrays of the same shape (which is sufficient
 # for our benchmarking purposes).
-@noinline function dual_eval_broadcast!(output_value, input_derivs, f, input_values::NTuple{N,Any}) where {N}
-    for i in 1:length(output_value)
-        ith_result = dual_eval_kernel(f, getindex.(input_values, i))
-        output_value[i] = ForwardDiff.value(ith_result)
-        for j in 1:N
-            input_derivs[i, j] = ForwardDiff.partials(ith_result, j)
+@noinline function dual_eval_broadcast!(output_value::AbstractMatrix,
+                                        input_derivs::AbstractArray{<:Any,3},
+                                        kernel,
+                                        input_values::NTuple{N,<:AbstractMatrix}) where {N}
+    @assert all(size(iv) === size(output_value) for iv in input_values)
+    for i in 1:size(output_value, 1)
+        for j in 1:size(output_value, 2)
+            ij_result = dual_eval_kernel(kernel, getindex.(input_values, i, j))
+            output_value[i, j] = ForwardDiff.value(ij_result)
+            for k in 1:N
+                input_derivs[i, j, k] = ForwardDiff.partials(ij_result, k)
+            end
         end
     end
 end
@@ -170,7 +176,7 @@ function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output, input_derivs = i.output
     for i in 1:length(args)
-        args[i].deriv .+= input_derivs[:, i] .* deriv(output)
+        args[i].deriv .+= input_derivs[:, :, i] .* deriv(output)
     end
     return nothing
 end
