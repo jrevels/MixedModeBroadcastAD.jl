@@ -156,15 +156,6 @@ macro cuda_index(A)
     end)
 end
 
-@enum(CUfunc_cache, CU_FUNC_CACHE_PREFER_NONE   = 0x00,
-                    CU_FUNC_CACHE_PREFER_SHARED = 0x01,
-                    CU_FUNC_CACHE_PREFER_L1     = 0x02,
-                    CU_FUNC_CACHE_PREFER_EQUAL  = 0x03)
-
-function setcacheconfig(config::CUfunc_cache)
-    CUDAdrv.@apicall(:cuCtxSetCacheConfig, (CUfunc_cache,), config)
-end
-
 ### 
 @noinline function dual_eval_broadcast!(output_value::CuMatrix, input_derivs::CuArray{<:Any, 3},
                                         kernel, input_values::NTuple{N,<:CuMatrix}) where N
