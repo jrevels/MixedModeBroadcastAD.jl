@@ -14,27 +14,27 @@ BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 function benchmark(::Type{Array}, n, fused)
     inputs = Tuple(Array{Float32}((n,n)) for i in 1:10)
     if fused
-        @belapsed lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed lstm_update_c($inputs...)
     else
-        @belapsed unfused_lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed unfused_lstm_update_c($inputs...)
     end
 end
 
 function benchmark(::Type{CuArray}, n, fused)
     inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
     if fused
-        @belapsed cudanative_lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed cudanative_lstm_update_c($inputs...)
     else
-        @belapsed unfused_cudanative_lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed unfused_cudanative_lstm_update_c($inputs...)
     end
 end
 
 function benchmark_cuda(n, fused)
     inputs = Tuple(CuArray{Float32}((n,n)) for i in 1:10)
     if fused
-        @belapsed cuda_lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed cuda_lstm_update_c($inputs...)
     else
-        @belapsed unfused_cuda_lstm_update_c($inputs...) setup=(gc_enable(false)) teardown=(gc_enable(true))
+        @belapsed unfused_cuda_lstm_update_c($inputs...)
     end
 end
 
