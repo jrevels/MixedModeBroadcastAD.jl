@@ -180,9 +180,8 @@ end
             ivs = @ncall $N SVector iv 
             ij_result = dual_eval_kernel(kernel, ivs)
             @inbounds output_value[I] = ForwardDiff.value(ij_result)
-            iderivs = view(input_derivs, I, :)
             for k in 1:$N
-                @inbounds iderivs[k] = ForwardDiff.partials(ij_result, k)
+                @inbounds input_derivs[I[1], I[2], k] = ForwardDiff.partials(ij_result, k)
             end
         end
         return
