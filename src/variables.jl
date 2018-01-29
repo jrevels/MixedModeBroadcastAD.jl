@@ -4,8 +4,8 @@ mutable struct Variable{V}
     Variable(value::V) where {V} = new{V}(value, initderiv(value))
 end
 
-struct Record{tag,V}
-    tape::Tape{tag}
+struct Record{V}
+    tape::Tape
     variable::Variable{V}
 end
 
