@@ -5,9 +5,6 @@ import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
 
-# speed it up a little
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 1
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1
 # make sure we collect CuArrays from previous iterations
 BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 
@@ -37,7 +34,6 @@ for fused in [false, true], n in (2^i for i in 9:11)
     for T in [Array, CuArray]
         tape = prepare(T, n, fused)
         benchmark(T, tape) # warm-up
-        # CUDAdrv.cache_config!(CUDAdrv.FUNC_CACHE_PREFER_L1)
         fwd, bwd = benchmark(T, tape)
         push!(rows, ["Julia $T", "$(n)x$(n)", fused, timedelta(fwd), timedelta(bwd)])
     end

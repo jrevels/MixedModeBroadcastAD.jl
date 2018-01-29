@@ -5,9 +5,6 @@ import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
 
-# speed it up a little
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 1
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1
 # make sure we collect CuArrays from previous iterations
 BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 
