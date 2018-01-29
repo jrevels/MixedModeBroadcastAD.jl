@@ -1,4 +1,6 @@
 julia 0.7-
-ForwardDiff
+ForwardDiff v0.7.3
+CUDAdrv
+CUDAnative
 StaticArrays
 FastSplat
