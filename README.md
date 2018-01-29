@@ -12,7 +12,7 @@ Last tests passed with:
 |---------------------------------------------------------|------------------------------------------|
 | Julia                                                   | 4f87318ceecfaf684a56a7b4dea390ea928d36a3 |
 | StaticArrays.jl                                         | a83cac63fd23b3a33fd2b3fe015b091c540e874e |
-| ForwardDiff.jl                                          | v0.7.3                                   |
+| ForwardDiff.jl                                          | feb9940c45e6b45e83cb4876bce437f7d0ca6955 |
 | BenchmarkTools.jl                                       | v0.2.4                                   |
 | CUDAnative.jl                                           | v0.5.4                                   |
 | CUDAdrv.jl                                              | v0.7.4                                   |
