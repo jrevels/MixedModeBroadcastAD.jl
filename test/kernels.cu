@@ -102,18 +102,18 @@ unfused_lstm_update_c(int numElements, float *out, float *tmp1, float *tmp2,
 
   // sigmoid(Wx_f + Rh_f + b_f) * c
   pw_vecAdd2<<<gridDim, blockDim>>>(tmp1, Wx_f, Rh_f, numElements);
-  pw_vecAdd2<<<gridDim, blockDim>>>(tmp2, Rh_f, b_f, numElements);
+  pw_vecAdd2<<<gridDim, blockDim>>>(tmp2, tmp1, b_f, numElements);
   pw_sigmoid<<<gridDim, blockDim>>>(tmp3, tmp1, numElements);
   pw_vecMul<<<gridDim, blockDim>>>(tmp4, tmp3, c, numElements);
 
   // sigmoid(Wx_i + Rh_i + b_i)
   pw_vecAdd2<<<gridDim, blockDim>>>(tmp5, Wx_i, Rh_i, numElements);
-  pw_vecAdd2<<<gridDim, blockDim>>>(tmp6, Rh_i, b_i, numElements);
+  pw_vecAdd2<<<gridDim, blockDim>>>(tmp6, tmp5, b_i, numElements);
   pw_sigmoid<<<gridDim, blockDim>>>(tmp7, tmp6, numElements);
 
   // tanh(Wx_c + Rh_c + b_c)
   pw_vecAdd2<<<gridDim, blockDim>>>(tmp8, Wx_c, Rh_c, numElements);
-  pw_vecAdd2<<<gridDim, blockDim>>>(tmp9, Rh_c, b_c, numElements);
+  pw_vecAdd2<<<gridDim, blockDim>>>(tmp9, tmp8, b_c, numElements);
   pw_tanh<<<gridDim, blockDim>>>(tmp10, tmp9, numElements);
 
   // sigmoid(...) * tanh(...)
