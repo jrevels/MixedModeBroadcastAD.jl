@@ -23,9 +23,10 @@ end
         test = (args...) -> sum(kernel(args...))
         output, grads = autograd(test, inputs...)
         @test output ≈ test(inputs...)
+        reference_inputs = Array.(inputs)
         for i in 1:length(inputs)
-            testarg = x -> reference_test(inputs[1:(i - 1)]...,  x, inputs[(i + 1):end]...)
-            @test Array(grads[i]) ≈ ForwardDiff.gradient(testarg, inputs[i])
+            testarg = x -> reference_test(reference_inputs[1:(i - 1)]...,  x, reference_inputs[(i + 1):end]...)
+            @test Array(grads[i]) ≈ ForwardDiff.gradient(testarg, reference_inputs[i])
         end
     end
 end
