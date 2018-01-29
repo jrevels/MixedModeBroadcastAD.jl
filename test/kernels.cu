@@ -103,7 +103,7 @@ unfused_lstm_update_c(int numElements, float *out, float *tmp1, float *tmp2,
   // sigmoid(Wx_f + Rh_f + b_f) * c
   pw_vecAdd2<<<gridDim, blockDim>>>(tmp1, Wx_f, Rh_f, numElements);
   pw_vecAdd2<<<gridDim, blockDim>>>(tmp2, tmp1, b_f, numElements);
-  pw_sigmoid<<<gridDim, blockDim>>>(tmp3, tmp1, numElements);
+  pw_sigmoid<<<gridDim, blockDim>>>(tmp3, tmp2, numElements);
   pw_vecMul<<<gridDim, blockDim>>>(tmp4, tmp3, c, numElements);
 
   // sigmoid(Wx_i + Rh_i + b_i)
