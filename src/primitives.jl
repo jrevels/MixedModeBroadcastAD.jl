@@ -78,27 +78,40 @@ forward!(i::BroadcastInstruction{typeof(*)}) = invoke(forward!, Tuple{Instructio
 
 function forward!(i::BroadcastInstruction)
     output_variable = isa(i.output, Variable) ? i.output : first(i.output)
-    f, values = first(i.input), value.(i.input[2:end])
-    N, T = length(values), eltype(value(output_variable))
-    gradient_template = DiffResults.GradientResult(zeros(SVector{N,T}))
-    i.output = _forward_broadcast!(f, output_variable, values, gradient_template)
+    f, input_values = first(i.input), value.(i.input[2:end])
+    output_value = value(output_variable)
+    input_derivs = similar(output_value, size(output_value, 1), size(output_value, 2), length(input_values))
+    dual_eval_broadcast!(output_value, input_derivs, f, input_values)
+    i.output = (output_variable, input_derivs)
     return nothing
 end
 
-@noinline function _forward_broadcast!(f, output_variable, values, gradient_template)
-    # Use ForwardDiff to calculate `f(values[1][i], values[2][i], ...)` and
-    # `∇f(values[1][i], values[2][i], ...)` from a single elementwise application.
-    df = (y...) -> ForwardDiff.gradient!(gradient_template,
-                                         x -> @fastsplat(f(x...)),
-                                         @fastsplat(SVector(y...)))
-    df_results = df.(values...)
+# Use ForwardDiff to calculate `f(values[1][i], values[2][i], ...)` and
+# `∇f(values[1][i], values[2][i], ...)` from a single elementwise application. This
+# implementation is actually incomplete, but it doesn't matter for our performance
+# experiment. Specifically, it doesn't implement the proper reduction/expansion semantics
+# encountered when the arguments have different shapes. In other words, this implementation
+# only works when all broadcast arguments are arrays of the same shape (which is sufficient
+# for our benchmarking purposes).
+@noinline function dual_eval_broadcast!(output_value::AbstractMatrix,
+                                        input_derivs::AbstractArray{<:Any,3},
+                                        kernel,
+                                        input_values::NTuple{N,<:AbstractMatrix}) where {N}
+    @assert all(size(iv) === size(output_value) for iv in input_values)
+    for i in 1:size(output_value, 1)
+        for j in 1:size(output_value, 2)
+            ij_result = dual_eval_kernel(kernel, getindex.(input_values, i, j))
+            output_value[i, j] = ForwardDiff.value(ij_result)
+            for k in 1:N
+                input_derivs[i, j, k] = ForwardDiff.partials(ij_result, k)
+            end
+        end
+    end
+end
 
-    # `df_results` is a `AbstractArray{DiffResults.DiffResult}`, i.e. each element of
-    # `df_results` corresponds to a primal value and intermediate gradient. We record
-    # both the values and the gradients back to the tape, which will be used in the
-    # backwards pass.
-    map!(DiffResults.value, output_variable.value, df_results)
-    return (output_variable, df_results)
+function dual_eval_kernel(f, inputs)
+    dual_inputs = ForwardDiff.dualize(Void, StaticArrays.SVector(inputs))
+    return @fastsplat(f(dual_inputs...))
 end
 
 ##################
@@ -159,20 +172,11 @@ end
 
 #=== mixed-mode broadcast optimization ===#
 
-# FIXME: this `@inbounds` is incorrectly placed, but it doesn't seem to have any impact
-#        when placed at the `getpartial` call site
-Base.@propagate_inbounds getpartial(x, i) = @inbounds DiffResults.derivative(x)[i]
-
-# This broadcast `backward!` implementation is actually incomplete, but it doesn't matter
-# for our performance experiment. Specifically, it doesn't implement the proper reduction
-# and expansion semantics encountered when the arguments have different shapes. In other
-# words, this implementation only works when all broadcast arguments are arrays of the same
-# shape (which is sufficient for our benchmarking purposes).
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
-    output, df_results = i.output
+    output, input_derivs = i.output
     for i in 1:length(args)
-        args[i].deriv .+= getpartial.(df_results, i) .* deriv(output)
+        args[i].deriv .+= view(input_derivs, :, :, i) .* deriv(output)
     end
     return nothing
 end

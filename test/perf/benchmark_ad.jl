@@ -5,6 +5,12 @@ import CUDAdrv
 include("util.jl")
 include("../kernels.jl")
 
+# speed it up a little
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 1
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1
+# make sure we collect CuArrays from previous iterations
+BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
+
 kernel(::Type{Array}, fused) = fused ? lstm_update_c : unfused_lstm_update_c
 kernel(::Type{CuArray}, fused) = fused ? cudanative_lstm_update_c : unfused_cudanative_lstm_update_c
 
@@ -15,19 +21,25 @@ function prepare(::Type{T}, n::Int, fused) where {T<:AbstractArray}
 end
 
 function benchmark(::Type{Array}, tape)
-    @elapsed(forward!(tape)), @elapsed(backward!(tape))
+    @belapsed(forward!($tape)), @belapsed(backward!($tape))
 end
 
 function benchmark(::Type{CuArray}, tape)
-    @elapsed((forward!(tape), CUDAdrv.synchronize())),
-    @elapsed((backward!(tape), CUDAdrv.synchronize()))
+    @belapsed((forward!($tape), CUDAdrv.synchronize())),
+    @belapsed((backward!($tape), CUDAdrv.synchronize()))
 end
 
 rows = Any[["environment", "size", "fused", "forwards", "backwards"]]
-for fused in [false, true], n in (2^i for i in 9:11), T in [Array, CuArray]
-    tape = prepare(T, n, fused)
-    benchmark(T, tape) # warm-up
-    fwd, bwd = benchmark(T, tape)
-    push!(rows, ["Julia $T", "$(n)x$(n)", fused, timedelta(fwd), timedelta(bwd)])
+for fused in [false, true], n in (2^i for i in 9:11)
+    info("benchmarking fused=$fused size=$n")
+
+    # Julia arrays
+    for T in [Array, CuArray]
+        tape = prepare(T, n, fused)
+        benchmark(T, tape) # warm-up
+        # CUDAdrv.cache_config!(CUDAdrv.FUNC_CACHE_PREFER_L1)
+        fwd, bwd = benchmark(T, tape)
+        push!(rows, ["Julia $T", "$(n)x$(n)", fused, timedelta(fwd), timedelta(bwd)])
+    end
 end
 println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))
