@@ -65,12 +65,12 @@ end
 
 # multiple dispatch selects these implementations for the unfused benchmarks
 
-forward!(i::BroadcastInstruction{Tuple{typeof(σ),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{Tuple{typeof(cuda_σ),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{Tuple{typeof(tanh),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{Tuple{typeof(cuda_tanh),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{Tuple{typeof(+),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{Tuple{typeof(*),<:Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(σ),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(cuda_σ),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(tanh),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(cuda_tanh),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(+),Any,Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(*),Any,Any}}) = invoke(forward!, Tuple{Instruction}, i)
 
 #=== mixed-mode broadcast optimization ===#
 
@@ -114,20 +114,21 @@ function dual_eval_kernel(f, inputs)
     return @fastsplat(f(dual_inputs...))
 end
 
+
 ##################
 # Backwards Pass #
 ##################
 
 #=== standard reverse definitions ===#
 
-function backward!(i::Instruction{typeof(sum)})
+function backward!(i::Instruction{typeof(sum),<:Tuple{Any}})
     x = first(i.input)
     y = i.output
     x.deriv .+= deriv(y)
     return nothing
 end
 
-function backward!(i::Instruction{typeof(*),Tuple{<:Any,<:Any}})
+function backward!(i::Instruction{typeof(*),<:Tuple{Any,Any}})
     x, y = i.input
     z = i.output
     x.deriv .+= deriv(z) * value(y)'
@@ -135,7 +136,7 @@ function backward!(i::Instruction{typeof(*),Tuple{<:Any,<:Any}})
     return nothing
 end
 
-function backward!(i::Instruction{typeof(+),Tuple{<:Any,<:Any}})
+function backward!(i::Instruction{typeof(+),<:Tuple{Any,Any}})
     x, y = i.input
     z = i.output
     x.deriv .+= deriv(z)
@@ -145,7 +146,7 @@ end
 
 for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
                 (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
-    @eval function backward!(i::BroadcastInstruction{Tuple{typeof($f), <:Any}})
+    @eval function backward!(i::BroadcastInstruction{<:Tuple{typeof($f),Any}})
         f, args = first(i.input), i.input[2:end]
         for j in 1:length(args)
             args[j].deriv .+= $(df).(value(args[j])) .* deriv(i.output)
@@ -154,7 +155,7 @@ for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
     end
 end
 
-function backward!(i::BroadcastInstruction{Tuple{typeof(*),<:Any,<:Any}})
+function backward!(i::BroadcastInstruction{<:Tuple{typeof(*),Any,Any}})
     _, x, y = i.input
     z = i.output
     x.deriv .+= value(y) .* deriv(z)
@@ -162,7 +163,7 @@ function backward!(i::BroadcastInstruction{Tuple{typeof(*),<:Any,<:Any}})
     return nothing
 end
 
-function backward!(i::BroadcastInstruction{Tuple{typeof(+),<:Any,<:Any}})
+function backward!(i::BroadcastInstruction{<:Tuple{typeof(+),Any,Any}})
     _, x, y = i.input
     z = i.output
     x.deriv .+= deriv(z)
