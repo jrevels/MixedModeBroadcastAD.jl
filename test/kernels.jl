@@ -1,5 +1,19 @@
 using MixedModeBroadcastAD: σ, cuda_σ, cuda_tanh
 import CUDAdrv
+import CUDAapi
+import Base.Filesystem: mtime
+
+cd(@__DIR__) do
+    if !isfile("kernels.so") || mtime("kernels.so") < mtime("kernels.cu")
+        info("Compiling CUDA kernels")
+        toolkit = CUDAapi.find_toolkit()
+        toolchain = CUDAapi.find_toolchain(toolkit)
+        nvcc = CUDAapi.find_cuda_binary("nvcc", toolkit)
+        flags = `-shared -Xcompiler -fPIC -o kernels.so kernels.cu`
+        run(`$nvcc -ccbin=$(toolchain.host_compiler) $flags`)
+        @assert isfile("kernels.so")
+    end
+end
 
 const cuda_lib = Libdl.dlopen(joinpath(@__DIR__, "kernels.so"))
 
