@@ -156,28 +156,6 @@ macro cuda_index(A)
     end)
 end
 
-### 
-@noinline function dual_eval_broadcast!(output_value::CuMatrix, input_derivs::CuArray{<:Any, 3},
-                                        kernel, input_values::NTuple{N,<:CuMatrix}) where N
-    @assert all(size(iv) === size(output_value) for iv in input_values)
-    blk, thr = cuda_dimensions(output_value)
-    @cuda blocks=blk threads=thr maxthreads=256 _dual_eval_broadcast!(output_value, input_derivs, kernel, input_values, Val(N))
-end
-
-@generated function _dual_eval_broadcast!(output_value::CuDeviceArray, input_derivs, kernel, input_values, ::Val{N}) where N
-    quote
-        let I = @cuda_index(output_value)
-            @nexprs $N i->(iv_{i} = input_values[i][I])
-            ivs = @ncall $N SVector iv 
-            ij_result = dual_eval_kernel(kernel, ivs)
-            @inbounds output_value[I] = ForwardDiff.value(ij_result)
-            for k in 1:$N
-                @inbounds input_derivs[I[1], I[2], k] = ForwardDiff.partials(ij_result, k)
-            end
-        end
-        return
-    end
-end
 
 ## high-level operations
 
