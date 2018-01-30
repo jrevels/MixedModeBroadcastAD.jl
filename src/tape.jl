@@ -8,17 +8,17 @@ mutable struct Instruction{F,I<:Tuple}
     output::Any
 end
 
-const BroadcastInstruction{F} = Instruction{typeof(broadcast),T} where T <: Tuple{F,Vararg{Any}}
+const BroadcastInstruction{I<:Tuple} = Instruction{typeof(broadcast),I}
 
 ########
 # Tape #
 ########
 
-struct Tape{tag}
+struct Tape
     instructions::Vector{Instruction}
 end
 
-Tape() = Tape{gensym()}(Vector{Instruction}())
+Tape() = Tape(Vector{Instruction}())
 
 Base.push!(t::Tape, i::Instruction) = push!(t.instructions, i)
 
