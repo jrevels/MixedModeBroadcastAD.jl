@@ -20,7 +20,7 @@ end
     reference_test = (args...) -> sum(reference_kernel(args...))
     for kind in [:cpu, :cudanative, :cudaraw], fusion_level in 0:2
         println("testing lstm-like kernel for kind `", kind, "` and fusion_level `", fusion_level, "`")
-        kind == :cudaraw && fusion_level > 1 && continue
+        kind == :cudaraw && fusion_level == 1 && continue
         kernel, inputs = getkernel(kind, fusion_level, 2)
         test = (args...) -> sum(kernel(args...))
         reference_inputs = Array.(inputs)

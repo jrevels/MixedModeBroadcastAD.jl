@@ -166,6 +166,7 @@ function getkernel(kind::Symbol, fusion_level::Int, dim::Int)
                    cudanative_fully_fused_lstm_update_c)
         T = CuArray
     elseif kind === :cudaraw
+        fusion_level == 1 && error("partially fused kernel not yet implemented in raw CUDA")
         kernels = (cudaraw_unfused_lstm_update_c,
                    cudaraw_fully_fused_lstm_update_c,
                    cudaraw_fully_fused_lstm_update_c)
