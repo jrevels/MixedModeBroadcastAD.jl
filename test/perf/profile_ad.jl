@@ -18,6 +18,7 @@ end
 
 # warm-up
 benchmark(tape)
+benchmark(tape) # additional compilation by re-using the tape
 
 # profile
 NVTX.@activate CUDAdrv.@profile begin
