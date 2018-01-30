@@ -5,11 +5,12 @@ import Base.Filesystem: mtime
 
 cd(@__DIR__) do
     if !isfile("kernels.so") || mtime("kernels.so") < mtime("kernels.cu")
-        toolchain = CUDAapi.find_toolchain(CUDAapi.find_toolkit())
-        #TODO use nvcc from toolchain
-        withenv("NVCCFLAGS" => "-ccbin=$(toolchain.host_compiler)") do
-           run(`make`)
-        end
+        info("Compiling CUDA kernels")
+        toolkit = CUDAapi.find_toolkit()
+        toolchain = CUDAapi.find_toolchain(toolkit)
+        nvcc = CUDAapi.find_cuda_binary("nvcc", toolkit)
+        flags = `-shared -Xcompiler -fPIC -o kernels.so kernels.cu`
+        run(`$nvcc -ccbin=$(toolchain.host_compiler) $flags`)
         @assert isfile("kernels.so")
     end
 end
