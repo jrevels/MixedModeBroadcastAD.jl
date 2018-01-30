@@ -109,7 +109,7 @@ using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
     @boundscheck check_broadcast_indices(shape, A, Bs...)
     keeps, Idefaults = map_newindexer(shape, A, Bs)
     blk, thr = cuda_dimensions(C)
-    @cuda (blk, thr) _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    @cuda blocks=blk threads=thr _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
     return C
 end
 
@@ -161,7 +161,7 @@ end
                                         kernel, input_values::NTuple{N,<:CuMatrix}) where N
     @assert all(size(iv) === size(output_value) for iv in input_values)
     blk, thr = cuda_dimensions(output_value)
-    @cuda (blk, thr) _dual_eval_broadcast!(output_value, input_derivs, kernel, input_values, Val(N))
+    @cuda blocks=blk threads=thr maxthreads=256 _dual_eval_broadcast!(output_value, input_derivs, kernel, input_values, Val(N))
 end
 
 @generated function _dual_eval_broadcast!(output_value::CuDeviceArray, input_derivs, kernel, input_values, ::Val{N}) where N
@@ -188,7 +188,7 @@ function Base.fill!(xs::CuArray, x)
         return
     end
     blk, thr = cuda_dimensions(xs)
-    @cuda (blk, thr) _fill!(xs, convert(eltype(xs), x))
+    @cuda blocks=blk threads=thr _fill!(xs, convert(eltype(xs), x))
     return xs
 end
 
@@ -245,8 +245,8 @@ function _reduce(op, v0, input, output, dim = reduce_cudim(length(input)))
   if length(output) < blocks
     throw(ArgumentError("output array too small, should be at least $blocks elements"))
   end
-  @cuda (blocks,threads) reduce_grid(op, v0, input, output, Int32(length(input)))
-  @cuda (1,1024) reduce_grid(op, v0, output, output, Int32(blocks))
+  @cuda blocks=blocks threads=threads reduce_grid(op, v0, input, output, Int32(length(input)))
+  @cuda threads=1024 reduce_grid(op, v0, output, output, Int32(blocks))
   return
 end
 
