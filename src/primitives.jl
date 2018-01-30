@@ -80,37 +80,36 @@ function forward!(i::BroadcastInstruction)
     output_variable = isa(i.output, Variable) ? i.output : first(i.output)
     f, input_values = first(i.input), value.(i.input[2:end])
     output_value = value(output_variable)
-    input_derivs = similar(output_value, size(output_value, 1), size(output_value, 2), length(input_values))
+    input_derivs = map(_ -> similar(output_value), input_values)
     dual_eval_broadcast!(output_value, input_derivs, f, input_values)
     i.output = (output_variable, input_derivs)
     return nothing
 end
 
-# Use ForwardDiff to calculate `f(values[1][i], values[2][i], ...)` and
-# `∇f(values[1][i], values[2][i], ...)` from a single elementwise application. This
-# implementation is actually incomplete, but it doesn't matter for our performance
-# experiment. Specifically, it doesn't implement the proper reduction/expansion semantics
-# encountered when the arguments have different shapes. In other words, this implementation
-# only works when all broadcast arguments are arrays of the same shape (which is sufficient
-# for our benchmarking purposes).
 @noinline function dual_eval_broadcast!(output_value::AbstractMatrix,
-                                        input_derivs::AbstractArray{<:Any,3},
+                                        input_derivs::NTuple{N,<:AbstractMatrix},
                                         kernel,
                                         input_values::NTuple{N,<:AbstractMatrix}) where {N}
     @assert all(size(iv) === size(output_value) for iv in input_values)
-    for i in 1:size(output_value, 1)
-        for j in 1:size(output_value, 2)
-            ij_result = dual_eval_kernel(kernel, getindex.(input_values, i, j))
-            output_value[i, j] = ForwardDiff.value(ij_result)
-            for k in 1:N
-                input_derivs[i, j, k] = ForwardDiff.partials(ij_result, k)
-            end
-        end
+
+    # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
+    # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
+    # of dual numbers).
+    output_duals = @fastsplat(broadcast((args...) -> dual_eval(kernel, args), input_values...))
+
+    # Load the results into the various result buffers, storing the derivatives in a manner
+    # that's GPU-transpilation friendly and propagation-friendly for the backwards pass.
+    # Note that this code assumes all arguments have the same shape, which is not generally
+    # true for broadcast operations, but is good enough for our performance experiments,
+    # since all of our test kernels feature arguments of homogenous shape.
+    map!(ForwardDiff.value, output_value, output_duals)
+    for i in 1:N
+        map!(d -> ForwardDiff.partials(d, i), input_derivs[i], output_duals)
     end
 end
 
-function dual_eval_kernel(f, inputs)
-    dual_inputs = ForwardDiff.dualize(Nothing, StaticArrays.SVector(inputs))
+function dual_eval(f, inputs)
+    dual_inputs = ForwardDiff.dualize(Void, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))
 end
 
@@ -177,7 +176,7 @@ function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output, input_derivs = i.output
     for i in 1:length(args)
-        args[i].deriv .+= view(input_derivs, :, :, i) .* deriv(output)
+        args[i].deriv .+= input_derivs[i] .* deriv(output)
     end
     return nothing
 end
