@@ -104,7 +104,9 @@ end
     # since all of our test kernels feature arguments of homogenous shape.
     map!(ForwardDiff.value, output_value, output_duals)
     for i in 1:N
-        map!(d -> ForwardDiff.partials(d, i), input_derivs[i], output_duals)
+        let i=i
+            map!(d -> ForwardDiff.partials(d, i), input_derivs[i], output_duals)
+        end
     end
 end
 
