@@ -86,6 +86,8 @@ function forward!(i::BroadcastInstruction)
     return nothing
 end
 
+@inline inbounds_partials(args...) = @inbounds ForwardDiff.partials(args...)
+
 @noinline function dual_eval_broadcast!(output_value::AbstractMatrix,
                                         input_derivs::NTuple{N,<:AbstractMatrix},
                                         kernel,
@@ -95,7 +97,7 @@ end
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
     # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
     # of dual numbers).
-    output_duals = @fastsplat(broadcast((args...) -> dual_eval(kernel, args), input_values...))
+    output_duals = @fastsplat(broadcast(dual_eval, kernel, input_values...))
 
     # Load the results into the various result buffers, storing the derivatives in a manner
     # that's GPU-transpilation friendly and propagation-friendly for the backwards pass.
@@ -104,13 +106,11 @@ end
     # since all of our test kernels feature arguments of homogenous shape.
     map!(ForwardDiff.value, output_value, output_duals)
     for i in 1:N
-        let i=i
-            map!(d -> (@inbounds ForwardDiff.partials(d, i)), input_derivs[i], output_duals)
-        end
+        broadcast!(inbounds_partials, input_derivs[i], output_duals, i)
     end
 end
 
-function dual_eval(f, inputs)
+@inline function dual_eval(f, inputs...)
     dual_inputs = ForwardDiff.dualize(Void, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))
 end
