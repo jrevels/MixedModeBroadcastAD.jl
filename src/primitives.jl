@@ -167,8 +167,10 @@ end
 
 #=== mixed-mode broadcast optimization ===#
 
+@inline inbounds_partials(d, i) = @inbounds ForwardDiff.partials(d, i)
+
 @inline function backprop_partial(input_deriv, output_dual, i, output_deriv)
-    return input_deriv + (ForwardDiff.partials(output_dual, i) * output_deriv)
+    return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
 end
 
 function backward!(i::BroadcastInstruction)
