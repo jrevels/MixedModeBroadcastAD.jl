@@ -105,7 +105,7 @@ end
     map!(ForwardDiff.value, output_value, output_duals)
     for i in 1:N
         let i=i
-            map!(d -> ForwardDiff.partials(d, i), input_derivs[i], output_duals)
+            map!(d -> (@inbounds ForwardDiff.partials(d, i)), input_derivs[i], output_duals)
         end
     end
 end
