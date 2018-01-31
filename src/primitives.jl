@@ -111,7 +111,7 @@ end
 end
 
 @inline function dual_eval(f::F, inputs...) where {F}
-    dual_inputs = ForwardDiff.dualize(Void, StaticArrays.SVector(inputs))
+    dual_inputs = ForwardDiff.dualize(Nothing, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))
 end
 
