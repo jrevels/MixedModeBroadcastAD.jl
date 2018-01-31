@@ -84,15 +84,15 @@ function forward!(i::BroadcastInstruction)
     return nothing
 end
 
-@noinline function dual_eval_broadcast!(kernel,
+@noinline function dual_eval_broadcast!(kernel::K,
                                         output_value::AbstractMatrix,
-                                        input_values::NTuple{N,<:AbstractMatrix}) where {N}
+                                        input_values::NTuple{N,<:AbstractMatrix}) where {K,N}
     @assert all(size(iv) === size(output_value) for iv in input_values)
 
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
     # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
     # of dual numbers).
-    output_duals = @fastsplat(broadcast((args...) -> dual_eval(kernel, args), input_values...))
+    output_duals = @fastsplat(broadcast(dual_eval, kernel, input_values...))
 
     # Load the value of the results into the output value buffer. Note that this assumes all
     # arguments have the same shape, which is not generally true for broadcast operations,
@@ -102,7 +102,7 @@ end
     return output_value, output_duals
 end
 
-function dual_eval(f, inputs)
+@inline function dual_eval(f::F, inputs...) where {F}
     dual_inputs = ForwardDiff.dualize(Nothing, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))
 end
