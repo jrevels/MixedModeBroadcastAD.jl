@@ -80,7 +80,8 @@ function forward!(i::BroadcastInstruction)
     output_variable = isa(i.output, Variable) ? i.output : first(i.output)
     f, input_values = first(i.input), value.(i.input[2:end])
     output_value = value(output_variable)
-    i.output = dual_eval_broadcast!(f, output_value, input_values)
+    output_duals = dual_eval_broadcast!(f, output_value, input_values)
+    i.output = (output_variable, output_duals)
     return nothing
 end
 
@@ -99,7 +100,7 @@ end
     # but is good enough for our performance experiments, since all of our test kernels
     # feature arguments of homogenous shape.
     map!(ForwardDiff.value, output_value, output_duals)
-    return output_value, output_duals
+    return output_duals
 end
 
 @inline function dual_eval(f::F, inputs...) where {F}
