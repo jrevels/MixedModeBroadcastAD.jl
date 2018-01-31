@@ -90,8 +90,8 @@ end
 
 @noinline function dual_eval_broadcast!(output_value::AbstractMatrix,
                                         input_derivs::NTuple{N,<:AbstractMatrix},
-                                        kernel,
-                                        input_values::NTuple{N,<:AbstractMatrix}) where {N}
+                                        kernel::K,
+                                        input_values::NTuple{N,<:AbstractMatrix}) where {K,N}
     @assert all(size(iv) === size(output_value) for iv in input_values)
 
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
@@ -110,7 +110,7 @@ end
     end
 end
 
-@inline function dual_eval(f, inputs...)
+@inline function dual_eval(f::F, inputs...) where {F}
     dual_inputs = ForwardDiff.dualize(Void, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))
 end
