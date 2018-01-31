@@ -22,7 +22,7 @@ benchmark(tape) # additional compilation by re-using the tape
 
 # profile
 NVTX.@activate CUDAdrv.@profile begin
-    ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
+    ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     benchmark(tape)
-    ccall(:jl_dump_compiles, Void, (Ptr{Void},), C_NULL)
+    ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end

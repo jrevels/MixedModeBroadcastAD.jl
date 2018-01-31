@@ -3,6 +3,8 @@ import CUDAdrv
 import CUDAapi
 import Base.Filesystem: mtime
 
+using Libdl
+
 cd(@__DIR__) do
     if !isfile("kernels.so") || mtime("kernels.so") < mtime("kernels.cu")
         info("Compiling CUDA kernels")
@@ -133,7 +135,7 @@ function cudaraw_unfused_lstm_update_c(c,
     out = similar(c)
     temporaries = Tuple(similar(c) for i in 1:11)
     numElements = length(out)
-    ccall(cuda_fun_unfused, Void,
+    ccall(cuda_fun_unfused, Cvoid,
           (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
@@ -155,7 +157,7 @@ function cudaraw_fully_fused_lstm_update_c(c,
                                            b_f,  b_i,  b_c)
     out = similar(c)
     numElements = length(out)
-    ccall(cuda_fun, Void,
+    ccall(cuda_fun, Cvoid,
           (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
            Ptr{Float32}, Ptr{Float32}),

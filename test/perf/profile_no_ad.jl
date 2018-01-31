@@ -23,8 +23,8 @@ gc()
 
 # profile
 NVTX.@activate CUDAdrv.@profile begin
-    ccall(:jl_dump_compiles, Void, (Ptr{Nothing},), STDERR.handle)
+    ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     NVTX.@range "cudaraw"    cudaraw_kernel(cudaraw_inputs...)
     NVTX.@range "cudanative" cudanative_kernel(cudanative_inputs...)
-    ccall(:jl_dump_compiles, Void, (Ptr{Void},), C_NULL)
+    ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end
