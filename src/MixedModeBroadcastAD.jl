@@ -16,6 +16,7 @@ include("tape.jl")
 include("variables.jl")
 include("primitives.jl")
 include("gpu.jl")
+include("soa.jl")
 
 DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)

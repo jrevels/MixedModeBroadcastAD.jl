@@ -19,6 +19,7 @@ mutable struct CuArray{T,N} <: AbstractArray{T,N}
 end
 
 CuArray{T}(shape::NTuple{N,Integer}) where {T,N} = CuArray{T,N}(shape)
+CuArray{T,N}(::Uninitialized, shape::NTuple{N,Integer}) where {T,N} = CuArray{T,N}(shape)
 
 function unsafe_free!(a::CuArray)
       CUDAdrv.isvalid(a.buf.ctx) && Mem.free(a.buf)
@@ -78,6 +79,10 @@ function CUDAnative.cudaconvert(A::SubArray)
     SubArray(CUDAnative.cudaconvert(A.parent), A.indices)
 end
 
+function CUDAnative.cudaconvert(::Type{<:CuArray{T, N}}) where {T, N}
+    return CuDeviceArray{T,N,AS.Global}
+end
+
 ## broadcast
 
 ### base interface
@@ -90,7 +95,7 @@ function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, i
 end
 
 @inline function Base.broadcast!(f, dest::CuArray, ::Nothing, As::Vararg{Any, N}) where N
-    _broadcast!(f, dest, As...)
+    gpu_broadcast!(f, dest, As...)
     return dest
 end
 
@@ -102,12 +107,12 @@ Base.Broadcast.broadcast_indices(::Type{CuArray}, A) = indices(A)
 using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
 
 # This indirection allows size-dependent implementations.
-@inline function _broadcast!(f, C::CuArray, A, Bs::Vararg{Any,N}) where N
+@inline function gpu_broadcast!(f, C, A, Bs::Vararg{Any,N}) where N
     shape = broadcast_indices(C)
     @boundscheck check_broadcast_indices(shape, A, Bs...)
     keeps, Idefaults = map_newindexer(shape, A, Bs)
     blk, thr = cuda_dimensions(C)
-    @cuda blocks=blk threads=thr _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    @cuda blocks=blk threads=thr device_broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
     return C
 end
 
@@ -116,7 +121,7 @@ using Base.Cartesian: @nexprs, @ncall
 
 # nargs encodes the number of As arguments (which matches the number
 # of keeps). The first two type parameters are to ensure specialization.
-@generated function _broadcast!(f, B::CuDeviceArray, keeps::K, Idefaults::ID,
+@generated function device_broadcast!(f, B, keeps::K, Idefaults::ID,
                                 A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
     nargs = N + 1
     quote

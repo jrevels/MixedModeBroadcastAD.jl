@@ -9,8 +9,9 @@ NVTX.stop()
 
 const N            = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 2048
 const fusion_level = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 2
-const cudaraw_resources = getkernel(:cudaraw, fusion_level, N)
-const cudanative_resources = getkernel(:cudanative, fusion_level, N)
+const soa          = length(ARGS) >= 3 ? parse(Bool, ARGS[3]) : true
+const cudaraw_resources = getkernel(:cudaraw, fusion_level, N, false)
+const cudanative_resources = getkernel(:cudanative, fusion_level, N, soa)
 const cudaraw_kernel    = cudaraw_resources[1]
 const cudanative_kernel = cudanative_resources[1]
 const cudaraw_inputs    = cudaraw_resources[2]
