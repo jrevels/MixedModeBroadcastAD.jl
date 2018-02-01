@@ -1,4 +1,4 @@
-# Based upon https://github.com/simonster/StructsOfArrays.jl v0.3
+# Based upon https://github.com/simonster/StructsOfArrays.jl
 # MIT License
 
 ###
@@ -15,8 +15,6 @@ struct StructOfArrays{T,N,A<:AbstractArray{T,N},U<:Tuple} <: AbstractArray{T,N}
     # TODO: Verify U
 end
 
-_types(T) = isbits(T) && isempty(T.types) ? Core.svec(T) : T.types
-
 # Storage types of StructOfArrays need to implement this
 _type_with_eltype(::Type{<:Array}, T, N) = Array{T, N}
 _type_with_eltype(::Type{<:CuArray}, T, N) = CuArray{T, N}
@@ -25,19 +23,32 @@ _type(::Type{<:Array}) = Array
 _type(::Type{<:CuArray}) = CuArray
 _type(::Type{<:CuDeviceArray}) = CuDeviceArray
 
-@generated function StructOfArrays(::Type{T}, ::Type{ArrayT}, dims::Integer...) where {T, ArrayT<:AbstractArray} 
-    if !isconcretetype(T) || T.mutable
-        return :(throw(ArgumentError("can only create an StructOfArrays of concrete types")))
+function gather_eltypes(T, visited = Set{Type}())
+    (!isconcretetype(T) || T.mutable) && throw(ArgumentError("can only create an StructOfArrays of leaf type immutables"))
+    if isempty(T.types)
+        return Type[T]
     end
-    if !isbits(T) && isempty(T.types)
-        return :(throw(ArgumentError("cannot create an StructOfArrays of an empty type")))
+    types = Type[]
+    push!(visited, T)
+    for S in T.types
+        sizeof(S) == 0 && continue
+        (S in visited) && throw(ArgumentError("Recursive types are not allowed for SoA conversion"))
+        if isempty(S.types)
+            push!(types, S)
+        else
+            append!(types, gather_eltypes(S, copy(visited)))
+        end
     end
+    types
+end
+
+@generated function StructOfArrays(::Type{T}, ::Type{ArrayT}, dims::Integer...) where {T, ArrayT<:AbstractArray}
     N         = length(dims)
     pArrayT   = _type_with_eltype(ArrayT, T, N)
-    typvec    = _types(T)
-    arrtypvec = map(t->_type_with_eltype(ArrayT, t, N), typvec)
-    arrtuple  = Tuple{arrtypvec...}
-    :(StructOfArrays{T,$N,$(pArrayT),$arrtuple}(($([:($(arrtypvec[i])(uninitialized,dims)) for i = 1:length(typvec)]...),)))
+    types     = gather_eltypes(T)
+    arrtypes  = map(t->_type_with_eltype(ArrayT, t, N), types)
+    arrtuple  = Tuple{arrtypes...}
+    :(StructOfArrays{T,$N,$(pArrayT),$arrtuple}(($([:($(arrtypes[i])(uninitialized,dims)) for i = 1:length(types)]...),)))
 end
 StructOfArrays(T::Type, AT::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, AT, dims...)
 
@@ -47,28 +58,57 @@ Base.show(io::IO, a::StructOfArrays{T,N,A}) where {T,N,A} = print(io, "$(length(
 
 Base.print_array(::IO, ::StructOfArrays) = nothing
 
-@generated function Base.getindex(A::StructOfArrays{T}, i::Integer...) where {T}
-    typvec = _types(T)
+function generate_getindex(T, arraynum)
+    members = Expr[]
+    for S in T.types
+        sizeof(S) == 0 && push!(members, :($(S())))
+        if isempty(S.types)
+            push!(members, :(A.arrays[$arraynum][i...]))
+            arraynum += 1
+        else
+            member, arraynum = generate_getindex(S, arraynum)
+            push!(members, member)
+        end
+    end
+    Expr(:new, T, members...), arraynum
+end
+
+@generated function Base.getindex(A::StructOfArrays{T}, i::Integer...) where T
     exprs = Any[Expr(:meta, :inline), Expr(:meta, :propagate_inbounds)]
-    if length(typvec) == 1
+    if isempty(T.types)
         push!(exprs, :(return A.arrays[1][i...]))
     else
-        push!(exprs, Expr(:new, T, [:(A.arrays[$j][i...]) for j in 1:length(typvec)]...))
+        strct, _ = generate_getindex(T, 1)
+        push!(exprs, strct)
     end
     quote
         $(exprs...)
     end
 end
+
+function generate_setindex(T, x, arraynum)
+    s = gensym()
+    exprs = Expr[:($s = $x)]
+    for (el,S) in enumerate(T.types)
+        sizeof(S) == 0 && push!(exprs, :($(S())))
+        if isempty(S.types)
+            push!(exprs, :(A.arrays[$arraynum][i...] = getfield($s, $el)))
+            arraynum += 1
+        else
+            nexprs, arraynum = generate_setindex(S, :(getfield($s, $el)), arraynum)
+            append!(exprs, nexprs)
+        end
+    end
+    exprs, arraynum
+end
+
 @generated function Base.setindex!(A::StructOfArrays{T}, x, i::Integer...) where {T}
-    typvec = _types(T)
     exprs = Any[Expr(:meta, :inline), Expr(:meta, :propagate_inbounds)]
     push!(exprs, :(v = convert(T, x)))
-    if length(typvec) == 1
+    if isempty(T.types)
         push!(exprs, :(A.arrays[1][i...] = v))
     else
-        for j = 1:length(typvec)
-            push!(exprs, :(A.arrays[$j][i...] = getfield(v, $j)))
-        end
+        append!(exprs, generate_setindex(T, :v, 1)[1])
     end
     push!(exprs, :(return x))
     quote
