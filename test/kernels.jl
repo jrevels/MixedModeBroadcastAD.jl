@@ -1,198 +1,107 @@
-using MixedModeBroadcastAD: σ, cuda_σ, cuda_tanh, CuArray, StructOfArrays
-import CUDAdrv
-import CUDAapi
-import Base.Filesystem: mtime
+using MixedModeBroadcastAD: record, forward!, backward!, sigm, cuda_sigm, cuda_tanh
 
-using Libdl
-
-cd(@__DIR__) do
-    if !isfile("kernels.so") || mtime("kernels.so") < mtime("kernels.cu")
-        info("Compiling CUDA kernels")
-        toolkit = CUDAapi.find_toolkit()
-        toolchain = CUDAapi.find_toolchain(toolkit)
-        nvcc = CUDAapi.find_cuda_binary("nvcc", toolkit)
-        flags = `-shared -Xcompiler -fPIC -o kernels.so kernels.cu`
-        run(`$nvcc -ccbin=$(toolchain.host_compiler) $flags`)
-        @assert isfile("kernels.so")
-    end
-end
-
-const cuda_lib = Libdl.dlopen(joinpath(@__DIR__, "kernels.so"))
+########################
+# fine-grained kernels #
+########################
 
 #=
-Since our technique only affects broadcast performance, we have limited our kernel to
-execute only a small part of the LSTM layer which stresses fused broadcast operations. This
-allows us to benchmark/test our technique in isolation from the other parts of our ad-hoc AD
-framework which are not necessarily performant and only exist to facilitate the
-demonstration of the broadcast technique.
-
-In the below kernels, Julia will perform broadcast fusion automatically via the dot syntax.
-Thus, we control where broadcast fusion happens by breaking up our dot syntax expressions
-into separate statements. Note that fused, partially fused, and unfused versions of a kernel
-are exactly the same otherwise.
+This section provides scalar kernel implementations for updating `c` in an HM-LSTM. To
+broadcast these kernels over array inputs, one simply uses Julia's broadcast syntax
+(e.g. `f.(array_inputs...)`).
 =#
 
-#######
-# CPU #
-#######
-
-function cpu_unfused_lstm_update_c(c,
-                                   Wx_f, Wx_i, Wx_c,
-                                   Rh_f, Rh_i, Rh_c,
-                                   b_f,  b_i,  b_c)
-    tmp_f = Wx_f .+ Rh_f
-    tmp_f = tmp_f .+ b_f
-    tmp_f = σ.(tmp_f)
-
-    tmp_i = Wx_i .+ Rh_i
-    tmp_i = tmp_i .+ b_i
-    tmp_i = σ.(tmp_i)
-
-    tmp_c = Wx_c .+ Rh_c
-    tmp_c = tmp_c .+ b_c
-    tmp_c = tanh.(tmp_c)
-
-    tmp_ic = tmp_i .* tmp_c
-    tmp_fc = tmp_f .* c
-    return tmp_ic + tmp_fc
-end
-
-function cpu_partially_fused_lstm_update_c(c,
-                                           Wx_f, Wx_i, Wx_c,
-                                           Rh_f, Rh_i, Rh_c,
-                                           b_f,  b_i,  b_c)
-    tmp = σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
-    return σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ tmp
-end
-
-function cpu_fully_fused_lstm_update_c(c,
-                                       Wx_f, Wx_i, Wx_c,
-                                       Rh_f, Rh_i, Rh_c,
-                                       b_f,  b_i,  b_c)
-    return σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
-           σ.(Wx_i .+ Rh_i .+ b_i) .* tanh.(Wx_c .+ Rh_c .+ b_c)
-end
-
-#######
-# GPU #
-#######
-
-#=== CUDAnative ===#
-
-function cudanative_unfused_lstm_update_c(c,
-                                          Wx_f, Wx_i, Wx_c,
-                                          Rh_f, Rh_i, Rh_c,
-                                          b_f,  b_i,  b_c)
-    tmp_f = Wx_f .+ Rh_f
-    tmp_f = tmp_f .+ b_f
-    tmp_f = cuda_σ.(tmp_f)
-
-    tmp_i = Wx_i .+ Rh_i
-    tmp_i = tmp_i .+ b_i
-    tmp_i = cuda_σ.(tmp_i)
-
-    tmp_c = Wx_c .+ Rh_c
-    tmp_c = tmp_c .+ b_c
-    tmp_c = cuda_tanh.(tmp_c)
-
-    tmp_ic = tmp_i .* tmp_c
-    tmp_fc = tmp_f .* c
-    out = tmp_ic + tmp_fc
-
-    CUDAdrv.synchronize()
-    return out
-end
-
-function cudanative_partially_fused_lstm_update_c(c,
-                                                  Wx_f, Wx_i, Wx_c,
-                                                  Rh_f, Rh_i, Rh_c,
-                                                  b_f,  b_i,  b_c)
-    tmp = cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* cuda_tanh.(Wx_c .+ Rh_c .+ b_c)
-    out = cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+ tmp
-
-    CUDAdrv.synchronize()
-    return out
-end
-
-function cudanative_fully_fused_lstm_update_c(c,
-                                              Wx_f, Wx_i, Wx_c,
-                                              Rh_f, Rh_i, Rh_c,
-                                              b_f,  b_i,  b_c)
-    out = cuda_σ.(Wx_f .+ Rh_f .+ b_f) .* c .+
-          cuda_σ.(Wx_i .+ Rh_i .+ b_i) .* cuda_tanh.(Wx_c .+ Rh_c .+ b_c)
-
-    CUDAdrv.synchronize()
-    return out
-end
-
-#=== raw CUDA wrappers ===#
-
-const cuda_fun_unfused = Libdl.dlsym(cuda_lib, "unfused_lstm_update_c")
-function cudaraw_unfused_lstm_update_c(c,
-                                    Wx_f, Wx_i, Wx_c,
-                                    Rh_f, Rh_i, Rh_c,
-                                    b_f,  b_i,  b_c)
-    out = similar(c)
-    temporaries = Tuple(similar(c) for i in 1:11)
-    numElements = length(out)
-    ccall(cuda_fun_unfused, Cvoid,
-          (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}),
-          numElements, out, temporaries[1], temporaries[2], temporaries[3], temporaries[4],
-          temporaries[5], temporaries[6], temporaries[7], temporaries[8], temporaries[9],
-          temporaries[10], temporaries[11], c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i,
-          b_c)
-
-    CUDAdrv.synchronize()
-    return out
-end
-
-const cuda_fun = Libdl.dlsym(cuda_lib, "lstm_update_c")
-function cudaraw_fully_fused_lstm_update_c(c,
-                                           Wx_f, Wx_i, Wx_c,
-                                           Rh_f, Rh_i, Rh_c,
-                                           b_f,  b_i,  b_c)
-    out = similar(c)
-    numElements = length(out)
-    ccall(cuda_fun, Cvoid,
-          (Cint, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32}, Ptr{Float32},
-           Ptr{Float32}, Ptr{Float32}),
-          numElements, out, c, Wx_f, Wx_i, Wx_c, Rh_f, Rh_i, Rh_c, b_f, b_i, b_c)
-    CUDAdrv.synchronize()
-    return out
-end
-
-#############
-# utilities #
-#############
-
-function getkernel(kind::Symbol, fusion_level::Int, dim::Int, soa::Bool)
-    if kind === :cpu
-        kernels = (cpu_unfused_lstm_update_c,
-                   cpu_partially_fused_lstm_update_c,
-                   cpu_fully_fused_lstm_update_c)
-        T = Array{Float32, 2}
-    elseif kind === :cudanative
-        kernels = (cudanative_unfused_lstm_update_c,
-                   cudanative_partially_fused_lstm_update_c,
-                   cudanative_fully_fused_lstm_update_c)
-        T = CuArray{Float32, 2}
-    elseif kind === :cudaraw
-        fusion_level == 1 && error("partially fused kernel not yet implemented in raw CUDA")
-        soa && error("StructOfArrays not implemented in raw CUDA")
-        kernels = (cudaraw_unfused_lstm_update_c,
-                   cudaraw_fully_fused_lstm_update_c,
-                   cudaraw_fully_fused_lstm_update_c)
-        T = CuArray{Float32, 2}
+function cpu_hmlstm_update_c(c,
+                             z_t, # = z_{t}^{l-1}
+                             z_l, # = z_{t-1}^{l}
+                             W_f, R_f, b_f,
+                             W_i, R_i, b_i,
+                             W_g, R_g, b_g)
+    if z_l == 1 # FLUSH
+        return sigm(W_i + R_i + b_i) * tanh(W_g + R_g + b_g)
+    elseif z_t == 1 # UPDATE
+        return sigm(W_f + R_f + b_f) * c +
+               sigm(W_i + R_i + b_i) * tanh(W_g + R_g + b_g)
+    else # COPY
+        return c
     end
-    if soa
-        arrays = Tuple(convert(StructOfArrays{Float32, 2, T}, convert(StructOfArrays, rand(Float32, dim, dim))) for i in 1:10)
+end
+
+function gpu_hmlstm_update_c(c,
+                             z_t, # = z_{t}^{l-1}
+                             z_l, # = z_{t-1}^{l}
+                             W_f, R_f, b_f,
+                             W_i, R_i, b_i,
+                             W_g, R_g, b_g)
+    if z_l == 1 # FLUSH
+        return cuda_sigm(W_i + R_i + b_i) * cuda_tanh(W_g + R_g + b_g)
+    elseif z_t == 1 # UPDATE
+        return cuda_sigm(W_f + R_f + b_f) * c +
+               cuda_sigm(W_i + R_i + b_i) * cuda_tanh(W_g + R_g + b_g)
+    else # COPY
+        return c
+    end
+end
+
+function hmlstm_update_c_precomputed(c,
+                                     z_t, # = z_{t}^{l-1}
+                                     z_l, # = z_{t-1}^{l}
+                                     f, i, g)
+    if z_l == 1 # FLUSH
+        return i * g
+    elseif z_t == 1 # UPDATE
+        return f * c + i * g
+    else # COPY
+        return c
+    end
+end
+
+##########################
+# coarse-grained kernels #
+##########################
+
+#=
+TODO: port over something more similar to the TF HM-LSTM implementation, e.g:
+
+new_c = tf.where(
+    tf.equal(z, tf.constant(1., dtype=tf.float32)),
+    tf.multiply(i, g, name='c'),
+    tf.where(
+        tf.equal(zb, tf.constant(0., dtype=tf.float32)),
+        tf.identity(c),
+        tf.add(tf.multiply(f, c), tf.multiply(i, g))
+    )
+)
+=#
+
+########################
+# kernel/tape selector #
+########################
+
+function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
+    @assert kind == :cpu || kind == :gpu
+    if kind == :cpu
+        kernel = cpu_hmlstm_update_c
+        T = Array
     else
-        arrays = Tuple(convert(T, rand(Float32, dim, dim)) for i in 1:10)
+        kernel = gpu_hmlstm_update_c
+        T = CuArray
     end
-    return kernels[fusion_level + 1], arrays
+    if precomputed
+        kernel = hmlstm_update_c_precomputed
+        n = 3
+    else
+        n = 9
+    end
+    inputs = map(T, Tuple(rand(Float32, dims, dims),
+                          rand(Bool, dims), rand(Bool, dims),
+                          (rand(Float32, dims, dims) for _ in 1:n)...))
+    return kernel, inputs
+end
+
+function gettape(args...)
+    f, inputs = getkernel(args...)
+    tape = first(record(f, inputs...))
+    forward!(tape)  # "precompile" forwards pass
+    backward!(tape) # "precompile" backwards pass
+    return tape
 end

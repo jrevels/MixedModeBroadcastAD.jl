@@ -4,11 +4,11 @@
 
 d_tanh(x) = sech(x)^2
 
-σ(x) = 1 / (1 + exp(-x))
-d_σ(x) = (expx = exp(x); expx / (1 + expx)^2)
+sigm(x) = 1 / (1 + exp(-x))
+d_sigm(x) = (expx = exp(x); expx / (1 + expx)^2)
 
-cuda_σ(x) = 1 / (1 + CUDAnative.exp(-x))
-d_cuda_σ(x) = (expx = CUDAnative.exp(x); expx / (1 + expx)^2)
+cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
+d_cuda_sigm(x) = (expx = CUDAnative.exp(x); expx / (1 + expx)^2)
 
 cuda_tanh(x) = CUDAnative.tanh(x)
 d_cuda_tanh(x) = 1 - CUDAnative.tanh(x)^2
@@ -65,8 +65,8 @@ end
 
 # multiple dispatch selects these implementations for the unfused benchmarks
 
-forward!(i::BroadcastInstruction{<:Tuple{typeof(σ),Any}}) = invoke(forward!, Tuple{Instruction}, i)
-forward!(i::BroadcastInstruction{<:Tuple{typeof(cuda_σ),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(sigm),Any}}) = invoke(forward!, Tuple{Instruction}, i)
+forward!(i::BroadcastInstruction{<:Tuple{typeof(cuda_sigm),Any}}) = invoke(forward!, Tuple{Instruction}, i)
 forward!(i::BroadcastInstruction{<:Tuple{typeof(tanh),Any}}) = invoke(forward!, Tuple{Instruction}, i)
 forward!(i::BroadcastInstruction{<:Tuple{typeof(cuda_tanh),Any}}) = invoke(forward!, Tuple{Instruction}, i)
 forward!(i::BroadcastInstruction{<:Tuple{typeof(+),Any,Any}}) = invoke(forward!, Tuple{Instruction}, i)
@@ -138,7 +138,7 @@ function backward!(i::Instruction{typeof(+),<:Tuple{Any,Any}})
     return nothing
 end
 
-for (f, df) in [(:σ, :d_σ), (:cuda_σ, :d_cuda_σ),
+for (f, df) in [(:sigm, :d_sigm), (:cuda_sigm, :d_cuda_sigm),
                 (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
     @eval function backward!(i::BroadcastInstruction{<:Tuple{typeof($f),Any}})
         f, args = first(i.input), i.input[2:end]

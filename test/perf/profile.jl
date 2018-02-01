@@ -2,26 +2,23 @@ using MixedModeBroadcastAD: forward!, backward!
 using CUDAnative
 import CUDAdrv
 import NVTX
-include("util.jl")
+
+include("../kernels.jl")
 
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
-const N            = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 2048
-const fusion_level = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 2
-const soa          = length(ARGS) >= 3 ? parse(Bool, ARGS[3]) : true
-const tape = gettape(:cudanative, fusion_level, N, soa)
+const DIMS        = length(ARGS) >= 1 ? parse(Int, ARGS[1])  : 2048
+const PRECOMPUTED = length(ARGS) >= 2 ? parse(Bool, ARGS[2]) : false
+const TAPE        = gettape(:gpu, precomputed, dims)
 
 function benchmark(tape)
     NVTX.@range "forward pass"  (forward!(tape), CUDAdrv.synchronize())
     NVTX.@range "backward pass" (backward!(tape), CUDAdrv.synchronize())
 end
 
-# warm-up
-benchmark(tape)
-benchmark(tape) # additional compilation by re-using the tape
+benchmark(tape) # warm-up
 
-# profile
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     benchmark(tape)

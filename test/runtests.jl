@@ -15,25 +15,19 @@ include("kernels.jl")
     end
 end
 
-@testset "LSTM-like kernels" begin
-    reference_kernel, _ = getkernel(:cpu, 0, 2, false)
-    reference_test = (args...) -> sum(reference_kernel(args...))
-    for kind in [:cpu, :cudanative, :cudaraw], fusion_level in 0:2, soa in [true, false]
-        println("testing lstm-like kernel for kind `", kind, "` and fusion_level `", fusion_level, "` and soa `", soa, "`" )
-        kind == :cudaraw && fusion_level == 1 && continue
-        kind == :cudaraw && soa && continue
-        kernel, inputs = getkernel(kind, fusion_level, 2, soa)
+@testset "HM-LSTM kernels" begin
+    dims = 2
+    for kind in (:cpu, :gpu), precompute in (false, true)
+        println("testing hmlstm kernel for kind=`", kind, "` and precompute=`", precompute, "`")
+        kernel, inputs = getkernel(kind, precompute, dims)
         test = (args...) -> sum(kernel(args...))
-        reference_inputs = Array.(inputs)
-        test_output = test(inputs...)
-        @test test_output ≈ reference_test(reference_inputs...)
-        if kind != :cudaraw
-            output, grads = autograd(test, inputs...)
-            @test test_output ≈ output
-            for i in 1:length(inputs)
-                testarg = x -> reference_test(reference_inputs[1:(i - 1)]...,  x, reference_inputs[(i + 1):end]...)
-                @test Array(grads[i]) ≈ ForwardDiff.gradient(testarg, reference_inputs[i])
-            end
+        output, grads = autograd(test, inputs...)
+        @test output ≈ test(inputs...)
+        cpu_kernel, cpu_inputs = first(getkernel(:cpu, precompute, dims)), Array.(inputs)
+        cpu_test = (args...) -> sum(cpu_kernel(args...))
+        for i in 1:length(inputs)
+            cpu_test_i = x -> cpu_test(cpu_inputs[1:(i - 1)]..., x, cpu_inputs[(i + 1):end]...)
+            @test Array(grads[i]) ≈ ForwardDiff.gradient(cpu_test_i, cpu_inputs[i])
         end
     end
 end
