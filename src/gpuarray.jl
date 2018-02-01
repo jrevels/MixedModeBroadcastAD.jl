@@ -1,8 +1,8 @@
 ## broadcast
 const GPUSoA = StructOfArrays{T,N,CuArray{T,N},U} where {T,N,U}
 const GPUDeviceSoA = StructOfArrays{T,N,CuDeviceArray{T,N,AS},U} where {T,N,AS,U}
-const GPUArrays = Union{<:CuArray, <:GPUSoA}
-const GPUDeviceArrays = Union{<:CuDeviceArray, <:GPUDeviceSoA}
+const GPUArrays = Union{<:CuArray{T,N}, <:GPUSoA{T,N}} where {T,N}
+const GPUDeviceArrays = Union{<:CuDeviceArray{T,N,AS}, <:GPUDeviceSoA{T,N,AS}} where {T,N,AS}
 
 function CUDAnative.cudaconvert(A::GPUSoA{T, N}) where {T, N}
     arrays = map(CUDAnative.cudaconvert, A.arrays)
