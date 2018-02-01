@@ -29,6 +29,6 @@ writedlm(joinpath(@__DIR__, "benchmark_no_ad.csv"), rows, ',')
 # table output
 for row in rows[2:end]
     row[2] = "$(row[2])x$(row[2])"
-    row[4] = timedelta(row[4])
+    row[5] = timedelta(row[5])
 end
 println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))

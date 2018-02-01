@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: σ, cuda_σ, cuda_tanh, CuArray, StructOfArrays, gpu
+using MixedModeBroadcastAD: σ, cuda_σ, cuda_tanh, CuArray, StructOfArrays
 import CUDAdrv
 import CUDAapi
 import Base.Filesystem: mtime
@@ -175,26 +175,22 @@ function getkernel(kind::Symbol, fusion_level::Int, dim::Int, soa::Bool)
         kernels = (cpu_unfused_lstm_update_c,
                    cpu_partially_fused_lstm_update_c,
                    cpu_fully_fused_lstm_update_c)
-        T = Array
+        T = Array{Float32, 2}
     elseif kind === :cudanative
         kernels = (cudanative_unfused_lstm_update_c,
                    cudanative_partially_fused_lstm_update_c,
                    cudanative_fully_fused_lstm_update_c)
-        T = CuArray
+        T = CuArray{Float32, 2}
     elseif kind === :cudaraw
         fusion_level == 1 && error("partially fused kernel not yet implemented in raw CUDA")
         soa && error("StructOfArrays not implemented in raw CUDA")
         kernels = (cudaraw_unfused_lstm_update_c,
                    cudaraw_fully_fused_lstm_update_c,
                    cudaraw_fully_fused_lstm_update_c)
-        T = CuArray
+        T = CuArray{Float32, 2}
     end
     if soa
-        if T == CuArray # TODO: change gpu to an actual convert(StructOfArrays{T, N, CuArray})
-            arrays = Tuple(gpu(convert(StructOfArrays, rand(Float32, dim, dim))) for i in 1:10)
-        else
-            arrays = Tuple(convert(StructOfArrays, rand(Float32, dim, dim)) for i in 1:10)
-        end
+        arrays = Tuple(convert(StructOfArrays{Float32, 2, T}, convert(StructOfArrays, rand(Float32, dim, dim))) for i in 1:10)
     else
         arrays = Tuple(convert(T, rand(Float32, dim, dim)) for i in 1:10)
     end

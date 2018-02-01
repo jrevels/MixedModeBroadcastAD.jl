@@ -34,7 +34,7 @@ writedlm(joinpath(@__DIR__, "benchmark_ad.csv"), rows, ',')
 # table output
 for row in rows[2:end]
     row[2] = "$(row[2])x$(row[2])"
-    row[4] = timedelta(row[4])
     row[5] = timedelta(row[5])
+    row[6] = timedelta(row[6])
 end
 println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c, :c])))

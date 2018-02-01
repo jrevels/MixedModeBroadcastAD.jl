@@ -41,6 +41,12 @@ Base.print_array(::IO, ::CuArray) = nothing
 
 Base.similar(a::CuArray, ::Type{T}, dims::Base.Dims{N}) where {T,N} =  CuArray{T,N}(dims)
 
+Base.BroadcastStyle(::Type{T}) where T<:CuArray = Broadcast.ArrayStyle{T}()
+
+function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{<:CuArray}, ::Type{T}, inds, As...) where T
+    @assert isconcretetype(T) "$T is not a leaf type"
+    similar(CuArray{T}, inds)
+end
 
 ## memory copy operations
 
@@ -63,7 +69,6 @@ function unsafe_getindex(xs::CuArray{T}, i::Integer) where T
   return Mem.download(T, buf)[1]
 end
 
-
 ## conversions
 
 Base.cconvert(::Type{Ptr{T}}, x::CuArray{T}) where T = x.buf
@@ -77,70 +82,6 @@ end
 
 function CUDAnative.cudaconvert(A::SubArray)
     SubArray(CUDAnative.cudaconvert(A.parent), A.indices)
-end
-
-function CUDAnative.cudaconvert(::Type{<:CuArray{T, N}}) where {T, N}
-    return CuDeviceArray{T,N,AS.Global}
-end
-
-## broadcast
-
-### base interface
-
-Base.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
-
-function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
-    @assert isconcretetype(T) "$T is not a leaf type"
-    similar(CuArray{T}, inds)
-end
-
-@inline function Base.broadcast!(f, dest::CuArray, ::Nothing, As::Vararg{Any, N}) where N
-    gpu_broadcast!(f, dest, As...)
-    return dest
-end
-
-Base.Broadcast.broadcast_indices(::Type{CuArray}, A::Ref) = ()
-Base.Broadcast.broadcast_indices(::Type{CuArray}, A) = indices(A)
-
-### internal implementation (mostly copied from Base)
-
-using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
-
-# This indirection allows size-dependent implementations.
-@inline function gpu_broadcast!(f, C, A, Bs::Vararg{Any,N}) where N
-    shape = broadcast_indices(C)
-    @boundscheck check_broadcast_indices(shape, A, Bs...)
-    keeps, Idefaults = map_newindexer(shape, A, Bs)
-    blk, thr = cuda_dimensions(C)
-    @cuda blocks=blk threads=thr device_broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
-    return C
-end
-
-using Base.Broadcast: newindex, _broadcast_getindex
-using Base.Cartesian: @nexprs, @ncall
-
-# nargs encodes the number of As arguments (which matches the number
-# of keeps). The first two type parameters are to ensure specialization.
-@generated function device_broadcast!(f, B, keeps::K, Idefaults::ID,
-                                A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
-    nargs = N + 1
-    quote
-        # destructure the keeps and As tuples
-        A_1 = A
-        @nexprs $N i->(A_{i+1} = Bs[i])
-        @nexprs $nargs i->(keep_i = keeps[i])
-        @nexprs $nargs i->(Idefault_i = Idefaults[i])
-        let I = @cuda_index(B)
-            # reverse-broadcast the indices
-            @nexprs $nargs i->(I_i = newindex(I, keep_i, Idefault_i))
-            # extract array values
-            @nexprs $nargs i->(@inbounds val_i = _broadcast_getindex(A_i, I_i))
-            # call the function and store the result
-            result = @ncall $nargs f val
-            @inbounds B[I] = result
-        end
-        return
-    end
 end
 
 ### auxiliary functionality
@@ -158,30 +99,6 @@ macro cuda_index(A)
         @inbounds CartesianIndices($A)[i]
     end)
 end
-
-
-## high-level operations
-
-function Base.fill!(xs::CuArray, x)
-    function _fill!(xs::CuDeviceArray, x)
-        I = @cuda_index xs
-        @inbounds xs[I] = x
-        return
-    end
-    blk, thr = cuda_dimensions(xs)
-    @cuda blocks=blk threads=thr _fill!(xs, convert(eltype(xs), x))
-    return xs
-end
-
-Base.map(f, y::CuArray, xs::CuArray...) = f.(y, xs...)
-
-Base.map!(f, y::CuArray, xs::CuArray...) = y .= f.(xs...)
-Base.map!(f, y::CuArray) =
-  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y)
-Base.map!(f, y::CuArray, x::CuArray) =
-  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y, x)
-Base.map!(f, y::CuArray, x1::CuArray, x2::CuArray) =
-  invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y, x1, x2)
 
 ### matrix operations
 
@@ -203,18 +120,6 @@ LinearAlgebra.mul!(C::CuMatrix, A::CuMatrix, adjB::Adjoint{<:Any,<:CuMatrix}) =
     cublas_gemm!(C, 'N', 'C', A, adjB.parent)
 LinearAlgebra.mul!(C::CuMatrix, adjA::Adjoint{<:Any,<:CuMatrix}, B::CuMatrix) =
     cublas_gemm!(C, 'C', 'N', adjA.parent, B)
-
-### reductions
-
-Base.sum(xs::CuArray) = reduce(+, 0, xs)
-
-function Base.reduce(f, v0::T, xs::CuArray{T}) where T
-  dim = cuda_reduce_dimensions(length(xs))
-  scratch = similar(xs, dim[2])
-  _reduce(f, v0, xs, scratch, dim)
-  return unsafe_getindex(scratch, 1)
-end
-Base.reduce(f, v0, xs::CuArray) = reduce(f, convert(eltype(xs), v0), xs)
 
 # dimension calculation specific to the reduction algorithm below
 function cuda_reduce_dimensions(n)
