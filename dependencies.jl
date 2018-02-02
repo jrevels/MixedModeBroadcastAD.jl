@@ -1,67 +1,97 @@
 import JSON
+const deps = JSON.Parser.parsefile("deps.json")
 
-const DEPENDENCIES = ["StaticArrays", "ForwardDiff", "BenchmarkTools", "CUDAnative", "CUDAdrv", "CUDAapi", "LLVM", "NVTX", "FastSplat"]
-const UNREGISTERED = Dict("FastSplat" => "https://github.com/maleadt/FastSplat.jl", "NVTX" => "https://github.com/maleadt/NVTX.jl")
+import Pkg
 
 function collect()
+    pkgs = keys(Pkg.installed())
     shas = Dict{String, String}()
-    for dep in DEPENDENCIES 
-        sha = cd(Pkg.dir(dep)) do
+    for pkg in pkgs
+        sha = cd(Pkg.dir(pkg)) do
             readchomp(`git rev-parse --verify HEAD`)
         end
-        shas[dep] = sha
+        shas[pkg] = sha
     end
     shas["julia"] = Base.GIT_VERSION_INFO.commit
     return shas
 end
 
-function record(file="deps.json")
+function process(;install_cb=nothing, checkout_cb=nothing)
     shas = collect()
-    open(file, "w") do io
-        write(io, JSON.json(shas, 4))
+    for dep in deps["dependencies"]
+        if !haskey(shas, dep)
+            install_cb != nothing && install_cb(dep)
+        else
+            ref = deps["refs"][dep]
+            sha = if length(ref) == 40
+                ref
+            else
+                cd(Pkg.dir(dep)) do
+                    run(`git fetch -q`)
+                    readchomp(`git rev-parse --verify $ref`)
+                end
+            end
+            if sha != shas[dep]
+                checkout_cb != nothing && checkout_cb(dep, shas[dep], sha)
+            end
+        end
     end
-    return
 end
 
-function verify(file="deps.json")
-    shas = collect()
-    old_shas = JSON.Parser.parsefile(file)
+function verify()
+    @info "Verifying packages"
 
-    for key in keys(shas) ∪ keys(old_shas)
-        if !haskey(shas, key)
-            @error "$key not in current version of DEPENDENCIES"
-        end
-        if !haskey(old_shas, key)
-            @error "$key not in recorded version of DEPENDENCIES"
-        end
-        if shas[key] != old_shas[key]
-            @error "The recorded and current SHAs differ for $key"
-        end
-    end
-    return true
+    install(dep)               = @warn "Dependency $dep not installed"
+    checkout(dep, sha, oldsha) = @warn "Dependency $dep at $oldsha, does not match $sha"
+    process(;install_cb=install, checkout_cb=checkout)
 end
 
 function install()
-    for dep in DEPENDENCIES
-        if haskey(UNREGISTERED, dep)
-            Pkg.clone(UNREGISTERED[dep])
+    @info "Installing packages"
+
+    function callback(dep)
+        @info "Installing $dep"
+        if haskey(deps["repositories"], dep)
+            repo = deps["repositories"][dep]
+            Pkg.clone(repo)
         else
             Pkg.add(dep)
         end
     end
-    return true
+    process(;install_cb=callback)
 end
 
-function checkout(file="deps.json")
-    shas = JSON.Parser.parsefile(file)
-    for (dep, sha) in shas
+function checkout()
+    @info "Checking-out packages"
+
+    function callback(dep, sha, oldsha)
         if dep == "julia"
-            continue
-        end
-        # Pkg.checkout complains about SHAs not having tracking information
-        cd(Pkg.dir(dep)) do
-            run(`git checkout $sha`)
+            @warn "Cannot check-out julia at $sha"
+        else
+            @info "Checking-out $dep at $sha"
+            # Pkg.checkout complains about refs not having tracking information
+            cd(Pkg.dir(dep)) do
+                run(`git checkout $ref`)
+            end
         end
     end
-    verify(file)
+    process(;checkout_cb=callback)
+end
+
+if length(ARGS) == 0
+    println("Usage: $(PROGRAM_FILE) [-v] [-i] [-c] [-b")
+else
+    for arg in ARGS
+        if arg == "-v"
+            verify()
+        elseif arg == "-i"
+            install()
+        elseif arg == "-c"
+            checkout()
+        elseif arg == "-b"
+            Pkg.build()
+        else
+            @error "Unknown option $arg"
+        end
+    end
 end

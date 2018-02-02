@@ -1,12 +1,21 @@
 {
-    "CUDAnative": "263cc4120f970f6748b6b5c1105ff3d5f0de69cf",
-    "StaticArrays": "d3c5662aa8a8a65ab391dbb3bc58441dac3a1461",
-    "CUDAapi": "4d0c0b46ae297c1128f89b123c9be4a3a47ba259",
-    "ForwardDiff": "593fe6523da74456f9f52b5c314a3a57d4122313",
-    "LLVM": "609dc8293eb0d40d863b874be610b6ae9a60b68f",
-    "julia": "ac389b016702666853bdb80d521a02977705bba1",
-    "FastSplat": "8cb90d7b8331862cdf5f9feda77946accaccc9a2",
-    "BenchmarkTools": "d0ef587d4168d5948a19bbe24a6b60be866b1cab",
-    "CUDAdrv": "8b9223e90e4919df4a5596fead889aa9a33dd9ad",
-    "NVTX": "0b32ea12d942119b26e0178d486e71a9fc1a30fc"
+    "dependencies": ["julia", "StaticArrays", "ForwardDiff", "BenchmarkTools",
+                     "CUDAnative", "CUDAdrv", "CUDAapi", "LLVM", "NVTX",
+                     "FastSplat"],
+    "refs": {
+        "CUDAnative":       "ff2ac00d0050f80f176cf5c3158d8e54d8fce7e9",
+        "StaticArrays":     "d3c5662aa8a8a65ab391dbb3bc58441dac3a1461",
+        "CUDAapi":          "v0.4.0",
+        "ForwardDiff":      "3bff34cb6b7b0c7ad0b65216a52e37a5fefee316",
+        "LLVM":             "v0.9.6",
+        "julia":            "0f95988141373cebb968a2eed022d661b440293d",
+        "FastSplat":        "8cb90d7b8331862cdf5f9feda77946accaccc9a2",
+        "BenchmarkTools":   "v0.2.4",
+        "CUDAdrv":          "9849fa66c503a6e34c916204a376cacbdbc7c935",
+        "NVTX":             "0b32ea12d942119b26e0178d486e71a9fc1a30fc"
+    },
+    "repositories": {
+        "NVTX":             "https://github.com/maleadt/NVTX.jl",
+        "FastSplat":        "https://github.com/maleadt/FastSplat.jl"
+    }
 }
