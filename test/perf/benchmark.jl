@@ -19,7 +19,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 #############
 
 rows = Any[["environment", "precomputed layers?", "size", "forward time", "backward time"]]
-for kind in (:cpu, :gpu),
+for kind in (:cpu, :gpu)
     for precomputed in (false, true)
         for dims in (2^i for i in 9:11)
             tape = gettape(kind, precomputed, dims)
