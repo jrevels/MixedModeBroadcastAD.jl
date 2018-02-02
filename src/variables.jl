@@ -1,8 +1,10 @@
 mutable struct Variable{V}
     value::V
     deriv::V
-    Variable(value::V) where {V} = new{V}(value, initderiv(value))
 end
+
+Variable(value::AbstractArray) = Variable(value, initderiv(value))
+Variable(value::AbstractArray{Bool}) = value
 
 struct Record{V}
     tape::Tape

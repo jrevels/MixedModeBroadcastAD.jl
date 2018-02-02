@@ -108,7 +108,6 @@ end
     return @fastsplat(f(dual_inputs...))
 end
 
-
 ##################
 # Backwards Pass #
 ##################
@@ -177,9 +176,10 @@ function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output, output_duals = i.output
     output_deriv = deriv(output)
-    for i in 1:length(args)
-        arg_i_deriv = deriv(args[i])
-        broadcast!(backprop_partial, arg_i_deriv, arg_i_deriv, output_duals, Val(i), output_deriv)
+    for (i, arg) in enumerate(args)
+        isa(arg, Variable) || continue
+        arg_deriv = deriv(arg)
+        broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, Val(i), output_deriv)
     end
     return nothing
 end
