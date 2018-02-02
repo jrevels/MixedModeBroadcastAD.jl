@@ -3,7 +3,7 @@ mutable struct Variable{V}
     deriv::V
 end
 
-Variable(value::AbstractArray) = Variable(value, initderiv(value))
+Variable(value::Union{AbstractArray,Real}) = Variable(value, initderiv(value))
 Variable(value::AbstractArray{Bool}) = value
 
 struct Record{V}
