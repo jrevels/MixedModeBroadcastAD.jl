@@ -26,6 +26,7 @@ end
         cpu_kernel, cpu_inputs = first(getkernel(:cpu, precompute, dims)), Array.(inputs)
         cpu_test = (args...) -> sum(cpu_kernel(args...))
         for i in 1:length(inputs)
+            grads[i] == nothing && continue
             cpu_test_i = x -> cpu_test(cpu_inputs[1:(i - 1)]..., x, cpu_inputs[(i + 1):end]...)
             @test Array(grads[i]) ≈ ForwardDiff.gradient(cpu_test_i, cpu_inputs[i])
         end
