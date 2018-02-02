@@ -39,7 +39,6 @@ writedlm(joinpath(@__DIR__, "timings.csv"), rows, ',')
 
 # table output
 for row in rows[2:end]
-    row[2] = "$(row[2])x$(row[2])"
     row[4] = BenchmarkTools.prettytime(row[4])
     row[5] = BenchmarkTools.prettytime(row[5])
 end

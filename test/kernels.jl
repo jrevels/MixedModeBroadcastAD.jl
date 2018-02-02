@@ -4,18 +4,14 @@ using MixedModeBroadcastAD: CuArray, record, forward!, backward!, sigm, cuda_sig
 # fine-grained kernels #
 ########################
 
-#=
-This section provides scalar kernel implementations for updating `c` in an HM-LSTM. To
-broadcast these kernels over array inputs, one simply uses Julia's broadcast syntax
-(e.g. `f.(array_inputs...)`).
-=#
+cpu_hmlstm_update_c(inputs...) = cpu_hmlstm_update_c_scalar.(inputs...)
 
-function cpu_hmlstm_update_c(c,
-                             z_t, # = z_{t}^{l-1}
-                             z_l, # = z_{t-1}^{l}
-                             W_f, R_f, b_f,
-                             W_i, R_i, b_i,
-                             W_g, R_g, b_g)
+function cpu_hmlstm_update_c_scalar(c,
+                                    z_t, # = z_{t}^{l-1}
+                                    z_l, # = z_{t-1}^{l}
+                                    W_f, R_f, b_f,
+                                    W_i, R_i, b_i,
+                                    W_g, R_g, b_g)
     if z_l == 1 # FLUSH
         return sigm(W_i + R_i + b_i) * tanh(W_g + R_g + b_g)
     elseif z_t == 1 # UPDATE
@@ -26,12 +22,14 @@ function cpu_hmlstm_update_c(c,
     end
 end
 
-function gpu_hmlstm_update_c(c,
-                             z_t, # = z_{t}^{l-1}
-                             z_l, # = z_{t-1}^{l}
-                             W_f, R_f, b_f,
-                             W_i, R_i, b_i,
-                             W_g, R_g, b_g)
+gpu_hmlstm_update_c(inputs...) = gpu_hmlstm_update_c_scalar.(inputs...)
+
+function gpu_hmlstm_update_c_scalar(c,
+                                    z_t, # = z_{t}^{l-1}
+                                    z_l, # = z_{t-1}^{l}
+                                    W_f, R_f, b_f,
+                                    W_i, R_i, b_i,
+                                    W_g, R_g, b_g)
     if z_l == 1 # FLUSH
         return cuda_sigm(W_i + R_i + b_i) * cuda_tanh(W_g + R_g + b_g)
     elseif z_t == 1 # UPDATE
@@ -42,10 +40,12 @@ function gpu_hmlstm_update_c(c,
     end
 end
 
-function hmlstm_update_c_precomputed(c,
-                                     z_t, # = z_{t}^{l-1}
-                                     z_l, # = z_{t-1}^{l}
-                                     f, i, g)
+hmlstm_update_c_precomputed(inputs...) = hmlstm_update_c_precomputed_scalar.(inputs...)
+
+function hmlstm_update_c_precomputed_scalar(c,
+                                            z_t, # = z_{t}^{l-1}
+                                            z_l, # = z_{t-1}^{l}
+                                            f, i, g)
     if z_l == 1 # FLUSH
         return i * g
     elseif z_t == 1 # UPDATE
