@@ -11,6 +11,8 @@ struct Record{V}
     variable::Variable{V}
 end
 
+Record(tape::Tape, value::AbstractArray) = value
+
 function Record(tape::Tape, f, input...)
     input_variables = map(i -> isa(i, Record) ? i.variable : i, input)
     output = tuplemap(Variable, f(map(value, input_variables)...))
