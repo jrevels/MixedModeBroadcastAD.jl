@@ -53,6 +53,7 @@ end
 StructOfArrays(T::Type, AT::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, AT, dims...)
 
 Base.size(A::StructOfArrays) = size(@inbounds(A.arrays[1]))
+Base.size(A::StructOfArrays, i) = size(@inbounds(A.arrays[1]), i)
 
 Base.show(io::IO, a::StructOfArrays{T,N,A}) where {T,N,A} = print(io, "$(length(a))-element SoA{$T,$N,$A}")
 
