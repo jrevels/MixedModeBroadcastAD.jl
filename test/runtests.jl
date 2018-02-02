@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: autograd
+using MixedModeBroadcastAD: CuArray, autograd
 using ForwardDiff
 using CUDAnative
 using Test

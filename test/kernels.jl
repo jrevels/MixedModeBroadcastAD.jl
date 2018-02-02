@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: record, forward!, backward!, sigm, cuda_sigm, cuda_tanh
+using MixedModeBroadcastAD: CuArray, record, forward!, backward!, sigm, cuda_sigm, cuda_tanh
 
 ########################
 # fine-grained kernels #
