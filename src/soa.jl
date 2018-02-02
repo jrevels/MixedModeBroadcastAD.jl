@@ -58,15 +58,15 @@ Base.show(io::IO, a::StructOfArrays{T,N,A}) where {T,N,A} = print(io, "$(length(
 
 Base.print_array(::IO, ::StructOfArrays) = nothing
 
-function generate_getindex(T, arraynum)
+function generate_getindex(T, getindex, arraynum)
     members = Expr[]
     for S in T.types
         sizeof(S) == 0 && push!(members, :($(S())))
         if isempty(S.types)
-            push!(members, :(A.arrays[$arraynum][i...]))
+            push!(members, :($(getindex)(A.arrays[$arraynum], i...)))
             arraynum += 1
         else
-            member, arraynum = generate_getindex(S, arraynum)
+            member, arraynum = generate_getindex(S, getindex, arraynum)
             push!(members, member)
         end
     end
@@ -78,7 +78,7 @@ end
     if isempty(T.types)
         push!(exprs, :(return A.arrays[1][i...]))
     else
-        strct, _ = generate_getindex(T, 1)
+        strct, _ = generate_getindex(T, Base.getindex, 1)
         push!(exprs, strct)
     end
     quote

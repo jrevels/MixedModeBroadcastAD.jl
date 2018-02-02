@@ -20,6 +20,19 @@ end
 Base.Broadcast.broadcast_indices(::Type{<:GPUArrays}, A::Ref) = ()
 Base.Broadcast.broadcast_indices(::Type{<:GPUArrays}, A) = indices(A)
 
+@generated function unsafe_getindex(A::GPUSoA{T}, i::Integer...) where {T}
+    exprs = Any[Expr(:meta, :inline), Expr(:meta, :propagate_inbounds)]
+    if isempty(T.types)
+        push!(exprs, :(return unsafe_getindex(A.arrays[1], i...)))
+    else
+        strct, _ = generate_getindex(T, unsafe_getindex, 1)
+        push!(exprs, strct)
+    end
+    quote
+        $(exprs...)
+    end
+end
+
 ### internal implementation (mostly copied from Base)
 
 using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
@@ -95,3 +108,19 @@ function Base.reduce(f, v0::T, xs::GPUArrays{T}) where T
   return unsafe_getindex(scratch, 1)
 end
 Base.reduce(f, v0, xs::GPUArrays) = reduce(f, convert(eltype(xs), v0), xs)
+
+function reduce_grid(op, v0::T, input::GPUDeviceArrays{T}, output::GPUDeviceArrays{T},
+                     len::Integer) where {T}
+    val = v0
+    i = (blockIdx().x-UInt32(1)) * blockDim().x + threadIdx().x
+    step = blockDim().x * gridDim().x
+    while i <= len
+        @inbounds val = op(val, input[i])
+        i += step
+    end
+    val = reduce_block(op, v0, val)
+    if threadIdx().x == UInt32(1)
+        @inbounds output[blockIdx().x] = val
+    end
+    return
+end

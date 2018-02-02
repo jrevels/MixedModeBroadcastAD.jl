@@ -162,19 +162,3 @@ end
   end
   return val
 end
-
-function reduce_grid(op, v0::T, input::CuDeviceArray{T}, output::CuDeviceArray{T},
-                     len::Integer) where {T}
-  val = v0
-  i = (blockIdx().x-UInt32(1)) * blockDim().x + threadIdx().x
-  step = blockDim().x * gridDim().x
-  while i <= len
-    @inbounds val = op(val, input[i])
-    i += step
-  end
-  val = reduce_block(op, v0, val)
-  if threadIdx().x == UInt32(1)
-    @inbounds output[blockIdx().x] = val
-  end
-  return
-end
