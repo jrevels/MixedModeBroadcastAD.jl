@@ -71,7 +71,7 @@ function checkout()
             @info "Checking-out $dep at $sha"
             # Pkg.checkout complains about refs not having tracking information
             cd(Pkg.dir(dep)) do
-                run(`git checkout $ref`)
+                run(`git checkout $sha`)
             end
         end
     end
