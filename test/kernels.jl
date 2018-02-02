@@ -92,9 +92,7 @@ function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
     else
         n = 9
     end
-    inputs = map(T, Tuple(rand(Float32, dims, dims),
-                          rand(Bool, dims), rand(Bool, dims),
-                          (rand(Float32, dims, dims) for _ in 1:n)...))
+    inputs = map(T, (rand(Float32, dims, dims), rand(Bool, dims), rand(Bool, dims), (rand(Float32, dims, dims) for _ in 1:n)...))
     return kernel, inputs
 end
 
