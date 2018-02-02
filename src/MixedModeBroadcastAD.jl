@@ -37,7 +37,7 @@ function autograd(f, input...)
     forward!(tape)
     seed!(recorded_output)
     backward!(tape)
-    return (value(recorded_output), map(deriv, recorded_input))
+    return (value(recorded_output), map(x -> isa(x, Record) ? deriv(x) : x, recorded_input))
 end
 
 end # module
