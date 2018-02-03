@@ -169,7 +169,7 @@ end
 
 @inline inbounds_partials(d, i) = @inbounds ForwardDiff.partials(d, i)
 
-@inline function backprop_partial(input_deriv, output_dual, i, output_deriv)
+@inline function backprop_partial(input_deriv, output_dual, ::Val{i}, output_deriv) where i
     return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
 end
 
@@ -179,7 +179,7 @@ function backward!(i::BroadcastInstruction)
     output_deriv = deriv(output)
     for i in 1:length(args)
         arg_i_deriv = deriv(args[i])
-        broadcast!(backprop_partial, arg_i_deriv, arg_i_deriv, output_duals, i, output_deriv)
+        broadcast!(backprop_partial, arg_i_deriv, arg_i_deriv, output_duals, Val(i), output_deriv)
     end
     return nothing
 end

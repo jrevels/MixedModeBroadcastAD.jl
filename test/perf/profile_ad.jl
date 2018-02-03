@@ -9,7 +9,8 @@ NVTX.stop()
 
 const N            = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 2048
 const fusion_level = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 2
-const tape = gettape(:cudanative, fusion_level, N)
+const soa          = length(ARGS) >= 3 ? parse(Bool, ARGS[3]) : true
+const tape = gettape(:cudanative, fusion_level, N, soa)
 
 function benchmark(tape)
     NVTX.@range "forward pass"  (forward!(tape), CUDAdrv.synchronize())

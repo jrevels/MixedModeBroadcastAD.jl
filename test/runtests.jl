@@ -16,12 +16,13 @@ include("kernels.jl")
 end
 
 @testset "LSTM-like kernels" begin
-    reference_kernel, _ = getkernel(:cpu, 0, 2)
+    reference_kernel, _ = getkernel(:cpu, 0, 2, false)
     reference_test = (args...) -> sum(reference_kernel(args...))
-    for kind in [:cpu, :cudanative, :cudaraw], fusion_level in 0:2
-        println("testing lstm-like kernel for kind `", kind, "` and fusion_level `", fusion_level, "`")
+    for kind in [:cpu, :cudanative, :cudaraw], fusion_level in 0:2, soa in [true, false]
+        println("testing lstm-like kernel for kind `", kind, "` and fusion_level `", fusion_level, "` and soa `", soa, "`" )
         kind == :cudaraw && fusion_level == 1 && continue
-        kernel, inputs = getkernel(kind, fusion_level, 2)
+        kind == :cudaraw && soa && continue
+        kernel, inputs = getkernel(kind, fusion_level, 2, soa)
         test = (args...) -> sum(kernel(args...))
         reference_inputs = Array.(inputs)
         test_output = test(inputs...)

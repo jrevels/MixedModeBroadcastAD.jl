@@ -18,12 +18,12 @@ function benchmark(kind::Symbol, args...)
     end
 end
 
-rows = Any[["environment", "size", "fusion_level", "forwards", "backwards"]]
-for fusion_level in [0, 1, 2], n in (2^i for i in 9:11)
-    info("benchmarking fusion_level=$fusion_level size=$n")
+rows = Any[["environment", "size", "fusion_level", "soa", "forwards", "backwards"]]
+for fusion_level in [0, 1, 2], n in (2^i for i in 9:11), soa in [true, false]
+    info("benchmarking fusion_level=$fusion_level size=$n, soa=$soa")
     for kind in [:cpu, :cudanative]
-        fwd, bwd = benchmark(kind, fusion_level, n)
-        push!(rows, [kind, n, fusion_level, fwd, bwd])
+        fwd, bwd = benchmark(kind, fusion_level, n, soa)
+        push!(rows, [kind, n, fusion_level, soa, fwd, bwd])
     end
 end
 
@@ -34,7 +34,7 @@ writedlm(joinpath(@__DIR__, "benchmark_ad.csv"), rows, ',')
 # table output
 for row in rows[2:end]
     row[2] = "$(row[2])x$(row[2])"
-    row[4] = timedelta(row[4])
     row[5] = timedelta(row[5])
+    row[6] = timedelta(row[6])
 end
-println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))
+println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c, :c])))

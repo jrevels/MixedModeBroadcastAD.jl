@@ -11,13 +11,14 @@ function benchmark(args...)
     @belapsed $(kernel)($inputs...)
 end
 
-rows = Any[["environment", "size", "fusion_level", "elapsed"]]
-for fusion_level in [0, 1, 2], n in (2^i for i in 9:11)
-    info("benchmarking fusion_level=$fusion_level size=$n")
+rows = Any[["environment", "size", "fusion_level", "soa", "elapsed"]]
+for fusion_level in [0, 1, 2], n in (2^i for i in 9:11), soa in [true, false]
+    info("benchmarking fusion_level=$fusion_level size=$n, soa=$soa")
     for kind in [:cpu, :cudanative, :cudaraw]
         kind == :cudaraw && fusion_level == 1 && continue
-        elapsed = benchmark(kind, fusion_level, n)
-        push!(rows, [kind, n, fusion_level, elapsed])
+        kind == :cudaraw && soa && continue
+        elapsed = benchmark(kind, fusion_level, n, soa)
+        push!(rows, [kind, n, fusion_level, soa, elapsed])
     end
 end
 
@@ -28,6 +29,6 @@ writedlm(joinpath(@__DIR__, "benchmark_no_ad.csv"), rows, ',')
 # table output
 for row in rows[2:end]
     row[2] = "$(row[2])x$(row[2])"
-    row[4] = timedelta(row[4])
+    row[5] = timedelta(row[5])
 end
-println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))
+println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))
