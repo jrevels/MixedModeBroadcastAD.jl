@@ -18,10 +18,12 @@ end
 # Storage types of StructOfArrays need to implement this
 _type_with_eltype(::Type{<:Array}, T, N) = Array{T, N}
 _type_with_eltype(::Type{<:CuArray}, T, N) = CuArray{T, N}
-_type_with_eltype(::Type{CuDeviceArray{_T,_N,AS}}, T, N) where{_T,_N,AS} = CuDeviceArray(T,N,AS)
+_type_with_eltype(::Type{CuDeviceArray{_T,_N,AS}}, T, N) where{_T,_N,AS} = CuDeviceArray{T,N,AS}
+_type_with_eltype(::Type{Const{_T,_N,AT}}, T, N) where{_T,_N,AT} = Const{T,N,_type_with_eltype(AT,T,N)}
 _type(::Type{<:Array}) = Array
 _type(::Type{<:CuArray}) = CuArray
 _type(::Type{<:CuDeviceArray}) = CuDeviceArray
+_type(::Type{<:Const}) = Const
 
 function gather_eltypes(T, visited = Set{Type}())
     (!isconcretetype(T) || T.mutable) && throw(ArgumentError("can only create an StructOfArrays of leaf type immutables"))
@@ -121,14 +123,30 @@ Base.IndexStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = 
 Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
 
 function Base.similar(A::StructOfArrays{T1,N,AT}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
+    @assert !(AT<:Const)
+    StructOfArrays(T, AT, dims)
+end
+
+function Base.similar(A::StructOfArrays{T1,N,Const{T1,N,AT}}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
     StructOfArrays(T, AT, dims)
 end
 
 function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{StructOfArrays{T1,N,A}}, ::Type{T}, inds, As...) where {T1,N,A,T}
+    @assert !(A<:Const)
     StructOfArrays(T, A, Base.to_shape(inds))
 end
 
-function Base.convert(::Type{<:StructOfArrays{T,N,AT}}, A::StructOfArrays{T,N}) where {T,N,AT<:AbstractArray{T,N}}
+function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{StructOfArrays{T1,N,Const{T1,N,A}}}, ::Type{T}, inds, As...) where {T1,N,A,T}
+    StructOfArrays(T, A, Base.to_shape(inds))
+end
+
+function readonly(A::StructOfArrays{T,N,AT}) where {T,N,AT}
+    arrays = map(readonly, A.arrays)
+    tt = typeof(arrays)
+    StructOfArrays{T,N,Const{T,N,AT},tt}(arrays)
+end
+
+function Base.convert(::Type{<:StructOfArrays{T,N,AT}}, A::StructOfArrays{T, N}) where {T,N,AT<:AbstractArray{T,N}}
     if AT <: StructOfArrays
         error("Can't embed a SoA array in a SoA array")
     end

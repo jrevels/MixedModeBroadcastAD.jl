@@ -1,10 +1,22 @@
 ## broadcast
 const GPUSoA = StructOfArrays{T,N,CuArray{T,N},U} where {T,N,U}
 const GPUDeviceSoA = StructOfArrays{T,N,CuDeviceArray{T,N,AS},U} where {T,N,AS,U}
-const GPUArrays = Union{<:CuArray{T,N}, <:GPUSoA{T,N}} where {T,N}
-const GPUDeviceArrays = Union{<:CuDeviceArray{T,N,AS}, <:GPUDeviceSoA{T,N,AS}} where {T,N,AS}
+const _GPUArrays = Union{<:CuArray{T,N}, <:GPUSoA{T,N}} where {T,N}
+const _GPUDeviceArrays = Union{<:CuDeviceArray{T,N,AS}, <:GPUDeviceSoA{T,N,AS}} where {T,N,AS}
+const GPUArrays = Union{<:_GPUArrays{T,N}, <:Const{T, N, <:_GPUArrays{T,N}}} where {T, N}
+const GPUDeviceArrays = Union{<:_GPUDeviceArrays{T,N,AS}, <:Const{T, N, <:_GPUDeviceArrays{T,N,AS}}} where {T, N, AS}
 
 function CUDAnative.cudaconvert(A::GPUSoA{T, N}) where {T, N}
+    arrays = map(CUDAnative.cudaconvert, A.arrays)
+    tt = typeof(arrays)
+    StructOfArrays{T, N, CuDeviceArray{T,N,AS.Global}, tt}(arrays)
+end
+
+function CUDAnative.cudaconvert(A::Const{T,N,CuArray{T,N}}) where {T, N}
+    Const{T,N,CuDeviceArray{T,N,AS.Global}}(CUDAnative.cudaconvert(A.data))
+end
+
+function CUDAnative.cudaconvert(A::StructOfArrays{T,N,Const{T,N,CuArray{T,N}}}) where {T,N}
     arrays = map(CUDAnative.cudaconvert, A.arrays)
     tt = typeof(arrays)
     StructOfArrays{T, N, CuDeviceArray{T,N,AS.Global}, tt}(arrays)
