@@ -23,7 +23,6 @@ CuArray{T,N}(::Uninitialized, shape::NTuple{N,Integer}) where {T,N} = CuArray{T,
 
 function unsafe_free!(a::CuArray)
       CUDAdrv.isvalid(a.buf.ctx) && Mem.free(a.buf)
-      Core.println("Freeing $(pointer_from_objref(a)): $(a.buf.ptr) -> $(a.buf.ptr+a.buf.bytesize)")
 end
 
 CuVector{T} = CuArray{T,1}
