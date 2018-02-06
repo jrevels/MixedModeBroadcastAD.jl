@@ -44,6 +44,8 @@ struct RecordOtherStyle <: Broadcast.BroadcastStyle end
 
 Broadcast.BroadcastStyle(::Type{<:Record}) = RecordOtherStyle()
 Broadcast.BroadcastStyle(::Type{<:Record{<:AbstractArray}}) = RecordArrayStyle()
+Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordArrayStyle) = s
 
 function Broadcast.broadcast(f,
                              ::Union{RecordArrayStyle,RecordOtherStyle},
