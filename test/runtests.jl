@@ -19,12 +19,13 @@ end
     dims = 2
     for kind in (:cpu, :gpu), precompute in (false, true)
         println("testing hmlstm kernel for kind=`", kind, "` and precompute=`", precompute, "`")
-        kernel, inputs = getkernel(kind, precompute, dims)
-        test = (args...) -> sum(kernel(args...))
+        kernel, bools, inputs = getkernel(kind, precompute, dims)
+        test = (args...) -> sum(kernel(bools..., args...))
         output, grads = autograd(test, inputs...)
         @test output ≈ test(inputs...)
-        cpu_kernel, cpu_inputs = first(getkernel(:cpu, precompute, dims)), Array.(inputs)
-        cpu_test = (args...) -> sum(cpu_kernel(args...))
+        cpu_kernel, cpu_bools, _ = getkernel(:cpu, precompute, dims)
+        cpu_inputs = Array.(inputs)
+        cpu_test = (args...) -> sum(cpu_kernel(cpu_bools, args...))
         for i in 1:length(inputs)
             grads[i] == nothing && continue
             cpu_test_i = x -> cpu_test(cpu_inputs[1:(i - 1)]..., x, cpu_inputs[(i + 1):end]...)

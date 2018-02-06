@@ -95,14 +95,12 @@ end
     # of dual numbers).
     output_duals = @fastsplat(broadcast(dual_eval, kernel, input_values...))
 
-    # Load the value of the results into the output value buffer. Note that this assumes all
-    # arguments have the same shape, which is not generally true for broadcast operations,
-    # but is good enough for our performance experiments, since all of our test kernels
-    # feature arguments of homogenous shape.
+    # Load the value of the results into the output value buffer.
     map!(ForwardDiff.value, output_value, output_duals)
     return output_duals
 end
 
+# TODO: don't dualize Bool inputs
 @inline function dual_eval(f::F, inputs...) where {F}
     dual_inputs = ForwardDiff.dualize(Nothing, StaticArrays.SVector(inputs))
     return @fastsplat(f(dual_inputs...))

@@ -1,17 +1,13 @@
 mutable struct Variable{V}
     value::V
     deriv::V
+    Variable(value::V) where {V} = new{V}(value, initderiv(value))
 end
-
-Variable(value::Union{AbstractArray,Real}) = Variable(value, initderiv(value))
-Variable(value::AbstractArray{Bool}) = value
 
 struct Record{V}
     tape::Tape
     variable::Variable{V}
 end
-
-Record(tape::Tape, value::AbstractArray) = value
 
 function Record(tape::Tape, f, input...)
     input_variables = map(i -> isa(i, Record) ? i.variable : i, input)

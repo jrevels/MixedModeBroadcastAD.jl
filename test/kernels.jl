@@ -6,9 +6,9 @@ using MixedModeBroadcastAD: CuArray, record, forward!, backward!, sigm, cuda_sig
 
 cpu_hmlstm_update_c(inputs...) = cpu_hmlstm_update_c_scalar.(inputs...)
 
-function cpu_hmlstm_update_c_scalar(c,
-                                    z_t, # = z_{t}^{l-1}
+function cpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
                                     z_l, # = z_{t-1}^{l}
+                                    c,
                                     W_f, R_f, b_f,
                                     W_i, R_i, b_i,
                                     W_g, R_g, b_g)
@@ -24,9 +24,9 @@ end
 
 gpu_hmlstm_update_c(inputs...) = gpu_hmlstm_update_c_scalar.(inputs...)
 
-function gpu_hmlstm_update_c_scalar(c,
-                                    z_t, # = z_{t}^{l-1}
+function gpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
                                     z_l, # = z_{t-1}^{l}
+                                    c,
                                     W_f, R_f, b_f,
                                     W_i, R_i, b_i,
                                     W_g, R_g, b_g)
@@ -42,10 +42,9 @@ end
 
 hmlstm_update_c_precomputed(inputs...) = hmlstm_update_c_precomputed_scalar.(inputs...)
 
-function hmlstm_update_c_precomputed_scalar(c,
-                                            z_t, # = z_{t}^{l-1}
+function hmlstm_update_c_precomputed_scalar(z_t, # = z_{t}^{l-1}
                                             z_l, # = z_{t-1}^{l}
-                                            f, i, g)
+                                            c, f, i, g)
     if z_l == 1 # FLUSH
         return i * g
     elseif z_t == 1 # UPDATE
@@ -88,17 +87,18 @@ function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
     end
     if precomputed
         kernel = hmlstm_update_c_precomputed
-        n = 3
+        n = 4
     else
-        n = 9
+        n = 10
     end
-    inputs = map(T, (rand(Float32, dims, dims), rand(Bool, dims), rand(Bool, dims), (rand(Float32, dims, dims) for _ in 1:n)...))
-    return kernel, inputs
+    bools = map(T, (rand(Bool, dims), rand(Bool, dims))
+    inputs = map(T, (rand(Float32, dims, dims) for _ in 1:n)...))
+    return kernel, bools, inputs
 end
 
 function gettape(args...)
-    f, inputs = getkernel(args...)
-    tape = first(record(f, inputs...))
+    f, bools, inputs = getkernel(args...)
+    tape = first(record((xs...) -> f(bools, xs...), inputs...))
     forward!(tape)  # "precompile" forwards pass
     backward!(tape) # "precompile" backwards pass
     return tape
