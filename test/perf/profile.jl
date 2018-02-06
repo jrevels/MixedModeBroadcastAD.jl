@@ -8,9 +8,9 @@ include("../kernels.jl")
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
-const DIMS        = length(ARGS) >= 1 ? parse(Int, ARGS[1])  : 2048
-const PRECOMPUTED = length(ARGS) >= 2 ? parse(Bool, ARGS[2]) : false
-const TAPE        = gettape(:gpu, precomputed, dims)
+const PRECOMPUTED = length(ARGS) >= 1 ? parse(Bool, ARGS[1]) : false
+const DIMS        = length(ARGS) >= 2 ? parse(Int,  ARGS[2]) : 2048
+const TAPE        = gettape(:gpu, PRECOMPUTED, DIMS)
 
 function benchmark(tape)
     NVTX.@range "forward pass"  (forward!(tape), CUDAdrv.synchronize())
