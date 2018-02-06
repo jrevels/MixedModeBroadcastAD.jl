@@ -98,7 +98,7 @@ end
 
 function gettape(args...)
     f, bools, inputs = getkernel(args...)
-    tape = first(record((xs...) -> f(bools, xs...), inputs...))
+    tape = first(record((xs...) -> f(bools..., xs...), inputs...))
     forward!(tape)  # "precompile" forwards pass
     backward!(tape) # "precompile" backwards pass
     return tape
