@@ -24,6 +24,14 @@ Base.push!(t::Tape, i::Instruction) = push!(t.instructions, i)
 
 Base.empty!(t::Tape) = (empty!(t.instructions); t)
 
+function initderiv!(tape::Tape)
+    for i in tape.instructions
+        tuplemap(initderiv!, i.input)
+        tuplemap(initderiv!, i.output)
+    end
+    return nothing
+end
+
 function forward!(tape::Tape)
     for i in tape.instructions
         forward!(i)::Nothing

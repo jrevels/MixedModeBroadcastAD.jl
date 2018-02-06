@@ -85,11 +85,17 @@ function record(f, input...)
     return tape, recorded_output, recorded_input
 end
 
-function autograd(f, input...)
+function autograd(f, input...; cache::Bool = false)
     tape, recorded_output, recorded_input = record(f, input...)
     forward!(tape)
     seed!(recorded_output)
     backward!(tape)
+    if cache
+        initderiv!(tape)
+        forward!(tape)
+        seed!(recorded_output)
+        backward!(tape)
+    end
     return (value(recorded_output), deriv.(recorded_input))
 end
 
@@ -127,7 +133,7 @@ end
 function gettape(args...)
     f, bools, inputs = getkernel(args...)
     tape = first(record((xs...) -> f(bools..., xs...), inputs...))
-    forward!(tape)  # "precompile" forwards pass
+    forward!(tape) # "precompile" forwards pass
     backward!(tape) # "precompile" backwards pass
     return tape
 end

@@ -19,6 +19,10 @@ end
 initderiv(x::AbstractArray) = fill!(similar(x), 0)
 initderiv(x) = zero(x)
 
+initderiv!(x) = x
+initderiv!(v::Variable{<:AbstractArray}) = (fill!(v.deriv, 0); v)
+initderiv!(v::Variable{<:Number}) = (v.deriv = zero(v.deriv); v)
+
 seed!(v::Variable) = (v.deriv = one(v.deriv); nothing)
 seed!(r::Record) = seed!(r.variable)
 
