@@ -183,7 +183,7 @@ end
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output_variable, output_duals = i.output
-    dual_broadcast_backward!(args, output_duals, deriv(output))
+    dual_broadcast_backward!(args, output_duals, deriv(output_variable))
     return nothing
 end
 
