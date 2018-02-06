@@ -91,8 +91,8 @@ function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
     else
         n = 10
     end
-    bools = map(T, (rand(Bool, dims), rand(Bool, dims))
-    inputs = map(T, (rand(Float32, dims, dims) for _ in 1:n)...))
+    bools = (T(rand(Bool, dims)), T(rand(Bool, dims)))
+    inputs = Tuple(T(rand(Float32, dims, dims)) for _ in 1:n)
     return kernel, bools, inputs
 end
 
