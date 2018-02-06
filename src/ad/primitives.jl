@@ -111,7 +111,7 @@ end
                                         output_duals,
                                         output_value::AbstractArray,
                                         input_values::NTuple{N,AbstractArray}) where {K,N}
-    @fastsplat(broadcast!(output_duals, dual_eval, kernel, input_values...))
+    @fastsplat(broadcast!(dual_eval, output_duals, kernel, input_values...))
     map!(ForwardDiff.value, output_value, output_duals)
     return nothing
 end
