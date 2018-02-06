@@ -114,10 +114,12 @@ function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048, so
     else
         n = 10
     end
-    bools = (A(rand(Bool, dims)), A(rand(Bool, dims)))
-    inputs = Tuple(A(rand(Float32, dims, dims)) for _ in 1:n)
+    bools = (convert(A, rand(Bool, dims)),
+             convert(A, rand(Bool, dims)))
     if soa
-        inputs = Tuple(tosoa(A, x) for x in inputs)
+        inputs = Tuple(tosoa(A{Float32,2}, rand(Float32, dims, dims)) for _ in 1:n)
+    else
+        inputs = Tuple(convert(A, rand(Float32, dims, dims)) for _ in 1:n)
     end
     return kernel, bools, inputs
 end
