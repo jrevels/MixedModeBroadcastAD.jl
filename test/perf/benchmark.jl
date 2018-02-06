@@ -23,8 +23,9 @@ for kind in (:cpu, :gpu)
     for precomputed in (false, true)
         for dims in (2^i for i in 9:11)
             for soa in (false, true)
+                println("benchmarking kind=:", kind, "; precomputed=", precomputed, "; dims=", dims, "; soa=", soa)
                 tape = gettape(kind, precomputed, dims, soa)
-                fwdtime = @belapsed (forward!($tape),  CUDAdrv.synchronize()) evals=1
+                fwdtime = @belapsed (forward!($tape), CUDAdrv.synchronize())  evals=1
                 bwdtime = @belapsed (backward!($tape), CUDAdrv.synchronize()) evals=1
                 push!(rows, Any[kind, precomputed, dims, soa, fwdtime, bwdtime])
             end
