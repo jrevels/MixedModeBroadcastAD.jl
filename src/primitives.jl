@@ -39,13 +39,17 @@ end
 
 #=== broadcast ===#
 
-Base.BroadcastStyle(::Type{<:Record}) = Broadcast.Style{Record}()
+struct RecordArrayStyle <: Broadcast.AbstractArrayStyle{Any} end
+struct RecordOtherStyle <: Broadcast.BroadcastStyle end
+
+Broadcast.BroadcastStyle(::Type{<:Record}) = RecordOtherStyle()
+Broadcast.BroadcastStyle(::Type{<:Record{<:AbstractArray}}) = RecordArrayStyle()
 
 function Broadcast.broadcast(f,
-                             ::Broadcast.Style{Record},
+                             ::Union{RecordArrayStyle,RecordOtherStyle},
                              ::Nothing,
                              ::Nothing,
-                             args::Vararg{Union{AbstractArray,Record},N}) where {N}
+                             args::Union{AbstractArray,Number,Record}...)
     tape = first(arg.tape for arg in args if isa(arg, Record))
     return Record(tape, broadcast, f, args...)
 end
