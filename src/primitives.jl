@@ -92,8 +92,6 @@ end
 @noinline function dual_eval_broadcast!(kernel::K,
                                         output_value::AbstractArray,
                                         input_values::NTuple{N,AbstractArray}) where {K,N}
-    @assert all(size(iv) === size(output_value) for iv in input_values)
-
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
     # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
     # of dual numbers).
