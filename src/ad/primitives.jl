@@ -81,11 +81,15 @@ forward!(i::BroadcastInstruction{<:Tuple{typeof(*),Any,Any}}) = invoke(forward!,
 # multiple dispatch selects this implementation for fused benchmarks
 
 function forward!(i::BroadcastInstruction)
-    output_variable = isa(i.output, Variable) ? i.output : first(i.output)
     f, input_values = first(i.input), value.(i.input[2:end])
-    output_value = value(output_variable)
-    output_duals = dual_eval_broadcast!(f, output_value, input_values)
-    i.output = (output_variable, output_duals)
+    if isa(i.output, Tuple) # we have pre-cached memory we can reuse
+        output_variable, output_duals = i.output
+        dual_eval_broadcast!(f, output_duals, value(output_variable), input_values)
+    else
+        @assert isa(i.output, Variable)
+        output_variable = i.output
+        i.output = (output_variable, dual_eval_broadcast!(f, value(output_variable), input_values))
+    end
     return nothing
 end
 
@@ -100,6 +104,16 @@ end
     # Load the value of the results into the output value buffer.
     map!(ForwardDiff.value, output_value, output_duals)
     return output_duals
+end
+
+# version of dual_eval_broadcast! that reuses dual number buffer
+@noinline function dual_eval_broadcast!(kernel::K,
+                                        output_duals,
+                                        output_value::AbstractArray,
+                                        input_values::NTuple{N,AbstractArray}) where {K,N}
+    @fastsplat(broadcast!(output_duals, dual_eval, kernel, input_values...))
+    map!(ForwardDiff.value, output_value, output_duals)
+    return nothing
 end
 
 # TODO: don't dualize Bool inputs
