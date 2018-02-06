@@ -197,9 +197,10 @@ end
     body = Expr(:block)
     for i in 1:N
         if inputs.parameters[i] <: Variable
+            input_deriv_i = Symbol("input_deriv_", i)
             push!(body.args, quote
-                input_deriv_i = deriv(inputs[$i])
-                broadcast!(backprop_partial, input_deriv_i, input_deriv_i, output_duals, Val($i), output_deriv)
+                $input_deriv_i = deriv(inputs[$i])
+                broadcast!(backprop_partial, $input_deriv_i, $input_deriv_i, output_duals, Val($i), output_deriv)
             end)
         end
     end
