@@ -18,16 +18,15 @@ end
 @testset "HM-LSTM kernels" begin
     dims = 2
     for kind in (:cpu, :gpu), precompute in (false, true)
-        println("testing hmlstm kernel for kind=`", kind, "` and precompute=`", precompute, "`")
+        println("testing hmlstm kernel for kind=:", kind, "; precompute=", precompute, "")
         kernel, bools, inputs = getkernel(kind, precompute, dims)
         test = (args...) -> sum(kernel(bools..., args...))
         output, grads = autograd(test, inputs...)
         @test output ≈ test(inputs...)
-        cpu_kernel, cpu_bools, _ = getkernel(:cpu, precompute, dims)
-        cpu_inputs = Array.(inputs)
+        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, precompute, dims)), Array.(bools), Array.(inputs)
         cpu_test = (args...) -> sum(cpu_kernel(cpu_bools..., args...))
         for i in 1:length(inputs)
-            grads[i] == nothing && continue
+            println("\t...checking gradient for input $i")
             cpu_test_i = x -> cpu_test(cpu_inputs[1:(i - 1)]..., x, cpu_inputs[(i + 1):end]...)
             @test Array(grads[i]) ≈ ForwardDiff.gradient(cpu_test_i, cpu_inputs[i])
         end
