@@ -11,6 +11,8 @@ include("../kernels.jl")
 # setup #
 #########
 
+const RUNALL = length(ARGS) >= 1 ? parse(Bool, ARGS[1]) : false
+
 # make sure we collect CuArrays from previous iterations
 BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 
@@ -31,10 +33,12 @@ end
 # execution #
 #############
 
+kind_opts = RUNALL ? (:cpu, :gpu) : (:gpu,)
+soa_opts = RUNALL ? (false, true) : (true,)
 rows = Any[["environment", "precomputed layers?", "SoA enabled?", "size", "forward time", "backward time"]]
-for kind in (:cpu, :gpu)
+for kind in kind_opts
     for precomputed in (false, true)
-        for soa in (false, true)
+        for soa in soa_opts
             for dims in (2^i for i in 9:11)
                 println("benchmarking kind=:", kind, "; precomputed=", precomputed, "; soa=", soa, "; dims=", dims)
                 tape = gettape(kind, precomputed, soa, dims)
