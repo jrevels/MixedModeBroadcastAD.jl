@@ -1,4 +1,5 @@
-using MixedModeBroadcastAD: CuArray, StructOfArrays, record, forward!, backward!,
+using MixedModeBroadcastAD: CuArray, StructOfArrays, Record, Tape, Variable,
+                            forward!, backward!, seed!, value, deriv
                             sigm, cuda_sigm, cuda_tanh
 
 ########################
@@ -72,6 +73,25 @@ new_c = tf.where(
     )
 )
 =#
+
+#########################################
+# record/autograd convenience functions #
+#########################################
+
+function record(f, input...)
+    tape = Tape()
+    recorded_input = map(x -> Record(tape, Variable(x)), input)
+    recorded_output = f(recorded_input...)
+    return tape, recorded_output, recorded_input
+end
+
+function autograd(f, input...)
+    tape, recorded_output, recorded_input = record(f, input...)
+    forward!(tape)
+    seed!(recorded_output)
+    backward!(tape)
+    return (value(recorded_output), deriv.(recorded_input))
+end
 
 ########################
 # kernel/tape selector #

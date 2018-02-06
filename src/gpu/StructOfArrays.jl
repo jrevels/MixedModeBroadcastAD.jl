@@ -118,13 +118,15 @@ end
 end
 
 Base.IndexStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} =  Base.IndexStyle(A)
-Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
+
+struct SoAStyle{T,N,A} <: Broadcast.AbstractArrayStyle{N} end
+Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = SoAStyle{T,N,A}()
 
 function Base.similar(A::StructOfArrays{T1,N,AT}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
     StructOfArrays(T, AT, dims)
 end
 
-function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{StructOfArrays{T1, N, A}}, ::Type{T}, inds, As...) where {T1,N,A,T}
+function Base.broadcast_similar(f, ::SoAStyle{T1,N,A}, ::Type{T}, inds, As...) where {T1,N,A,T}
     StructOfArrays(T, A, Base.to_shape(inds))
 end
 

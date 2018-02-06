@@ -1,7 +1,5 @@
-using MixedModeBroadcastAD: CuArray, autograd
-using ForwardDiff
-using CUDAnative
-using Test
+using ForwardDiff, CUDAnative, Test
+
 include("kernels.jl")
 
 @testset "smoke test" begin

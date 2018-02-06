@@ -1,46 +1,41 @@
 module MixedModeBroadcastAD
 
-#=
-Many parts of the reverse-mode implementation in this package
-are derived from the prototypical AD package Capstan
-(https://github.com/JuliaDiff/Capstan.jl).
-=#
-
 using ForwardDiff
 using DiffRules
 using StaticArrays
 using FastSplat
 
-# GPU code
-include("cuarray.jl")
-include("soa.jl")
-include("gpuarray.jl")
+############
+# GPU code #
+############
 
-# AD code
-include("utilities.jl")
-include("tape.jl")
-include("variables.jl")
-include("primitives.jl")
+include("gpu/CuArrays.jl")
+include("gpu/StructOfArrays.jl")
+include("gpu/GPUArrays.jl")
+
+###########
+# AD code #
+###########
+
+include("ad/utilities.jl")
+include("ad/tape.jl")
+include("ad/variables.jl")
+include("ad/primitives.jl")
+
+####################
+# misc definitions #
+####################
+
+Broadcast.BroadcastStyle(::CuArrayStyle, s::SoAStyle) = s
+Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordArrayStyle) = s
+Broadcast.BroadcastStyle(::SoAStyle,     s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::SoAStyle,     s::RecordArrayStyle) = s
 
 DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)
 
 @eval $(ForwardDiff.unary_dual_definition(:CUDAnative, :exp))
 @eval $(ForwardDiff.unary_dual_definition(:CUDAnative, :tanh))
-
-function record(f, input...)
-    tape = Tape()
-    recorded_input = map(x -> Record(tape, Variable(x)), input)
-    recorded_output = f(recorded_input...)
-    return tape, recorded_output, recorded_input
-end
-
-function autograd(f, input...)
-    tape, recorded_output, recorded_input = record(f, input...)
-    forward!(tape)
-    seed!(recorded_output)
-    backward!(tape)
-    return (value(recorded_output), deriv.(recorded_input))
-end
 
 end # module
