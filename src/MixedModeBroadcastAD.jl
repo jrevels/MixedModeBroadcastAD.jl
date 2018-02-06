@@ -26,11 +26,11 @@ include("ad/primitives.jl")
 # misc definitions #
 ####################
 
-Broadcast.BroadcastStyle(::CuArrayStyle, s::SoAStyle) = s
-Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordOtherStyle) = s
-Broadcast.BroadcastStyle(::CuArrayStyle, s::RecordArrayStyle) = s
-Broadcast.BroadcastStyle(::SoAStyle,     s::RecordOtherStyle) = s
-Broadcast.BroadcastStyle(::SoAStyle,     s::RecordArrayStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::Broadcast.ArrayStyle{<:StructOfArrays}) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::RecordArrayStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordArrayStyle) = s
 
 DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)
