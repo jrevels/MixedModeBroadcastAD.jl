@@ -11,13 +11,16 @@ using DiffRules
 using StaticArrays
 using FastSplat
 
+# GPU code
+include("cuarray.jl")
+include("soa.jl")
+include("gpuarray.jl")
+
+# AD code
 include("utilities.jl")
 include("tape.jl")
 include("variables.jl")
 include("primitives.jl")
-include("cuarray.jl")
-include("soa.jl")
-include("gpuarray.jl")
 
 DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)
