@@ -40,9 +40,9 @@ Base.print_array(::IO, ::CuArray) = nothing
 
 Base.similar(a::CuArray, ::Type{T}, dims::Base.Dims{N}) where {T,N} =  CuArray{T,N}(dims)
 
-Base.BroadcastStyle(::Type{T}) where T<:CuArray = Broadcast.ArrayStyle{T}()
+Base.BroadcastStyle(::Type{<:CuArray}) = Broadcast.ArrayStyle{CuArray}()
 
-function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{<:CuArray}, ::Type{T}, inds, As...) where T
+function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, inds, As...) where T
     @assert isconcretetype(T) "$T is not a leaf type"
     similar(CuArray{T}, inds)
 end

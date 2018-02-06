@@ -26,9 +26,9 @@ include("ad/primitives.jl")
 # misc definitions #
 ####################
 
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::Broadcast.ArrayStyle{<:StructOfArrays}) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::RecordOtherStyle) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:CuArray}, s::RecordArrayStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::Broadcast.ArrayStyle{<:StructOfArrays}) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::RecordOtherStyle) = s
+Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::RecordArrayStyle) = s
 Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordOtherStyle) = s
 Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordArrayStyle) = s
 
