@@ -1,4 +1,5 @@
-using MixedModeBroadcastAD: CuArray, record, forward!, backward!, sigm, cuda_sigm, cuda_tanh
+using MixedModeBroadcastAD: CuArray, StructOfArrays, record, forward!, backward!,
+                            sigm, cuda_sigm, cuda_tanh
 
 ########################
 # fine-grained kernels #
@@ -76,14 +77,16 @@ new_c = tf.where(
 # kernel/tape selector #
 ########################
 
-function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
+tosoa(::Type{A}, x::AbstractArray{T,N}) where {A,T,N} = convert(StructOfArrays{T,N,A}, convert(StructOfArrays, x))
+
+function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048, soa::Bool = true)
     @assert kind == :cpu || kind == :gpu
     if kind == :cpu
         kernel = cpu_hmlstm_update_c
-        T = Array
+        A = Array
     else
         kernel = gpu_hmlstm_update_c
-        T = CuArray
+        A = CuArray
     end
     if precomputed
         kernel = hmlstm_update_c_precomputed
@@ -91,8 +94,11 @@ function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048)
     else
         n = 10
     end
-    bools = (T(rand(Bool, dims)), T(rand(Bool, dims)))
-    inputs = Tuple(T(rand(Float32, dims, dims)) for _ in 1:n)
+    bools = (A(rand(Bool, dims)), A(rand(Bool, dims)))
+    inputs = Tuple(A(rand(Float32, dims, dims)) for _ in 1:n)
+    if soa
+        inputs = Tuple(tosoa(A, x) for x in inputs)
+    end
     return kernel, bools, inputs
 end
 

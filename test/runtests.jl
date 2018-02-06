@@ -17,9 +17,9 @@ end
 
 @testset "HM-LSTM kernels" begin
     dims = 2
-    for kind in (:cpu, :gpu), precompute in (false, true)
-        println("testing hmlstm kernel for kind=:", kind, "; precompute=", precompute, "")
-        kernel, bools, inputs = getkernel(kind, precompute, dims)
+    for kind in (:cpu, :gpu), precompute in (false, true), soa in (false, true)
+        println("testing hmlstm kernel for kind=:", kind, "; precompute=", precompute, "; soa=", soa)
+        kernel, bools, inputs = getkernel(kind, precompute, dims, soa)
         test = (args...) -> sum(kernel(bools..., args...))
         output, grads = autograd(test, inputs...)
         @test output ≈ test(inputs...)

@@ -18,14 +18,16 @@ BenchmarkTools.DEFAULT_PARAMETERS.gcsample = true
 # execution #
 #############
 
-rows = Any[["environment", "precomputed layers?", "size", "forward time", "backward time"]]
+rows = Any[["environment", "precomputed layers?", "size", "SoA enabled?", "forward time", "backward time"]]
 for kind in (:cpu, :gpu)
     for precomputed in (false, true)
         for dims in (2^i for i in 9:11)
-            tape = gettape(kind, precomputed, dims)
-            fwdtime = @belapsed (forward!($tape),  CUDAdrv.synchronize()) evals=1
-            bwdtime = @belapsed (backward!($tape), CUDAdrv.synchronize()) evals=1
-            push!(rows, Any[kind, precomputed, dims, fwdtime, bwdtime])
+            for soa in (false, true)
+                tape = gettape(kind, precomputed, dims, soa)
+                fwdtime = @belapsed (forward!($tape),  CUDAdrv.synchronize()) evals=1
+                bwdtime = @belapsed (backward!($tape), CUDAdrv.synchronize()) evals=1
+                push!(rows, Any[kind, precomputed, dims, soa, fwdtime, bwdtime])
+            end
         end
     end
 end
@@ -52,7 +54,7 @@ writedlm(joinpath(@__DIR__, "timings.csv"), rows, ',')
 
 # table output
 for row in rows[2:end]
-    row[4] = pretty_print_time(row[4])
     row[5] = pretty_print_time(row[5])
+    row[6] = pretty_print_time(row[6])
 end
-println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))
+println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c, :c])))
