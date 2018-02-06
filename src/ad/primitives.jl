@@ -180,20 +180,28 @@ end
 
 #=== mixed-mode broadcast optimization ===#
 
+function backward!(i::BroadcastInstruction)
+    f, args = first(i.input), i.input[2:end]
+    output_variable, output_duals = i.output
+    dual_broadcast_backward!(args, output_duals, deriv(output))
+    return nothing
+end
+
 @inline inbounds_partials(d, i) = @inbounds ForwardDiff.partials(d, i)
 
 @inline function backprop_partial(input_deriv, output_dual, ::Val{i}, output_deriv) where i
     return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
 end
 
-function backward!(i::BroadcastInstruction)
-    f, args = first(i.input), i.input[2:end]
-    output, output_duals = i.output
-    output_deriv = deriv(output)
-    for (i, arg) in enumerate(args)
-        isa(arg, Variable) || continue
-        arg_deriv = deriv(arg)
-        broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, Val(i), output_deriv)
+@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_deriv) where {N}
+    body = Expr(:block)
+    for i in 1:N
+        if inputs.parameters[i] <: Variable
+            push!(body.args, quote
+                input_deriv_i = deriv(inputs[$i])
+                broadcast!(backprop_partial, input_deriv_i, input_deriv_i, output_duals, Val($i), output_deriv)
+            end)
+        end
     end
-    return nothing
+    return body
 end
