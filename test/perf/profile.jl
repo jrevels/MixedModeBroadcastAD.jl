@@ -14,8 +14,8 @@ const SOA         = length(ARGS) >= 3 ? parse(Bool, ARGS[3]) : true
 const TAPE        = gettape(:gpu, PRECOMPUTED, SOA, DIMS)
 
 function benchmark(tape)
-    NVTX.@range "forward pass"  (forward!(TAPE),  CUDAdrv.synchronize())
-    NVTX.@range "backward pass" (backward!(TAPE), CUDAdrv.synchronize())
+    NVTX.@range "forward pass"  (forward!(tape),  CUDAdrv.synchronize())
+    NVTX.@range "backward pass" (backward!(tape), CUDAdrv.synchronize())
 end
 
 benchmark(TAPE) # warm-up
