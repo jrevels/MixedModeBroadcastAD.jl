@@ -1,5 +1,5 @@
 using MixedModeBroadcastAD: CuArray, StructOfArrays, Record, Tape, Variable,
-                            forward!, backward!, seed!, value, deriv
+                            forward!, backward!, seed!, value, deriv,
                             sigm, cuda_sigm, cuda_tanh
 
 ########################
