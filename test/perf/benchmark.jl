@@ -23,9 +23,9 @@ for kind in (:cpu, :gpu)
     for precomputed in (false, true)
         for dims in (2^i for i in 9:11)
             tape = gettape(kind, precomputed, dims)
-            fwdtime = @belapsed (forward!($tape), CUDAdrv.synchronize()) evals=1
+            fwdtime = @belapsed (forward!($tape),  CUDAdrv.synchronize()) evals=1
             bwdtime = @belapsed (backward!($tape), CUDAdrv.synchronize()) evals=1
-            push!(rows, [kind, precomputed, dims, fwdtime, bwdtime])
+            push!(rows, Any[kind, precomputed, dims, fwdtime, bwdtime])
         end
     end
 end
@@ -34,12 +34,25 @@ end
 # writing output #
 ##################
 
+function pretty_print_time(s)
+    (unit, factor) = if s < 1e-6
+        ("n", 1e9)
+    elseif s < 1e-3
+        ("u", 1e6)
+    elseif s < 1
+        ("m", 1e3)
+    else
+        ("", 1)
+    end
+    @sprintf("%.2f %ss", factor*s, unit)
+end
+
 # raw output
 writedlm(joinpath(@__DIR__, "timings.csv"), rows, ',')
 
 # table output
 for row in rows[2:end]
-    row[4] = BenchmarkTools.prettytime(row[4])
-    row[5] = BenchmarkTools.prettytime(row[5])
+    row[4] = pretty_print_time(row[4])
+    row[5] = pretty_print_time(row[5])
 end
 println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c, :c])))

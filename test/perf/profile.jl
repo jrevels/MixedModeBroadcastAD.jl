@@ -13,7 +13,7 @@ const DIMS        = length(ARGS) >= 2 ? parse(Int,  ARGS[2]) : 2048
 const TAPE        = gettape(:gpu, PRECOMPUTED, DIMS)
 
 function benchmark(tape)
-    NVTX.@range "forward pass"  (forward!(tape), CUDAdrv.synchronize())
+    NVTX.@range "forward pass"  (forward!(tape),  CUDAdrv.synchronize())
     NVTX.@range "backward pass" (backward!(tape), CUDAdrv.synchronize())
 end
 
