@@ -81,7 +81,8 @@ forward!(i::BroadcastInstruction{<:Tuple{typeof(*),Any,Any}}) = invoke(forward!,
 # multiple dispatch selects this implementation for fused benchmarks
 
 function forward!(i::BroadcastInstruction)
-    f, input_values = first(i.input), value.(i.input[2:end])
+    f, _input_values = first(i.input), value.(i.input[2:end])
+    input_values = map(readonly, _input_values)
     if isa(i.output, Tuple) # we have pre-cached memory we can reuse
         output_variable, output_duals = i.output
         dual_eval_broadcast!(f, output_duals, value(output_variable), input_values)
@@ -188,8 +189,9 @@ end
 
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
-    output, output_duals = i.output
-    output_deriv = deriv(output)
+    output, _output_duals = i.output
+    output_duals = readonly(_output_duals)
+    output_deriv = readonly(deriv(output))
     for (i, arg) in enumerate(args)
         isa(arg, Variable) || continue
         arg_deriv = deriv(arg)
