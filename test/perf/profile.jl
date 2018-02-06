@@ -11,7 +11,7 @@ NVTX.stop()
 const PRECOMPUTED = length(ARGS) >= 1 ? parse(Bool, ARGS[1]) : false
 const DIMS        = length(ARGS) >= 2 ? parse(Int,  ARGS[2]) : 2048
 const SOA         = length(ARGS) >= 3 ? parse(Bool, ARGS[3]) : true
-const TAPE        = gettape(:gpu, PRECOMPUTED, DIMS, SOA)
+const TAPE        = gettape(:gpu, PRECOMPUTED, SOA, DIMS)
 
 function benchmark(tape)
     NVTX.@range "forward pass"  (forward!(tape),  CUDAdrv.synchronize())

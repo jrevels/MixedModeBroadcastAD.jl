@@ -17,11 +17,11 @@ end
     dims = 2
     for kind in (:cpu, :gpu), precompute in (false, true), soa in (false, true)
         println("testing hmlstm kernel for kind=:", kind, "; precompute=", precompute, "; soa=", soa)
-        kernel, bools, inputs = getkernel(kind, precompute, dims, soa)
+        kernel, bools, inputs = getkernel(kind, precompute, soa, dims)
         test = (args...) -> sum(kernel(bools..., args...))
         output, grads = autograd(test, inputs...)
         @test output ≈ test(inputs...)
-        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, precompute, dims)), Array.(bools), Array.(inputs)
+        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, precompute, false, dims)), Array.(bools), Array.(inputs)
         cpu_test = (args...) -> sum(cpu_kernel(cpu_bools..., args...))
         for i in 1:length(inputs)
             println("\t...checking gradient for input $i")

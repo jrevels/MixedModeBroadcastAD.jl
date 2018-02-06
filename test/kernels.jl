@@ -99,7 +99,7 @@ end
 
 tosoa(::Type{A}, x::AbstractArray{T,N}) where {A,T,N} = convert(StructOfArrays{T,N,A}, convert(StructOfArrays, x))
 
-function getkernel(kind::Symbol, precomputed::Bool = false, dims::Int = 2048, soa::Bool = true)
+function getkernel(kind::Symbol, precomputed::Bool = false, soa::Bool = true, dims::Int = 2048)
     @assert kind == :cpu || kind == :gpu
     if kind == :cpu
         kernel = cpu_hmlstm_update_c
