@@ -18,7 +18,7 @@ end
 # Storage types of StructOfArrays need to implement this
 _type_with_eltype(::Type{<:Array}, T, N) = Array{T, N}
 _type_with_eltype(::Type{<:CuArray}, T, N) = CuArray{T, N}
-_type_with_eltype(::Type{CuDeviceArray{_T,_N,AS}}, T, N) where{_T,_N,AS} = CuDeviceArray(T,N,AS)
+_type_with_eltype(::Type{CuDeviceArray{_T,_N,AS,C}}, T, N) where{_T,_N,AS,C} = CuDeviceArray(T,N,AS,C)
 _type(::Type{<:Array}) = Array
 _type(::Type{<:CuArray}) = CuArray
 _type(::Type{<:CuDeviceArray}) = CuDeviceArray

@@ -1,14 +1,16 @@
 ## broadcast
 const GPUSoA = StructOfArrays{T,N,CuArray{T,N},U} where {T,N,U}
-const GPUDeviceSoA = StructOfArrays{T,N,CuDeviceArray{T,N,AS},U} where {T,N,AS,U}
+const GPUDeviceSoA = StructOfArrays{T,N,CuDeviceArray{T,N,AS,C},U} where {T,N,AS,C,U}
 const GPUArrays = Union{<:CuArray{T,N}, <:GPUSoA{T,N}} where {T,N}
-const GPUDeviceArrays = Union{<:CuDeviceArray{T,N,AS}, <:GPUDeviceSoA{T,N,AS}} where {T,N,AS}
+const GPUDeviceArrays = Union{<:CuDeviceArray{T,N,AS,C}, <:GPUDeviceSoA{T,N,AS}} where {T,N,AS,C}
 
 function CUDAnative.cudaconvert(A::GPUSoA{T, N}) where {T, N}
     arrays = map(CUDAnative.cudaconvert, A.arrays)
+    arrays = map(CUDAnative.Cached, arrays)
     tt = typeof(arrays)
-    StructOfArrays{T, N, CuDeviceArray{T,N,AS.Global}, tt}(arrays)
+    StructOfArrays{T, N, CuDeviceArray{T,N,AS.Global,true}, tt}(arrays)
 end
+
 
 ### base interface
 

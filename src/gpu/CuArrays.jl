@@ -76,7 +76,7 @@ Base.cconvert(::Type{Ptr{Cvoid}}, x::CuArray) = x.buf
 function CUDAnative.cudaconvert(a::CuArray{T,N}) where {T,N}
     ptr = Base.unsafe_convert(Ptr{T}, a.buf)
     devptr = CUDAnative.DevicePtr{T,AS.Global}(ptr)
-    CuDeviceArray{T,N,AS.Global}(a.shape, devptr)
+    CuDeviceArray{T,N,AS.Global,true}(a.shape, devptr)
 end
 
 function CUDAnative.cudaconvert(A::SubArray)
