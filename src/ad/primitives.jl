@@ -186,45 +186,59 @@ end
     return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
 end
 
-@noinline function backprop_partial_broadcast!(arg_derivs::Tuple, vars, output_duals, output_derivs)
+@noinline function backprop_partial_broadcast!(input_derivs::Tuple, vars, output_duals, output_derivs)
     blk, thr = cuda_dimensions(output_duals)
-    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(arg_derivs, Val(vars), output_duals, output_derivs)
+    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(input_derivs, Val(Tuple(vars)), output_duals, output_derivs)
 end
 
-@generated function _backprop_partial_broadcast!(arg_derivs::Tuple, ::Val{vars}, output_duals, output_derivs) where vars
+@generated function _backprop_partial_broadcast!(input_derivs::Tuple, ::Val{vars}, output_duals, output_derivs) where vars
     quote
         let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
             @inbounds output_dual = output_duals[I]
             @inbounds output_deriv = output_derivs[I]
             # FIXME: can Julia unroll this loop?
             #for (i,j) in enumerate($vars)
-            #    @inbounds arg_derivs[i][I] = backprop_partial(arg_derivs[i][I], output_dual, j, output_deriv)
+            #    @inbounds input_derivs[i][I] = backprop_partial(input_derivs[i][I], output_dual, j, output_deriv)
             #end
             $((:(
-                @inbounds arg_derivs[$i][I] = backprop_partial(arg_derivs[$i][I], output_dual, $j, output_deriv)
+                @inbounds input_derivs[$i][I] = backprop_partial(input_derivs[$i][I], output_dual, $j, output_deriv)
             ) for (i,j) in enumerate(vars))...)
         end
         return
     end
 end
 
-function backward!(i::BroadcastInstruction)
-    f, args = first(i.input), i.input[2:end]
-    outputs, output_duals = i.output
-    output_derivs = deriv(outputs)
-    if isa(output_derivs, CuArray) ||
-       isa(output_derivs, StructOfArrays{T,N,A} where {T,N,A<:CuArray}) # FIXME: dispatch
-        vars = Tuple(map(((i,arg),)->i,
-                     filter(((i,arg),)->isa(arg, Variable),
-                     collect(enumerate(args)))))
-        arg_derivs = Tuple(deriv(args[i]) for i in vars)
-        backprop_partial_broadcast!(arg_derivs, vars, output_duals, output_derivs)
-    else
-        for (i, arg) in enumerate(args)
-            isa(arg, Variable) || continue
-            arg_deriv = deriv(arg)
-            broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, i, output_derivs)
+@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_derivs) where {N}
+    body = Expr(:block)
+
+    vars = []
+    for i in 1:N
+        if inputs.parameters[i] <: Variable
+            push!(vars, i)
         end
     end
+
+    if output_derivs <: CuArray ||
+       output_derivs <: StructOfArrays{T,N,A} where {T,N,A<:CuArray}
+        push!(body.args, quote
+            input_derivs = tuple($((:(deriv(inputs[$i])) for i in vars)...))
+            backprop_partial_broadcast!(input_derivs, $vars, output_duals, output_derivs)
+        end)
+    else
+        for i in vars
+            input_deriv_i = Symbol("input_deriv_", i)
+            push!(body.args, quote
+                $input_deriv_i = deriv(inputs[$i])
+                broadcast!(backprop_partial, $input_deriv_i, $input_deriv_i, output_duals, $i, output_derivs)
+            end)
+        end
+    end
+    return body
+end
+
+function backward!(i::BroadcastInstruction)
+    f, args = first(i.input), i.input[2:end]
+    output_variable, output_duals = i.output
+    dual_broadcast_backward!(args, output_duals, deriv(output_variable))
     return nothing
 end
