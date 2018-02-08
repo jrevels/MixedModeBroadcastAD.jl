@@ -182,18 +182,49 @@ end
 
 @inline inbounds_partials(d, i) = @inbounds ForwardDiff.partials(d, i)
 
-@inline function backprop_partial(input_deriv, output_dual, ::Val{i}, output_deriv) where i
+@inline function backprop_partial(input_deriv, output_dual, i, output_deriv)
     return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
+end
+
+@noinline function backprop_partial_broadcast!(arg_derivs::Tuple, vars, output_duals, output_derivs)
+    blk, thr = cuda_dimensions(output_duals)
+    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(arg_derivs, Val(vars), output_duals, output_derivs)
+end
+
+@generated function _backprop_partial_broadcast!(arg_derivs::Tuple, ::Val{vars}, output_duals, output_derivs) where vars
+    quote
+        let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
+            @inbounds output_dual = output_duals[I]
+            @inbounds output_deriv = output_derivs[I]
+            # FIXME: can Julia unroll this loop?
+            #for (i,j) in enumerate($vars)
+            #    @inbounds arg_derivs[i][I] = backprop_partial(arg_derivs[i][I], output_dual, j, output_deriv)
+            #end
+            $((:(
+                @inbounds arg_derivs[$i][I] = backprop_partial(arg_derivs[$i][I], output_dual, $j, output_deriv)
+            ) for (i,j) in enumerate(vars))...)
+        end
+        return
+    end
 end
 
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
-    output, output_duals = i.output
-    output_deriv = deriv(output)
-    for (i, arg) in enumerate(args)
-        isa(arg, Variable) || continue
-        arg_deriv = deriv(arg)
-        broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, Val(i), output_deriv)
+    outputs, output_duals = i.output
+    output_derivs = deriv(outputs)
+    if isa(output_derivs, CuArray) ||
+       isa(output_derivs, StructOfArrays{T,N,A} where {T,N,A<:CuArray}) # FIXME: dispatch
+        vars = Tuple(map(((i,arg),)->i,
+                     filter(((i,arg),)->isa(arg, Variable),
+                     collect(enumerate(args)))))
+        arg_derivs = Tuple(deriv(args[i]) for i in vars)
+        backprop_partial_broadcast!(arg_derivs, vars, output_duals, output_derivs)
+    else
+        for (i, arg) in enumerate(args)
+            isa(arg, Variable) || continue
+            arg_deriv = deriv(arg)
+            broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, i, output_derivs)
+        end
     end
     return nothing
 end
