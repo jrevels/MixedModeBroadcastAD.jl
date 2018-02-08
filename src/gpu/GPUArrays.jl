@@ -43,7 +43,12 @@ using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
     @boundscheck check_broadcast_indices(shape, A, Bs...)
     keeps, Idefaults = map_newindexer(shape, A, Bs)
     blk, thr = cuda_dimensions(C)
-    @cuda blocks=blk threads=thr _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    if f == backprop_partial
+        str = CUDAdrv.CuStream()
+        @cuda blocks=blk threads=thr stream=str _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    else
+        @cuda blocks=blk threads=thr _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    end
     return C
 end
 
