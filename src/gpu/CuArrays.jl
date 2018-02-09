@@ -87,7 +87,7 @@ end
 
 cuda_dimensions(a::AbstractArray) = cuda_dimensions(length(a))
 function cuda_dimensions(n::Integer)
-    threads = 256
+    threads = min(n, 256)
     ceil(Int, n / threads), threads
 end
 
