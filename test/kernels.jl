@@ -39,22 +39,7 @@ end
 ##########################
 
 #=
-TODO: port over something more similar to the TF HM-LSTM implementation, e.g:
-def hmlstm_update_c(c, g, i, f, z, zb):
-    i = tf.sigmoid(i)
-    g = tf.tanh(g)
-    f = tf.sigmoid(f)
-    o = tf.sigmoid(o)
-    new_c = tf.where(
-        tf.equal(z, tf.constant(1., dtype=tf.float32)),
-        tf.multiply(i, g, name='c'),
-        tf.where(
-            tf.equal(zb, tf.constant(0., dtype=tf.float32)),
-            tf.identity(c),
-            tf.add(tf.multiply(f, c), tf.multiply(i, g))
-        )
-    )
-    return new_c
+TODO: port over something comparable to what hmlstm.py is doing
 =#
 
 #########################################
