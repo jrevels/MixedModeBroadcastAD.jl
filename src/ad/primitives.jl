@@ -131,23 +131,23 @@ end
 function backward!(i::Instruction{typeof(sum),<:Tuple{Any}})
     x = first(i.input)
     y = i.output
-    x.deriv .+= deriv(y)
+    @propagate!(x, deriv(y))
     return nothing
 end
 
 function backward!(i::Instruction{typeof(*),<:Tuple{Any,Any}})
     x, y = i.input
     z = i.output
-    x.deriv .+= deriv(z) * value(y)'
-    y.deriv .+= value(x)' * deriv(z)
+    @propagate!(x, deriv(z) * value(y)')
+    @propagate!(y, value(x)' * deriv(z))
     return nothing
 end
 
 function backward!(i::Instruction{typeof(+),<:Tuple{Any,Any}})
     x, y = i.input
     z = i.output
-    x.deriv .+= deriv(z)
-    y.deriv .+= deriv(z)
+    @propagate!(x, deriv(z))
+    @propagate!(y, deriv(z))
     return nothing
 end
 
@@ -155,8 +155,8 @@ for (f, df) in [(:sigm, :d_sigm), (:cuda_sigm, :d_cuda_sigm),
                 (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
     @eval function backward!(i::BroadcastInstruction{<:Tuple{typeof($f),Any}})
         f, args = first(i.input), i.input[2:end]
-        for j in 1:length(args)
-            args[j].deriv .+= $(df).(value(args[j])) .* deriv(i.output)
+        for arg in args
+            @propagate!(arg, $(df).(value(arg)) .* deriv(i.output))
         end
         return nothing
     end
@@ -165,16 +165,16 @@ end
 function backward!(i::BroadcastInstruction{<:Tuple{typeof(*),Any,Any}})
     _, x, y = i.input
     z = i.output
-    x.deriv .+= value(y) .* deriv(z)
-    y.deriv .+= value(x) .* deriv(z)
+    @propagate!(x, value(y) .* deriv(z))
+    @propagate!(y, value(x) .* deriv(z))
     return nothing
 end
 
 function backward!(i::BroadcastInstruction{<:Tuple{typeof(+),Any,Any}})
     _, x, y = i.input
     z = i.output
-    x.deriv .+= deriv(z)
-    y.deriv .+= deriv(z)
+    @propagate!(x, deriv(z))
+    @propagate!(y, deriv(z))
     return nothing
 end
 
@@ -182,27 +182,34 @@ end
 
 @inline inbounds_partials(d, i) = @inbounds ForwardDiff.partials(d, i)
 
-@inline function backprop_partial(input_deriv, output_dual, i, output_deriv)
-    return input_deriv + (inbounds_partials(output_dual, i) * output_deriv)
+@inline function backprop_partial(output_dual, i, output_deriv)
+    return inbounds_partials(output_dual, i) * output_deriv
 end
 
-@noinline function backprop_partial_broadcast!(arg_derivs::Tuple, vars, output_duals, output_derivs)
+@inline function multivariable_backprop_partial(input_deriv, output_dual, i, output_deriv)
+    return input_deriv + backprop_partial(output_dual, i, output_deriv)
+end
+
+@noinline function backprop_partial_broadcast!(arg_derivs::Tuple, multivariable, vars, output_duals, output_derivs)
     blk, thr = cuda_dimensions(output_duals)
-    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(arg_derivs, Val(vars), output_duals, output_derivs)
+    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(arg_derivs, Val(multivariable), Val(vars), output_duals, output_derivs)
 end
 
-@generated function _backprop_partial_broadcast!(arg_derivs::Tuple, ::Val{vars}, output_duals, output_derivs) where vars
+@generated function _backprop_partial_broadcast!(arg_derivs::Tuple, ::Val{multivariable}, ::Val{vars}, output_duals, output_derivs) where {multivariable, vars}
+    evals = Expr(:block)
+    for (i,j) in enumerate(vars)
+        if multivariable[i]
+            push!(evals.args, :(@inbounds arg_derivs[$i][I] = multivariable_backprop_partial(arg_derivs[$i][I], output_dual, $j, output_deriv)))
+        else
+            push!(evals.args, :(@inbounds arg_derivs[$i][I] = backprop_partial(output_dual, $j, output_deriv)))
+        end
+    end
+
     quote
         let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
             @inbounds output_dual = output_duals[I]
             @inbounds output_deriv = output_derivs[I]
-            # FIXME: can Julia unroll this loop?
-            #for (i,j) in enumerate($vars)
-            #    @inbounds arg_derivs[i][I] = backprop_partial(arg_derivs[i][I], output_dual, j, output_deriv)
-            #end
-            $((:(
-                @inbounds arg_derivs[$i][I] = backprop_partial(arg_derivs[$i][I], output_dual, $j, output_deriv)
-            ) for (i,j) in enumerate(vars))...)
+            $evals
         end
         return
     end
@@ -214,16 +221,18 @@ function backward!(i::BroadcastInstruction)
     output_derivs = deriv(outputs)
     if isa(output_derivs, CuArray) ||
        isa(output_derivs, StructOfArrays{T,N,A} where {T,N,A<:CuArray}) # FIXME: dispatch
-        vars = Tuple(map(((i,arg),)->i,
-                     filter(((i,arg),)->isa(arg, Variable),
-                     collect(enumerate(args)))))
+        vars = Tuple(i for i in 1:length(args) if isa(args[i], Variable))
+        multivariable = Tuple(args[i].downstreams > 1  for i in vars)
         arg_derivs = Tuple(deriv(args[i]) for i in vars)
-        backprop_partial_broadcast!(arg_derivs, vars, output_duals, output_derivs)
+        backprop_partial_broadcast!(arg_derivs, multivariable, vars, output_duals, output_derivs)
     else
         for (i, arg) in enumerate(args)
             isa(arg, Variable) || continue
-            arg_deriv = deriv(arg)
-            broadcast!(backprop_partial, arg_deriv, arg_deriv, output_duals, i, output_derivs)
+            if arg.downstreams > 1
+                broadcast!(multivariable_backprop_partial, deriv(arg), deriv(arg), output_duals, i, output_derivs)
+            else
+                broadcast!(backprop_partial, deriv(arg), output_duals, i, output_derivs)
+            end
         end
     end
     return nothing
