@@ -217,23 +217,27 @@ end
 
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
-    outputs, output_duals = i.output
-    output_derivs = deriv(outputs)
-    if isa(output_derivs, CuArray) ||
-       isa(output_derivs, StructOfArrays{T,N,A} where {T,N,A<:CuArray}) # FIXME: dispatch
-        vars = Tuple(i for i in 1:length(args) if isa(args[i], Variable))
-        multivariable = Tuple(args[i].downstreams > 1  for i in vars)
-        arg_derivs = Tuple(deriv(args[i]) for i in vars)
-        backprop_partial_broadcast!(arg_derivs, multivariable, vars, output_duals, output_derivs)
-    else
-        for (i, arg) in enumerate(args)
-            isa(arg, Variable) || continue
-            if arg.downstreams > 1
-                broadcast!(multivariable_backprop_partial, deriv(arg), deriv(arg), output_duals, i, output_derivs)
-            else
-                broadcast!(backprop_partial, deriv(arg), output_duals, i, output_derivs)
-            end
+    output_variable, output_duals = i.output
+    dual_broadcast_backward!(args, output_duals, deriv(output_variable))
+    return nothing
+end
+
+function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_derivs::T) where
+                                 {N,_T,_N,_A<:CuArray,T<:Union{CuArray, StructOfArrays{_T,_N,_A}}}
+    vars = Tuple(i for i in 1:length(inputs) if isa(inputs[i], Variable))
+    multivariable = Tuple(inputs[i].downstreams > 1  for i in vars)
+    arg_derivs = Tuple(deriv(inputs[i]) for i in vars)
+    backprop_partial_broadcast!(arg_derivs, multivariable, vars, output_duals, output_derivs)
+end
+
+function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_derivs) where
+                                 {N}
+    for (i, input) in enumerate(inputs)
+        isa(input, Variable) || continue
+        if input.downstreams > 1
+            broadcast!(multivariable_backprop_partial, deriv(input), deriv(input), output_duals, i, output_derivs)
+        else
+            broadcast!(backprop_partial, deriv(input), output_duals, i, output_derivs)
         end
     end
-    return nothing
 end
