@@ -190,31 +190,6 @@ end
     return input_deriv + backprop_partial(output_dual, i, output_deriv)
 end
 
-@noinline function backprop_partial_broadcast!(arg_derivs::Tuple, multivariable, vars, output_duals, output_derivs)
-    blk, thr = cuda_dimensions(output_duals)
-    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(arg_derivs, Val(multivariable), Val(vars), output_duals, output_derivs)
-end
-
-@generated function _backprop_partial_broadcast!(arg_derivs::Tuple, ::Val{multivariable}, ::Val{vars}, output_duals, output_derivs) where {multivariable, vars}
-    evals = Expr(:block)
-    for (i,j) in enumerate(vars)
-        if multivariable[i]
-            push!(evals.args, :(@inbounds arg_derivs[$i][I] = multivariable_backprop_partial(arg_derivs[$i][I], output_dual, $j, output_deriv)))
-        else
-            push!(evals.args, :(@inbounds arg_derivs[$i][I] = backprop_partial(output_dual, $j, output_deriv)))
-        end
-    end
-
-    quote
-        let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
-            @inbounds output_dual = output_duals[I]
-            @inbounds output_deriv = output_derivs[I]
-            $evals
-        end
-        return
-    end
-end
-
 function backward!(i::BroadcastInstruction)
     f, args = first(i.input), i.input[2:end]
     output_variable, output_duals = i.output
@@ -222,22 +197,76 @@ function backward!(i::BroadcastInstruction)
     return nothing
 end
 
-function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_derivs::T) where
-                                 {N,_T,_N,_A<:CuArray,T<:Union{CuArray, StructOfArrays{_T,_N,_A}}}
-    vars = Tuple(i for i in 1:length(inputs) if isa(inputs[i], Variable))
-    multivariable = Tuple(inputs[i].downstreams > 1  for i in vars)
-    arg_derivs = Tuple(deriv(inputs[i]) for i in vars)
-    backprop_partial_broadcast!(arg_derivs, multivariable, vars, output_duals, output_derivs)
+## CPU impl
+
+@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals,
+                                             output_derivs) where {N}
+    body = Expr(:block)
+    for i in 1:N
+        if inputs.parameters[i] <: Variable
+            input = :(inputs[$i])
+            push!(body.args, quote
+                if $input.downstreams > 1
+                    broadcast!(multivariable_backprop_partial, deriv($input), deriv($input),
+                               output_duals, $i, output_derivs)
+                else
+                    broadcast!(backprop_partial, deriv($input), output_duals, $i,
+                               output_derivs)
+                end
+            end)
+        end
+    end
+    return body
 end
 
-function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals, output_derivs) where
-                                 {N}
-    for (i, input) in enumerate(inputs)
-        isa(input, Variable) || continue
-        if input.downstreams > 1
-            broadcast!(multivariable_backprop_partial, deriv(input), deriv(input), output_duals, i, output_derivs)
-        else
-            broadcast!(backprop_partial, deriv(input), output_duals, i, output_derivs)
+## GPU impl
+
+@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals,
+                                             output_derivs::T) where {N,_T,_N,_A<:CuArray,
+                                             T<:Union{CuArray, StructOfArrays{_T,_N,_A}}}
+    vars = []
+    for i in 1:N
+        if inputs.parameters[i] <: Variable
+            push!(vars, i)
         end
+    end
+    vars = Tuple(vars)
+
+    body = Expr(:block)
+    push!(body.args, quote
+        input_derivs = tuple($((:(deriv(inputs[$i])) for i in vars)...))
+        multivariable = tuple($((:(inputs[$i].downstreams > 1) for i in vars)...))
+        backprop_partial_broadcast!(input_derivs, output_duals, output_derivs, $vars, multivariable)
+    end)
+
+    return body
+end
+
+function backprop_partial_broadcast!(input_derivs, output_duals, output_derivs, vars, multivariable)
+    blk, thr = cuda_dimensions(output_duals)
+    @cuda blocks=blk threads=thr _backprop_partial_broadcast!(input_derivs, output_duals,
+                                                              output_derivs, Val(vars),
+                                                              Val(multivariable))
+end
+
+@generated function _backprop_partial_broadcast!(input_derivs, output_duals, output_derivs,
+                                                 ::Val{vars}, ::Val{multivariable}) where
+                                                {vars, multivariable}
+    body = Expr(:block)
+    for (i,j) in enumerate(vars)
+        if multivariable[i]
+            push!(body.args, :(@inbounds input_derivs[$i][I] = multivariable_backprop_partial(input_derivs[$i][I], output_dual, $j, output_deriv)))
+        else
+            push!(body.args, :(@inbounds input_derivs[$i][I] = backprop_partial(output_dual, $j, output_deriv)))
+        end
+    end
+
+    quote
+        let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
+            @inbounds output_dual = output_duals[I]
+            @inbounds output_deriv = output_derivs[I]
+            $body
+        end
+        return
     end
 end
