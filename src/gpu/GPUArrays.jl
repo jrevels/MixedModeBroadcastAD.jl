@@ -43,7 +43,7 @@ using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
     @boundscheck check_broadcast_indices(shape, A, Bs...)
     keeps, Idefaults = map_newindexer(shape, A, Bs)
     blk, thr = cuda_dimensions(C)
-    @cuda blocks=blk threads=thr _broadcast!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    @cuda blocks=blk threads=thr _broadcast_kernel!(f, C, keeps, Idefaults, A, Bs, Val(N))
     return C
 end
 
@@ -52,8 +52,8 @@ using Base.Cartesian: @nexprs, @ncall
 
 # nargs encodes the number of As arguments (which matches the number
 # of keeps). The first two type parameters are to ensure specialization.
-@generated function _broadcast!(f, B::GPUDeviceArrays, keeps::K, Idefaults::ID,
-                                A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
+@generated function _broadcast_kernel!(f, B::GPUDeviceArrays, keeps::K, Idefaults::ID,
+                                       A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
     nargs = N + 1
     quote
         # destructure the keeps and As tuples
@@ -78,13 +78,13 @@ end
 ## high-level operations
 
 function Base.fill!(xs::GPUArrays, x)
-    function _fill!(xs::GPUDeviceArrays, x)
+    function _fill_kernel!(xs::GPUDeviceArrays, x)
         I = @cuda_linear_index xs
         @inbounds xs[I] = x
         return
     end
     blk, thr = cuda_dimensions(xs)
-    @cuda blocks=blk threads=thr _fill!(xs, convert(eltype(xs), x))
+    @cuda blocks=blk threads=thr _fill_kernel!(xs, convert(eltype(xs), x))
     return xs
 end
 

@@ -47,6 +47,7 @@ function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{CuArray}, ::Type{T}, i
     similar(CuArray{T}, inds)
 end
 
+
 ## memory copy operations
 
 function CuArray{T,N}(src::Array{T,N}) where {T,N}
@@ -67,6 +68,7 @@ function unsafe_getindex(xs::CuArray{T}, i::Integer) where T
   buf = Mem.view(xs.buf, (i-1)*sizeof(T))
   return Mem.download(T, buf)[1]
 end
+
 
 ## conversions
 
