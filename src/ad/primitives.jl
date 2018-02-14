@@ -197,6 +197,9 @@ end
 end
 
 function backprop_partial_broadcast!(input_derivs, output_duals, output_derivs, vars, multivariable)
+    # we only implement a limited subset of broadcast
+    @assert all(X->size(X)==size(output_duals), [output_derivs, input_derivs...])
+
     blk, thr = cuda_dimensions(output_duals)
     @cuda blocks=blk threads=thr _backprop_partial_broadcast!(input_derivs, output_duals,
                                                               output_derivs, Val(vars),
@@ -216,7 +219,7 @@ end
     end
 
     quote
-        let I = @cuda_linear_index(output_duals) # FIXME: assumes equal shape, size, etc
+        let I = @cuda_linear_index(output_duals)
             output_dual = @inbounds output_duals[I]
             output_deriv = @inbounds output_derivs[I]
             $body
