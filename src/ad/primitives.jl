@@ -261,7 +261,7 @@ end
     end
 
     quote
-        let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
+        let I = @cuda_linear_index(output_duals) # FIXME: assumes equal shape, size, etc
             output_dual = @inbounds output_duals[I]
             output_deriv = @inbounds output_derivs[I]
             $body
