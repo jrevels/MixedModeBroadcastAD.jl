@@ -153,6 +153,10 @@ Base.convert(::Type{<:StructOfArrays{T}}, A::AbstractArray{S,N}) where {T,S,N} =
 Base.convert(::Type{<:StructOfArrays}, A::AbstractArray{T,N}) where {T,N} =
     convert(StructOfArrays{T,N}, A)
 
+function Base.one(x::StructOfArrays{T}) where {T}
+    # FIXME: probably not the best way, ie. don't use Base._one
+    convert(StructOfArrays, Base._one(one(T), x))
+end
 
 function Base.Array{T,N}(src::StructOfArrays{T,N}) where {T,N}
     A = convert(StructOfArrays{T,N,Array{T,N}}, src)
