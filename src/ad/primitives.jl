@@ -221,7 +221,7 @@ end
     end
 
     quote
-        let I = @cuda_linear_index(output_duals)
+        let I = @cuda_index(output_duals)
             output_dual = @inbounds output_duals[I]
             output_deriv = @inbounds output_derivs[I]
             $body

@@ -42,6 +42,8 @@ using Base.Broadcast: broadcast_indices
     # we only implement a very limited subset of broadcast
     @assert all(X->isa(X, GPUArrays), [A, Bs...])
     @assert all(X->size(X)==size(C), [A, Bs...])
+    # TODO: at least allow indexing 1D N-length containers when the output container is
+    #       2D N by N (the boolean arrays in our demo is such an 1D container)
 
     blk, thr = cuda_dimensions(C)
     @cuda blocks=blk threads=thr _broadcast_kernel!(f, C, A, Bs, Val(N))
@@ -76,7 +78,7 @@ end
 
 function Base.fill!(xs::GPUArrays, x)
     function _fill_kernel!(xs::GPUDeviceArrays, x)
-        I = @cuda_linear_index xs
+        I = @cuda_index xs
         @inbounds xs[I] = x
         return
     end

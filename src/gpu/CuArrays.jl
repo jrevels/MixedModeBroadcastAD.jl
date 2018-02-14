@@ -93,17 +93,10 @@ function cuda_dimensions(n::Integer)
     ceil(Int, n / threads), threads
 end
 
-macro cuda_linear_index(A)
+macro cuda_index(A)
     esc(quote
         i = (blockIdx().x-UInt32(1)) * blockDim().x + threadIdx().x
         i > length($A) && return
         i
-    end)
-end
-
-macro cuda_index(A)
-    esc(quote
-        i = @cuda_linear_index($A)
-        @inbounds CartesianIndices($A)[i]
     end)
 end
