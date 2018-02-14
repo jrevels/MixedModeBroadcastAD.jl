@@ -79,7 +79,7 @@ end
 
 function Base.fill!(xs::GPUArrays, x)
     function _fill!(xs::GPUDeviceArrays, x)
-        I = @cuda_index xs
+        I = @cuda_linear_index xs
         @inbounds xs[I] = x
         return
     end
