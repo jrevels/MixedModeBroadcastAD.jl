@@ -35,15 +35,17 @@ end
 
 ### internal implementation (mostly copied from Base)
 
+# NOTE: we only implement a subset of broadcast, only supporting homogeneous container
+#       arguments (ie. equal shape and size)
+
 using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
 
 # This indirection allows size-dependent implementations.
 @inline function _broadcast!(f, C::GPUArrays, A, Bs::Vararg{Any,N}) where N
     shape = broadcast_indices(C)
     @boundscheck check_broadcast_indices(shape, A, Bs...)
-    keeps, Idefaults = map_newindexer(shape, A, Bs)
     blk, thr = cuda_dimensions(C)
-    @cuda blocks=blk threads=thr _broadcast_kernel!(f, C, keeps, Idefaults, A, Bs, Val(N))
+    @cuda blocks=blk threads=thr _broadcast_kernel!(f, C, A, Bs, Val(N))
     return C
 end
 
@@ -52,20 +54,16 @@ using Base.Cartesian: @nexprs, @ncall
 
 # nargs encodes the number of As arguments (which matches the number
 # of keeps). The first two type parameters are to ensure specialization.
-@generated function _broadcast_kernel!(f, B::GPUDeviceArrays, keeps::K, Idefaults::ID,
-                                       A::AT, Bs::BT, ::Val{N}) where {K,ID,AT,BT,N}
+@generated function _broadcast_kernel!(f, B::GPUDeviceArrays, A::AT, Bs::BT, ::Val{N}) where
+                                      {AT,BT,N}
     nargs = N + 1
     quote
         # destructure the keeps and As tuples
         A_1 = A
         @nexprs $N i->(A_{i+1} = Bs[i])
-        @nexprs $nargs i->(keep_i = keeps[i])
-        @nexprs $nargs i->(Idefault_i = Idefaults[i])
         let I = @cuda_index(B)
-            # reverse-broadcast the indices
-            @nexprs $nargs i->(I_i = newindex(I, keep_i, Idefault_i))
             # extract array values
-            @nexprs $nargs i->(@inbounds val_i = _broadcast_getindex(A_i, I_i))
+            @nexprs $nargs i->(@inbounds val_i = A_i[I])
             # call the function and store the result
             result = @ncall $nargs f val
             @inbounds B[I] = result
