@@ -17,28 +17,6 @@ d_cuda_tanh(x) = 1 - CUDAnative.tanh(x)^2
 # Record Pass #
 ###############
 
-#=== auto-defined methods ===#
-
-const FORWARD_METHODS = [(:(Base.sum), 1), (:(Base.:*), 2), (:(Base.:+), 2)]
-
-for (f, arity) in FORWARD_METHODS
-    if arity == 1
-        @eval begin
-            $(f)(x::Record) = Record(x.tape, $f, x)
-        end
-    elseif arity == 2
-        @eval begin
-            $(f)(x::Record, y::Record) = Record(x.tape, $f, x, y)
-            $(f)(x::Record, y) = Record(x.tape, $f, x, y)
-            $(f)(x, y::Record) = Record(y.tape, $f, x, y)
-        end
-    else
-        error("unsupported arity $arity for method $f")
-    end
-end
-
-#=== broadcast ===#
-
 struct RecordArrayStyle <: Broadcast.AbstractArrayStyle{Any} end
 struct RecordOtherStyle <: Broadcast.BroadcastStyle end
 
@@ -126,30 +104,7 @@ end
 # Backwards Pass #
 ##################
 
-#=== standard reverse definitions ===#
-
-function backward!(i::Instruction{typeof(sum),<:Tuple{Any}})
-    x = first(i.input)
-    y = i.output
-    @propagate!(x, deriv(y))
-    return nothing
-end
-
-function backward!(i::Instruction{typeof(*),<:Tuple{Any,Any}})
-    x, y = i.input
-    z = i.output
-    @propagate!(x, deriv(z) * value(y)')
-    @propagate!(y, value(x)' * deriv(z))
-    return nothing
-end
-
-function backward!(i::Instruction{typeof(+),<:Tuple{Any,Any}})
-    x, y = i.input
-    z = i.output
-    @propagate!(x, deriv(z))
-    @propagate!(y, deriv(z))
-    return nothing
-end
+#=== "manual" broadcast reverse pass definitions ===#
 
 for (f, df) in [(:sigm, :d_sigm), (:cuda_sigm, :d_cuda_sigm),
                 (:tanh, :d_tanh), (:cuda_tanh, :d_cuda_tanh)]
