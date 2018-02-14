@@ -15,13 +15,13 @@ end
 
 @testset "HM-LSTM kernels" begin
     dims = 2
-    for kind in (:cpu, :gpu), precompute in (false, true), soa in (false, true), cache in (false, true)
-        println("testing hmlstm kernel for kind=:", kind, "; precompute=", precompute, "; soa=", soa, "; cache=", cache)
-        kernel, bools, inputs = getkernel(kind, precompute, soa, dims)
+    for kind in (:cpu, :gpu), soa in (false, true), cache in (false, true)
+        println("testing hmlstm kernel for kind=:", kind, "; soa=", soa, "; cache=", cache)
+        kernel, bools, inputs = getkernel(kind, soa, dims)
         test = (args...) -> sum(kernel(bools..., args...))
         output, grads = autograd(test, inputs...; cache = cache)
         @test output ≈ test(inputs...)
-        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, precompute, false, dims)), Array.(bools), Array.(inputs)
+        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, false, dims)), Array.(bools), Array.(inputs)
         cpu_test = (args...) -> sum(cpu_kernel(cpu_bools..., args...))
         for i in 1:length(inputs)
             println("\t...checking gradient for input $i")
