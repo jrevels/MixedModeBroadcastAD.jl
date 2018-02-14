@@ -221,9 +221,8 @@ end
 
 ## GPU impl
 
-@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals,
-                                             output_derivs::T) where {N,_T,_N,_A<:CuArray,
-                                             T<:Union{CuArray, StructOfArrays{_T,_N,_A}}}
+@generated function dual_broadcast_backward!(inputs::NTuple{N,Any}, output_duals::GPUArrays,
+                                             output_derivs::GPUArrays) where {N}
     vars = []
     for i in 1:N
         if inputs.parameters[i] <: Variable
@@ -263,8 +262,8 @@ end
 
     quote
         let I = @cuda_index(output_duals) # FIXME: assumes equal shape, size, etc
-            @inbounds output_dual = output_duals[I]
-            @inbounds output_deriv = output_derivs[I]
+            output_dual = @inbounds output_duals[I]
+            output_deriv = @inbounds output_derivs[I]
             $body
         end
         return
