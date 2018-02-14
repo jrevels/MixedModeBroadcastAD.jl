@@ -2,17 +2,6 @@ using ForwardDiff, CUDAnative, Test
 
 include("kernels.jl")
 
-@testset "smoke test" begin
-    smoketest(x, y) = x * y
-    x, y = rand(3, 3), rand(3, 3)
-    @testset for T in (Array, CuArray)
-        z, (dx, dy) = autograd(smoketest, T(x), T(y))
-        @test Array(z) ≈ smoketest(x, y)
-        @test Array(dx) ≈ y'
-        @test Array(dy) ≈ x'
-    end
-end
-
 @testset "HM-LSTM kernels" begin
     dims = 2
     for kind in (:cpu, :gpu), soa in (false, true), cache in (false, true)
