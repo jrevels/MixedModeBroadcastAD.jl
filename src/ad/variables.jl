@@ -40,7 +40,8 @@ end
 incrdownstreams!(x) = x
 incrdownstreams!(v::Variable) = (v.downstreams += 1; v)
 
-seed!(v::Variable) = (v.deriv = one(v.deriv); nothing)
+seed!(v::Variable{<:AbstractArray}) = (fill!(v.deriv, 1); nothing)
+seed!(v::Variable{<:Number}) = (v.deriv = one(v.deriv); nothing)
 seed!(r::Record) = seed!(r.variable)
 
 value(x) = x
