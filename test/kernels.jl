@@ -97,7 +97,7 @@ function getkernel(kind::Symbol, soa::Bool = true, dims::Int = 2048)
         kernel = gpu_hmlstm_update_c
         A = CuArray
     end
-    bools = (convert(A, rand(Bool, dims)), convert(A, rand(Bool, dims)))
+    bools = (convert(A, rand(Bool, dims, dims)), convert(A, rand(Bool, dims, dims)))
     n = 4
     if soa
         inputs = Tuple(tosoa(A{Float32,2}, rand(Float32, dims, dims)) for _ in 1:n)

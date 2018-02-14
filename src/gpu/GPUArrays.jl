@@ -35,15 +35,14 @@ end
 
 ### internal implementation (mostly copied from Base)
 
-# NOTE: we only implement a subset of broadcast, only supporting homogeneous container
-#       arguments (ie. equal shape and size)
-
-using Base.Broadcast: broadcast_indices, check_broadcast_indices, map_newindexer
+using Base.Broadcast: broadcast_indices
 
 # This indirection allows size-dependent implementations.
 @inline function _broadcast!(f, C::GPUArrays, A, Bs::Vararg{Any,N}) where N
-    shape = broadcast_indices(C)
-    @boundscheck check_broadcast_indices(shape, A, Bs...)
+    # we only implement a very limited subset of broadcast
+    @assert all(X->isa(X, GPUArrays), [A, Bs...])
+    @assert all(X->size(X)==size(C), [A, Bs...])
+
     blk, thr = cuda_dimensions(C)
     @cuda blocks=blk threads=thr _broadcast_kernel!(f, C, A, Bs, Val(N))
     return C
