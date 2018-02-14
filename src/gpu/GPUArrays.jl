@@ -97,30 +97,3 @@ Base.map!(f, y::GPUArrays, x::GPUArrays) =
   invoke(map!, Tuple{Any,GPUArrays,Vararg{GPUArrays}}, f, y, x)
 Base.map!(f, y::GPUArrays, x1::GPUArrays, x2::GPUArrays) =
   invoke(map!, Tuple{Any,CuArray,Vararg{CuArray}}, f, y, x1, x2)
-
-### reductions
-Base.sum(xs::GPUArrays) = reduce(+, 0, xs)
-
-function Base.reduce(f, v0::T, xs::GPUArrays{T}) where T
-  dim = cuda_reduce_dimensions(length(xs))
-  scratch = similar(xs, dim[2])
-  _reduce(f, v0, xs, scratch, dim)
-  return unsafe_getindex(scratch, 1)
-end
-Base.reduce(f, v0, xs::GPUArrays) = reduce(f, convert(eltype(xs), v0), xs)
-
-function reduce_grid(op, v0::T, input::GPUDeviceArrays{T}, output::GPUDeviceArrays{T},
-                     len::Integer) where {T}
-    val = v0
-    i = (blockIdx().x-UInt32(1)) * blockDim().x + threadIdx().x
-    step = blockDim().x * gridDim().x
-    while i <= len
-        @inbounds val = op(val, input[i])
-        i += step
-    end
-    val = reduce_block(op, v0, val)
-    if threadIdx().x == UInt32(1)
-        @inbounds output[blockIdx().x] = val
-    end
-    return
-end
