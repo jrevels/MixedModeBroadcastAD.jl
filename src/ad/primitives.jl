@@ -77,7 +77,8 @@ end
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
     # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
     # of dual numbers).
-    output_duals = @fastsplat(broadcast(dual_eval, kernel, input_values...))
+    @inline dual_eval_kernel(xs...) = @fastsplat(dual_eval(kernel, xs...))
+    output_duals = @fastsplat(broadcast(dual_eval_kernel, input_values...))
 
     # Load the value of the results into the output value buffer.
     map!(ForwardDiff.value, output_value, output_duals)
@@ -89,7 +90,8 @@ end
                                         output_duals,
                                         output_value::AbstractArray,
                                         input_values::NTuple{N,AbstractArray}) where {K,N}
-    @fastsplat(broadcast!(dual_eval, output_duals, kernel, input_values...))
+    @inline dual_eval_kernel(xs...) = @fastsplat(dual_eval(kernel, xs...))
+    @fastsplat(broadcast!(dual_eval_kernel, output_duals, input_values...))
     map!(ForwardDiff.value, output_value, output_duals)
     return nothing
 end
