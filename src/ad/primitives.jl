@@ -77,7 +77,8 @@ end
     # Use ForwardDiff's `Dual` numbers to calculate `kernel.(input_values...)` and
     # elementwise derivatives of `kernel` at the same time (`output_duals` is an array
     # of dual numbers).
-    output_duals = @fastsplat(broadcast(dual_eval, kernel, input_values...))
+    @inline dual_eval_kernel(xs...) = @fastsplat(dual_eval(kernel, xs...))
+    output_duals = @fastsplat(broadcast(dual_eval_kernel, input_values...))
 
     # Load the value of the results into the output value buffer.
     map!(ForwardDiff.value, output_value, output_duals)
@@ -89,7 +90,8 @@ end
                                         output_duals,
                                         output_value::AbstractArray,
                                         input_values::NTuple{N,AbstractArray}) where {K,N}
-    @fastsplat(broadcast!(dual_eval, output_duals, kernel, input_values...))
+    @inline dual_eval_kernel(xs...) = @fastsplat(dual_eval(kernel, xs...))
+    @fastsplat(broadcast!(dual_eval_kernel, output_duals, input_values...))
     map!(ForwardDiff.value, output_value, output_duals)
     return nothing
 end
@@ -197,6 +199,9 @@ end
 end
 
 function backprop_partial_broadcast!(input_derivs, output_duals, output_derivs, vars, multivariable)
+    # we only implement a limited subset of broadcast
+    @assert all(X->size(X)==size(output_duals), [output_derivs, input_derivs...])
+
     blk, thr = cuda_dimensions(output_duals)
     @cuda blocks=blk threads=thr _backprop_partial_broadcast!(input_derivs, output_duals,
                                                               output_derivs, Val(vars),
@@ -216,7 +221,7 @@ end
     end
 
     quote
-        let I = @cuda_linear_index(output_duals) # FIXME: assumes equal shape, size, etc
+        let I = @cuda_linear_index(output_duals)
             output_dual = @inbounds output_duals[I]
             output_deriv = @inbounds output_derivs[I]
             $body

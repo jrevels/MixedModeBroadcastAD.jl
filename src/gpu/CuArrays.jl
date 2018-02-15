@@ -93,8 +93,6 @@ function cuda_dimensions(n::Integer)
     ceil(Int, n / threads), threads
 end
 
-# NOTE: using a linear index where appropriate instead of a generic, Cartesian index
-#       does not impact performance, but greatly simplifies generated code.
 macro cuda_linear_index(A)
     esc(quote
         i = (blockIdx().x-UInt32(1)) * blockDim().x + threadIdx().x
