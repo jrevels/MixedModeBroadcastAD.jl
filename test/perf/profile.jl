@@ -9,18 +9,16 @@ include("../kernels.jl")
 NVTX.stop()
 
 const DIMS = length(ARGS) >= 1 ? parse(Int,  ARGS[1]) : 2048
-const SOA  = length(ARGS) >= 2 ? parse(Bool, ARGS[2]) : true
-const TAPE = gettape(:gpu, SOA, DIMS)
+const KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE = getkernel(:gpu, DIMS)
 
-function benchmark(tape)
-    NVTX.@range "forward pass"  (forward!(tape),  CUDAdrv.synchronize())
-    NVTX.@range "backward pass" (backward!(tape), CUDAdrv.synchronize())
+function benchmark(kernel, input_values, input_derivs, output_value)
+    NVTX.@range "autodiff_broadcast" (autodiff_broadcast!(kernel, input_values, input_derivs, output_value),  CUDAdrv.synchronize())
 end
 
-benchmark(TAPE) # warm-up
+benchmark(KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE) # warmup
 
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
-    benchmark(TAPE)
+    benchmark(KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE)
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end

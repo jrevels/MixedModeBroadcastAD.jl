@@ -1,21 +1,25 @@
-using ForwardDiff, CUDAnative, Test
+using ForwardDiff, Test
+using MixedModeBroadcastAD: autodiff_broadcast!
 
 include("kernels.jl")
 
 @testset "HM-LSTM kernels" begin
     dims = 2
-    for kind in (:cpu, :gpu), soa in (false, true), cache in (false, true)
-        println("testing hmlstm kernel for kind=:", kind, "; soa=", soa, "; cache=", cache)
-        kernel, bools, inputs = getkernel(kind, soa, dims)
-        test = (args...) -> kernel(bools..., args...)
-        output, grads = autograd(test, inputs...; cache = cache)
-        @test Array(output) ≈ Array(test(inputs...))
-        cpu_kernel, cpu_bools, cpu_inputs = first(getkernel(:cpu, false, dims)), Array.(bools), Array.(inputs)
-        cpu_test = (args...) -> cpu_kernel(cpu_bools..., args...)
-        for i in 1:length(inputs)
+    cpu_kernel = getkernel(:cpu, dims)
+    for kind in (:cpu, :gpu)
+        println("testing hmlstm kernel for kind=:", kind)
+        kernel, input_values, input_derivs, output_value = getkernel(kind, dims)
+        autodiff_broadcast!(kernel, input_values, input_derivs, output_value)
+        @test Array(output_value) ≈ Array(kernel.(input_values...))
+        cpu_input_values = Array.(input_values)
+        for (i, cpu_input_value) in enumerate(cpu_input_values)
             println("\t...checking gradient for input $i")
-            cpu_test_i = x -> sum(cpu_test(cpu_inputs[1:(i - 1)]..., x, cpu_inputs[(i + 1):end]...))
-            @test Array(grads[i]) ≈ ForwardDiff.gradient(cpu_test_i, cpu_inputs[i])
+            cpu_kernel_i = x -> begin
+                before = cpu_input_values[1:(i - 1)]
+                after = cpu_input_values[(i + 1):end]
+                return sum(cpu_kernel.(before..., x, after...))
+            end
+            @test Array(input_derivs[i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_input_value)
         end
     end
 end

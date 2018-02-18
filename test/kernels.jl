@@ -1,12 +1,12 @@
-using MixedModeBroadcastAD: CuArray, StructOfArrays, Record, Tape, Variable,
-                            forward!, backward!, seed!, initderiv!, value, deriv,
-                            sigm, cuda_sigm, cuda_tanh
+using MixedModeBroadcastAD: CuArray, sigm, cuda_sigm, cuda_tanh
+
+sigm(x) = 1 / (1 + exp(-x))
+cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
+cuda_tanh(x) = CUDAnative.tanh(x)
 
 ########################
 # fine-grained kernels #
 ########################
-
-cpu_hmlstm_update_c(inputs...) = cpu_hmlstm_update_c_scalar.(inputs...)
 
 function cpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
                                     z_l, # = z_{t-1}^{l}
@@ -19,8 +19,6 @@ function cpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
         return c
     end
 end
-
-gpu_hmlstm_update_c(inputs...) = gpu_hmlstm_update_c_scalar.(inputs...)
 
 function gpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
                                     z_l, # = z_{t-1}^{l}
@@ -38,42 +36,13 @@ end
 # coarse-grained kernels #
 ##########################
 
-#=
-TODO: port over something comparable to what hmlstm.py is doing
-=#
+# TODO: port over something comparable to what hmlstm.py is doing
 
-#########################################
-# record/autograd convenience functions #
-#########################################
+###################
+# kernel selector #
+###################
 
-function record(f, input...)
-    tape = Tape()
-    recorded_input = map(x -> Record(tape, Variable(x)), input)
-    recorded_output = f(recorded_input...)
-    return tape, recorded_output, recorded_input
-end
-
-function autograd(f, input...; cache::Bool = false)
-    tape, recorded_output, recorded_input = record(f, input...)
-    forward!(tape)
-    seed!(recorded_output)
-    backward!(tape)
-    if cache
-        initderiv!(tape)
-        forward!(tape)
-        seed!(recorded_output)
-        backward!(tape)
-    end
-    return (value(recorded_output), deriv.(recorded_input))
-end
-
-########################
-# kernel/tape selector #
-########################
-
-tosoa(::Type{A}, x::AbstractArray{T,N}) where {A,T,N} = convert(StructOfArrays{T,N,A}, convert(StructOfArrays, x))
-
-function getkernel(kind::Symbol, soa::Bool = true, dims::Int = 2048)
+function getkernel(kind::Symbol, dims::Int = 2048)
     @assert kind == :cpu || kind == :gpu
     if kind == :cpu
         kernel = cpu_hmlstm_update_c
@@ -82,20 +51,11 @@ function getkernel(kind::Symbol, soa::Bool = true, dims::Int = 2048)
         kernel = gpu_hmlstm_update_c
         A = CuArray
     end
-    bools = (convert(A, rand(Bool, dims)), convert(A, rand(Bool, dims)))
-    n = 4
-    if soa
-        inputs = Tuple(tosoa(A{Float32,2}, rand(Float32, dims, dims)) for _ in 1:n)
-    else
-        inputs = Tuple(convert(A, rand(Float32, dims, dims)) for _ in 1:n)
-    end
-    return kernel, bools, inputs
-end
-
-function gettape(args...)
-    f, bools, inputs = getkernel(args...)
-    tape = first(record((xs...) -> f(bools..., xs...), inputs...))
-    forward!(tape) # "precompile" forwards pass
-    backward!(tape) # "precompile" backwards pass
-    return tape
+    # TODO: the control values should just be vectors; see matching TODO in src/ad/broadcast.jl
+    control = (convert(A, round.(rand(Float32, dims, dims))) for _ in 1:2)
+    compute = (convert(A, rand(Float32, dims, dims)) for _ in 1:4)
+    input_values = (control..., compute...)
+    input_derivs = similar.(input_values)
+    output_value = rand(Float32, dims, dims)
+    return kernel, input_values, input_derivs, output_value
 end
