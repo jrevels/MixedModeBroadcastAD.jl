@@ -1,6 +1,7 @@
 module MixedModeBroadcastAD
 
 using ForwardDiff
+using ForwardDiff: Dual, value, dualize, partials
 using DiffRules
 using StaticArrays
 using FastSplat
@@ -17,10 +18,7 @@ include("gpu/GPUArrays.jl")
 # AD code #
 ###########
 
-include("ad/utilities.jl")
-include("ad/tape.jl")
-include("ad/variables.jl")
-include("ad/primitives.jl")
+include("ad/broadcast.jl")
 
 ####################
 # misc definitions #
