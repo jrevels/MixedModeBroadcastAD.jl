@@ -1,46 +1,35 @@
-###################
-# BroadcastResult #
-###################
+##################
+# BroadcastDuals #
+##################
 
-#=
-This is just a very poor version of the StructOfArrays-style approach we already have in
-`gpu/StructOfArrays.jl` (I just ended up rolling my own while messing around with this
-approach).
-=#
-
-struct BroadcastResult{T,N,V,D} <: AbstractArray{T,N}
-    output_value::V
-    input_derivs::D
-    function BroadcastResult(output_value::V,
-                             input_derivs::D) where {T,N,V<:AbstractArray{T,N},D<:Tuple}
-        # TODO: a proper StructOfArrays-style version shouldn't need these asserts,
-        # which are here to enforce that this code only really works for `map`-equivalent
-        # `broadcast`s.
-        @assert isa(IndexStyle(output_value), IndexLinear)
-        @assert all(IndexStyle(output_value) === IndexStyle(input_deriv) for input_deriv in input_derivs)
-        @assert all(size(output_value) === size(input_deriv) for input_deriv in input_derivs)
-        return new{T,N,V,D}(output_value, input_derivs)
+struct BroadcastDuals{V<:AbstractArray,D<:Tuple,T,N,M} <: AbstractArray{Dual{Nothing,T,N},M}
+    value::V
+    derivs::D
+    function BroadcastDuals(value::V,
+                            derivs::D) where {T,N,M,
+                                              V<:AbstractArray{T,M},
+                                              D<:NTuple{N,AbstractArray{T}}}
+        return new{V,D,T,N,M}(output_value, input_derivs)
     end
 end
 
-@inline Base.size(result::BroadcastResult) = size(result.output_value)
+@inline Base.size(x::BroadcastDuals) = size(x.output_value)
 
-@inline Base.IndexStyle(::Type{<:BroadcastResult}) where {T,N,V} = IndexLinear()
+@inline Base.IndexStyle(::Type{<:BroadcastDuals}) = IndexCartesian()
 
-@generated function Base.setindex!(result::BroadcastResult{<:Any,<:Any,<:Any,D},
-                                   dual::Dual{<:Any,<:Any,M},
-                                   i::Int) where {M,D<:NTuple{M,AbstractArray}}
+@inline bound(x::AbstractArray{<:Any,N}) where {N} = CartesianIndex{N}(size(x))
+
+@generated function Base.setindex!(x::BroadcastDuals{O,I,T,N},
+                                   dual::Dual{Nothing,T,N},
+                                   i::CartesianIndex) where {O,I,T,N}
     body = Expr(:block)
     push!(body.args, Expr(:meta, :inline))
-    push!(body.args, :(result.output_value[i] = value(dual)))
-    for j in 1:M
-        # Note that, in real-world code, the graph compiler would have to
-        # prove that it's safe to do `=` instead of `+=` here by determining
-        # that each input variable only has a single reverse-dependency. For
-        # our benchmark, we can assume that the hypothetical graph compiler
-        # has already determined that the broadcast output is our input
-        # variables' only reverse-dependency.
-        push!(body.args, :(result.input_derivs[$j][i] = partials(dual, $j)))
+    push!(body.args, :(x.value[i] = value(dual)))
+    for j in 1:N
+        push!(body.args, quote
+            deriv = x.derivs[$j]
+            deriv[min(bound(deriv), i)] = partials(dual, $j)
+        end)
     end
     return body
 end
@@ -56,7 +45,7 @@ function autodiff_broadcast!(kernel::K,
                              output_value::AbstractArray,
                              output_deriv::Union{Real,AbstractArray} = one(eltype(output_value))) where {K,N}
     dual_kernel = (xs...) -> dualcall(kernel, xs...)
-    bcast_result = BroadcastResult(output_value, input_derivs)
+    bcast_result = BroadcastDuals(output_value, input_derivs)
     broadcast!(dual_kernel, bcast_result, output_deriv, input_values...)
     return nothing
 end
