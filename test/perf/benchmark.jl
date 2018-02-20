@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: autodiff_broadcast!
+using MixedModeBroadcastAD: dual_broadcast!
 using BenchmarkTools
 using DelimitedFiles
 using Printf
@@ -35,8 +35,8 @@ rows = Any[["environment", "size", "time"]]
 for kind in (:cpu, :gpu)
     for dims in (2^i for i in 9:11)
         println("benchmarking kind=:", kind, "; dims=", dims)
-        kernel, input_values, input_derivs, output_value = getkernel(kind, dims)
-        time = @belapsed (autodiff_broadcast!($kernel, $input_values, $input_derivs, $output_value), CUDAdrv.synchronize()) evals=1
+        kernel, output, inputs, derivs = getkernel(kind, dims)
+        time = @belapsed (dual_broadcast!($kernel, $output, $inputs, $derivs), CUDAdrv.synchronize()) evals=1
         push!(rows, Any[kind, dims, time])
         println("\ttime:  ", pretty_print_time(time))
     end

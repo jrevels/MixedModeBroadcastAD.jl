@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: CuArray
+using CUDAdrv, CUDAnative
 
 sigm(x) = 1 / (1 + exp(-x))
 cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
@@ -61,9 +61,9 @@ function getkernel(kind::Symbol, dims::Int = 2048)
     control = (convert(A, control[1]), convert(A, control[2]))
 
     # set up the rest of our values/buffers
-    input_values = (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...)
-    input_derivs = similar.(input_values)
-    output_value = rand(Float32, dims, dims)
+    output = convert(A, Matrix{Float32}(dims, dims))
+    inputs = (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...)
+    derivs = similar.(inputs)
 
-    return kernel, input_values, input_derivs, output_value
+    return kernel, output, inputs, derivs
 end
