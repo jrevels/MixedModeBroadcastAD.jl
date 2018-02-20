@@ -25,10 +25,6 @@ include("ad/broadcast.jl")
 ####################
 
 Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::Broadcast.ArrayStyle{<:StructOfArrays}) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::RecordOtherStyle) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{CuArray}, s::RecordArrayStyle) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordOtherStyle) = s
-Broadcast.BroadcastStyle(::Broadcast.ArrayStyle{<:StructOfArrays}, s::RecordArrayStyle) = s
 
 DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)

@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: CuArray, sigm, cuda_sigm, cuda_tanh
+using MixedModeBroadcastAD: CuArray
 
 sigm(x) = 1 / (1 + exp(-x))
 cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
@@ -8,7 +8,7 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 # fine-grained kernels #
 ########################
 
-function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+function cpu_hmlstm_update_c(z, zb, c, f, i, g)
     if z == 1.0f0 # FLUSH
         return sigm(i) * tanh(g)
     elseif zb == 0.0f0 # COPY
@@ -18,7 +18,7 @@ function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
     end
 end
 
-function gpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+function gpu_hmlstm_update_c(z, zb, c, f, i, g)
     if z == 1.0f0 # FLUSH
         return cuda_sigm(i) * cuda_tanh(g)
     elseif zb == 0.0f0 # COPY
