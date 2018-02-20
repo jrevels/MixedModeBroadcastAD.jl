@@ -8,34 +8,29 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 # fine-grained kernels #
 ########################
 
-function cpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
-                                    z_l, # = z_{t-1}^{l}
-                                    c, f, i, g)
-    if z_l == 1 # FLUSH
+function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+    if z == 1.0f0 # FLUSH
         return sigm(i) * tanh(g)
-    elseif z_t == 1 # UPDATE
-        return sigm(f) * c + sigm(i) * tanh(g)
-    else # COPY
+    elseif zb == 0.0f0 # COPY
         return c
+    else # UPDATE
+        return sigm(f) * c + sigm(i) * tanh(g)
     end
 end
 
-function gpu_hmlstm_update_c_scalar(z_t, # = z_{t}^{l-1}
-                                    z_l, # = z_{t-1}^{l}
-                                    c, f, i, g)
-    if z_l == 1 # FLUSH
+function gpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+    if z == 1.0f0 # FLUSH
         return cuda_sigm(i) * cuda_tanh(g)
-    elseif z_t == 1 # UPDATE
-        return cuda_sigm(f) * c + cuda_sigm(i) * cuda_tanh(g)
-    else # COPY
+    elseif zb == 0.0f0 # COPY
         return c
+    else # UPDATE
+        return cuda_sigm(f) * c + cuda_sigm(i) * cuda_tanh(g)
     end
 end
 
 ##########################
 # coarse-grained kernels #
 ##########################
-
 # TODO: port over something comparable to what hmlstm.py is doing
 
 ###################
@@ -51,8 +46,7 @@ function getkernel(kind::Symbol, dims::Int = 2048)
         kernel = gpu_hmlstm_update_c
         A = CuArray
     end
-    # TODO: the control values should just be vectors; see matching TODO in src/ad/broadcast.jl
-    control = (convert(A, round.(rand(Float32, dims, dims))) for _ in 1:2)
+    control = (convert(A, round.(rand(Float32, dims))) for _ in 1:2)
     compute = (convert(A, rand(Float32, dims, dims)) for _ in 1:4)
     input_values = (control..., compute...)
     input_derivs = similar.(input_values)
