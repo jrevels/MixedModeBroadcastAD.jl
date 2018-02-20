@@ -9,16 +9,16 @@ include("../kernels.jl")
 NVTX.stop()
 
 const DIMS = length(ARGS) >= 1 ? parse(Int,  ARGS[1]) : 2048
-const KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE = getkernel(:gpu, DIMS)
+const KERNEL, OUTPUT, INPUTS, DERIVS = getkernel(:gpu, DIMS)
 
-function benchmark(kernel, input_values, input_derivs, output_value)
-    NVTX.@range "autodiff_broadcast" (autodiff_broadcast!(kernel, input_values, input_derivs, output_value),  CUDAdrv.synchronize())
+function benchmark(kernel, output, inputs, derivs)
+    NVTX.@range "dual_broadcast" (dual_broadcast!(kernel, output, inputs, derivs), CUDAdrv.synchronize())
 end
 
-benchmark(KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE) # warmup
+benchmark(KERNEL, OUTPUT, INPUTS, DERIVS) # warmup
 
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
-    benchmark(KERNEL, INPUT_VALUES, INPUT_DERIVS, OUTPUT_VALUE)
+    benchmark(KERNEL, OUTPUT, INPUTS, DERIVS)
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end
