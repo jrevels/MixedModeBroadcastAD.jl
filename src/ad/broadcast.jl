@@ -9,26 +9,36 @@ struct BroadcastDuals{V<:AbstractArray,D<:Tuple,T,N,M} <: AbstractArray{Dual{Not
                             derivs::D) where {T,N,M,
                                               V<:AbstractArray{T,M},
                                               D<:NTuple{N,AbstractArray{T}}}
-        return new{V,D,T,N,M}(output_value, input_derivs)
+        return new{V,D,T,N,M}(value, derivs)
     end
 end
 
-@inline Base.size(x::BroadcastDuals) = size(x.output_value)
+@inline Base.size(x::BroadcastDuals) = size(x.value)
 
 @inline Base.IndexStyle(::Type{<:BroadcastDuals}) = IndexCartesian()
 
-@inline bound(x::AbstractArray{<:Any,N}) where {N} = CartesianIndex{N}(size(x))
+@inline function bound(x::AbstractArray, ::Val{N}) where {N}
+    if @generated
+        shape = Expr(:tuple, (:(size(x, $i)) for i in 1:N)...)
+        return quote
+            $(Expr(:meta, :inline))
+            CartesianIndex{N}($shape)
+        end
+    else
+        return CartesianIndex{N}(NTuple{N}(size(x, i) for i in 1:N))
+    end
+end
 
-@generated function Base.setindex!(x::BroadcastDuals{O,I,T,N},
+@generated function Base.setindex!(x::BroadcastDuals{O,I,T,N,M},
                                    dual::Dual{Nothing,T,N},
-                                   i::CartesianIndex) where {O,I,T,N}
+                                   i::CartesianIndex) where {O,I,T,N,M}
     body = Expr(:block)
     push!(body.args, Expr(:meta, :inline))
     push!(body.args, :(x.value[i] = value(dual)))
     for j in 1:N
         push!(body.args, quote
             deriv = x.derivs[$j]
-            deriv[min(bound(deriv), i)] = partials(dual, $j)
+            deriv[min(bound(deriv, Val(M)), i)] = partials(dual, $j)
         end)
     end
     return body
@@ -37,6 +47,7 @@ end
 #######################
 # autodiff_broadcast! #
 #######################
+
 
 # a fused forwards/backwards pass to compute value and gradients of broadcast(kernel, input_values...)
 function autodiff_broadcast!(kernel::K,
