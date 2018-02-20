@@ -48,7 +48,6 @@ end
 # autodiff_broadcast! #
 #######################
 
-
 # a fused forwards/backwards pass to compute value and gradients of broadcast(kernel, input_values...)
 function autodiff_broadcast!(kernel::K,
                              input_values::NTuple{N,AbstractArray},

@@ -17,7 +17,7 @@ include("kernels.jl")
             cpu_kernel_i = x -> begin
                 before = cpu_input_values[1:(i - 1)]
                 after = cpu_input_values[(i + 1):end]
-                return sum(cpu_kernel.(before..., x, after...))
+                return sum(broadcast(cpu_kernel, before..., x, after...))
             end
             @test Array(input_derivs[i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_input_value)
         end
