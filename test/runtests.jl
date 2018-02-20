@@ -5,7 +5,7 @@ include("kernels.jl")
 
 @testset "HM-LSTM kernels" begin
     dims = 5
-    cpu_kernel = getkernel(:cpu, dims)
+    cpu_kernel = first(getkernel(:cpu, dims))
     for kind in (:cpu, :gpu)
         println("testing hmlstm kernel for kind=:", kind)
         kernel, input_values, input_derivs, output_value = getkernel(kind, dims)
