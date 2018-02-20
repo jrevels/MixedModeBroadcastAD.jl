@@ -4,7 +4,7 @@ using MixedModeBroadcastAD: autodiff_broadcast!
 include("kernels.jl")
 
 @testset "HM-LSTM kernels" begin
-    dims = 2
+    dims = 5
     cpu_kernel = getkernel(:cpu, dims)
     for kind in (:cpu, :gpu)
         println("testing hmlstm kernel for kind=:", kind)
