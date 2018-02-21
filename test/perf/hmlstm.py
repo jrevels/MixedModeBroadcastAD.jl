@@ -43,14 +43,14 @@ class Benchmark:
 
         # build the computation graph for our kernel
         new_c = hmlstm_update_c(z, zb, c, f, i, g)
-        self.z_grad, self.zb_grad, self.c_grad, self.f_grad, self.i_grad, self.g_grad = tf.gradients(new_c, [z, zb, c, f, i, g])
+        self.c_grad, self.f_grad, self.i_grad, self.g_grad = tf.gradients(new_c, [c, f, i, g])
 
     def warmup(self, sess):
         sess.run(tf.global_variables_initializer())
         self.run(sess)
 
     def run(self, sess, **kwargs):
-        sess.run([self.z_grad, self.zb_grad, self.c_grad, self.f_grad, self.i_grad, self.g_grad], **kwargs)
+        sess.run([self.c_grad, self.f_grad, self.i_grad, self.g_grad], **kwargs)
 
 def pretty_print_time(s):
     if s < 1e-6:
