@@ -9,7 +9,7 @@
 # Where reasonable, variable names used in these kernels match those used in the HLO graph.
 
 function tf_hmlstm_update_c_gradients(z, zb, c, f, i, g)
-    P0, P1, P2, P3, P4, P5 = ?, z, zb, ?, g, ? # TODO unpack variables
+    P0, P1, P2, P3, P4, P5 = c, z, zb, f, g, i
     tanh1 = tanh.(P4)
     fusion2 = tf_fusion_2_or_5(P5)
     fusion5 = tf_fusion_2_or_5(P3)
@@ -17,7 +17,7 @@ function tf_hmlstm_update_c_gradients(z, zb, c, f, i, g)
     fusion = tf_fusion(fusion2, tanh1, P1, P2)
     fusion3 = tf_fusion3(fusion5, P0, P1, P2)
     fusion4 = tf_fusion4(fusion5, P1, P2)
-    ∇c, ∇f, ∇i, ∇g = ?, ?, ?, ? # TODO unpack variables
+    ∇c, ∇f, ∇i, ∇g = fusion3, fusion4, fusion, fusion1 # TODO: are fusion and fusion1 reversed here?
     return ∇c, ∇f, ∇i, ∇g
 end
 
