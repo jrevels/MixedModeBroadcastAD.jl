@@ -21,7 +21,7 @@ def hmlstm_update_c(z, zb, c, f, i, g):
     f = tf.sigmoid(f)
     return tf.where(
         tf.equal(z, tf.constant(1., dtype=tf.float32)),
-        tf.multiply(i, g, name='c'),
+        tf.multiply(i, g),
         tf.where(
             tf.equal(zb, tf.constant(0., dtype=tf.float32)),
             tf.identity(c),
@@ -32,14 +32,14 @@ def hmlstm_update_c(z, zb, c, f, i, g):
 class Benchmark:
     def __init__(self, dims):
         # set up control variables
-        z = tf.Variable(tf.cast(tf.less(tf.random_uniform([dims]), 0.5), dtype=tf.float32), name='z')
-        zb = tf.Variable(tf.cast(tf.less(tf.random_uniform([dims]), 0.5), dtype=tf.float32), name='zb')
+        z = tf.Variable(tf.cast(tf.less(tf.random_uniform([dims]), 0.5), dtype=tf.float32))
+        zb = tf.Variable(tf.cast(tf.less(tf.random_uniform([dims]), 0.5), dtype=tf.float32))
 
         # set up differentiable variables
-        c = tf.Variable(tf.random_uniform([dims, dims]), name='c')
-        f = tf.Variable(tf.random_uniform([dims, dims]), name='f')
-        i = tf.Variable(tf.random_uniform([dims, dims]), name='i')
-        g = tf.Variable(tf.random_uniform([dims, dims]), name='g')
+        c = tf.Variable(tf.random_uniform([dims, dims]))
+        f = tf.Variable(tf.random_uniform([dims, dims]))
+        i = tf.Variable(tf.random_uniform([dims, dims]))
+        g = tf.Variable(tf.random_uniform([dims, dims]))
 
         # build the computation graph for our kernel
         new_c = hmlstm_update_c(z, zb, c, f, i, g)
