@@ -1,6 +1,8 @@
 #########################################
 # TF-style HMLSTM gradient calculations #
 #########################################
+# This code implements the computation described by the trace/graph images found
+# in this directory, which were created by profiling `../perf/tf_benchmark.py`.
 
 function tf_hmlstm_update_c_gradients(z, zb, c, f, i, g)
     p0, p1, p2, p3, p4, p5 = , z, zb, , g, # TODO unpack variables
