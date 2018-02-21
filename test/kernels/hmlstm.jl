@@ -4,9 +4,9 @@ sigm(x) = 1 / (1 + exp(-x))
 cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
 cuda_tanh(x) = CUDAnative.tanh(x)
 
-########################
-# fine-grained kernels #
-########################
+########################################
+# idiomatic Julia forward-pass kernels #
+########################################
 
 function cpu_hmlstm_update_c(z, zb, c, f, i, g)
     if z == 1.0f0 # FLUSH
@@ -27,11 +27,6 @@ function gpu_hmlstm_update_c(z, zb, c, f, i, g)
         return cuda_sigm(f) * c + cuda_sigm(i) * cuda_tanh(g)
     end
 end
-
-##########################
-# coarse-grained kernels #
-##########################
-# TODO: port over something comparable to what hmlstm.py is doing
 
 ###################
 # kernel selector #

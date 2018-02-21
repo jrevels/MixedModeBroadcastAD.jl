@@ -3,7 +3,8 @@ using CUDAnative
 import CUDAdrv
 import NVTX
 
-include("../kernels.jl")
+include("../kernels/hmlstm.jl")
+include("../kernels/tf_style_hmlstm.jl")
 
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()

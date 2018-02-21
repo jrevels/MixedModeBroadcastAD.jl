@@ -5,7 +5,8 @@ using Printf
 using CUDAnative
 import CUDAdrv
 
-include("../kernels.jl")
+include("../kernels/hmlstm.jl")
+include("../kernels/tf_style_hmlstm.jl")
 
 #########
 # setup #

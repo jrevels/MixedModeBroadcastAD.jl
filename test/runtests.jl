@@ -1,7 +1,8 @@
 using ForwardDiff, Test
 using MixedModeBroadcastAD: dual_broadcast!
 
-include("kernels.jl")
+include("kernels/hmlstm.jl")
+include("kernels/tf_style_hmlstm.jl")
 
 @testset "HM-LSTM kernels" begin
     dims = 5
