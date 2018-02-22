@@ -5,8 +5,7 @@ using Printf
 using CUDAnative
 import CUDAdrv
 
-include("../kernels/hmlstm.jl")
-include("../kernels/tf_style_hmlstm.jl")
+include("kernels.jl")
 
 #########
 # setup #
@@ -32,14 +31,16 @@ end
 # execution #
 #############
 
-rows = Any[["environment", "size", "time"]]
+rows = Any[["environment", "size", "TF-style?", "time"]]
 for kind in (:cpu, :gpu)
     for dims in (2^i for i in 9:11)
-        println("benchmarking kind=:", kind, "; dims=", dims)
-        kernel, output, inputs, derivs = getkernel(kind, dims)
-        time = @belapsed (dual_broadcast!($kernel, $output, $inputs, $derivs), CUDAdrv.synchronize()) evals=1
-        push!(rows, Any[kind, dims, time])
-        println("\ttime:  ", pretty_print_time(time))
+        for tfstyle in (false, true)
+            println("benchmarking kind=:", kind, "; dims=", dims, "; tfstyle=", tfstyle)
+            kernel!, inputs, derivs = get_kernel(kind, dims, tfstyle)
+            time = @belapsed ($kernel!($inputs, $derivs); CUDAdrv.synchronize()) evals=1
+            push!(rows, Any[kind, dims, tfstyle, time])
+            println("\ttime:  ", pretty_print_time(time))
+        end
     end
 end
 
@@ -52,6 +53,6 @@ writedlm(joinpath(@__DIR__, "timings.csv"), rows, ',')
 
 # table output
 for row in rows[2:end]
-    row[3] = pretty_print_time(row[3])
+    row[end] = pretty_print_time(row[end])
 end
-println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c])))
+println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))

@@ -1,18 +1,21 @@
 using ForwardDiff, Test
 using MixedModeBroadcastAD: dual_broadcast!
 
-include("kernels/hmlstm.jl")
-include("kernels/tf_style_hmlstm.jl")
+include("kernels.jl")
 
-@testset "HM-LSTM kernels" begin
+@testset "hmlstm kernels" begin
     dims = 5
     cpu_kernel = first(getkernel(:cpu, dims))
     for kind in (:cpu, :gpu)
-        println("testing hmlstm kernel for kind=:", kind)
-        kernel, output, inputs, derivs = getkernel(kind, dims)
+        println("testing hmlstm kernels for kind=:", kind)
+        tfkernel!, _, tfderivs = get_kernel(kind, dims, true)
+        kernel!, inputs, derivs = get_kernel(kind, dims, false)
+        kernel!(inputs, derivs)
+        tfkernel!(inputs, tfderivs)
+        for (d, tfd) in zip(derivs[3:end], tfderivs)
+            @test Array(d) ≈ Array(tfd)
+        end
         cpu_inputs = Array.(inputs)
-        dual_broadcast!(kernel, output, inputs, derivs)
-        @test Array(output) ≈ cpu_kernel.(cpu_inputs...)
         for (i, cpu_input) in enumerate(cpu_inputs)
             println("\t...checking gradient for input $i")
             cpu_kernel_i = x -> begin
