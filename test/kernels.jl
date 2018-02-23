@@ -78,8 +78,8 @@ end
 # by profiling the executed kernels using `nvprof`. Where reasonable, variable names used in
 # these kernels match those used in the HLO graph.
 
-function tf_hmlstm_update_c_gradients!(inputs::NTuple{N,AbstractArray},
-                                       derivs::NTuple{N,AbstractArray}) where {N}
+function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
+                                       derivs::NTuple{4,AbstractArray})
 
     z, zb, c, f, i, g = inputs
     ∇c, ∇f, ∇i, ∇g = derivs
