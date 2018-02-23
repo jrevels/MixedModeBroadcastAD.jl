@@ -1,5 +1,4 @@
 using ForwardDiff, Test
-using MixedModeBroadcastAD: dual_broadcast!
 
 include("kernels.jl")
 

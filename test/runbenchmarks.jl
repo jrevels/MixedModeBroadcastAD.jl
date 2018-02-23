@@ -1,4 +1,3 @@
-using MixedModeBroadcastAD: dual_broadcast!
 using BenchmarkTools
 using DelimitedFiles
 using Printf
