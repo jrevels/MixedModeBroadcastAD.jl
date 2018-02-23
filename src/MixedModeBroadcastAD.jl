@@ -26,9 +26,24 @@ macro cuda_linear_index(n)
     end)
 end
 
+# this is just `prod(length, x)`, but works on the GPU
+@generated function lengthproduct(x::NTuple{N,Any}) where {N}
+    if N == 0
+        body = :(Int32(0))
+    elseif N == 1
+        body = :(length(x[1]))
+    else
+        body = Expr(:call, :*, [:(length(x[$i])) for i in 1:N]...)
+    end
+    return quote
+        $(Expr(:meta, :inline))
+        $body
+    end
+end
+
 macro cuda_index(shape)
     return esc(quote
-        i = @cuda_linear_index(prod(length, $shape))
+        i = @cuda_linear_index(lengthproduct($shape))
         @inbounds CartesianIndices($shape)[i]
     end)
 end
