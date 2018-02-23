@@ -4,7 +4,6 @@ include("kernels.jl")
 
 @testset "hmlstm kernels" begin
     dims = 5
-    cpu_kernel = first(getkernel(:cpu, dims))
     for kind in (:cpu, :gpu)
         println("testing hmlstm kernels for kind=:", kind)
         tfkernel!, _, tfderivs = get_kernel(kind, dims, true)
@@ -20,7 +19,7 @@ include("kernels.jl")
             cpu_kernel_i = x -> begin
                 before = cpu_inputs[1:(i - 1)]
                 after = cpu_inputs[(i + 1):end]
-                return sum(broadcast(cpu_kernel, before..., x, after...))
+                return sum(broadcast(cpu_hmlstm_update_c_scalar, before..., x, after...))
             end
             @test Array(derivs[i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_input)
         end
