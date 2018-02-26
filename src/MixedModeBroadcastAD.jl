@@ -53,7 +53,7 @@ end
 #######################################
 
 Broadcast.broadcast_indices(::Type{<:CuArray}, A::Ref) = ()
-Broadcast.broadcast_indices(::Type{<:CuArray}, A) = indices(A)
+Broadcast.broadcast_indices(::Type{<:CuArray}, A) = axes(A)
 
 @inline function Broadcast.broadcast!(kernel, output::CuArray, ::Nothing, inputs...)
     shape = Broadcast.broadcast_indices(output)
@@ -100,7 +100,7 @@ function broadcast_gradients!(kernel::K,
                               inputs::NTuple{N,AbstractArray},
                               derivs::NTuple{N,AbstractArray}) where {K,N}
     @inline dual_kernel(elements...) = @fastsplat(dual_call(kernel, elements...))
-    @assert all(indices(derivs[i]) === indices(inputs[i]) for i in 1:N)
+    @assert all(axes(derivs[i]) === axes(inputs[i]) for i in 1:N)
     shape = Broadcast.combine_indices(inputs...)
     @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
     keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
