@@ -63,7 +63,7 @@ Broadcast.broadcast_indices(::Type{<:CuArray}, A) = axes(A)
     @cuda(blocks=blocks,
           threads=threads,
           _cuda_broadcast_kernel!(kernel, output, inputs, keep_bools, default_indices, shape))
-    return dest
+    return output
 end
 
 @generated function _cuda_broadcast_kernel!(kernel::K,
