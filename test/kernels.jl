@@ -9,7 +9,7 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 # kernel selector #
 ###################
 
-@noinline broadcast_wrapper(f::F) where {F} =  (inputs, derivs) -> broadcast_gradients!(f, inputs, derivs)
+@noinline broadcast_wrapper(f::F) where {F} = (inputs, derivs, buffers) -> broadcast_gradients!(f, inputs, derivs)
 
 function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
     @assert dims >= 3
@@ -40,11 +40,13 @@ function get_kernel(kind::Symbol, dims::Int = 2048, tfstyle::Bool = false)
     if tfstyle
         kernel! = tf_hmlstm_update_c_gradients!
         derivs = similar.(inputs[3:end])
+        buffers = similar.(derivs[2:end])
     else
         kernel! = broadcast_wrapper(scalar_kernel)
         derivs = similar.(inputs)
+        buffers = (,)
     end
-    return kernel!, inputs, derivs
+    return kernel!, inputs, derivs, buffers
 end
 
 ###############################################
@@ -81,15 +83,16 @@ end
 # these kernels match those used in the HLO graph.
 
 function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
-                                       derivs::NTuple{4,AbstractArray})
+                                       derivs::NTuple{4,AbstractArray},
+                                       buffers::NTuple{3,AbstractArray})
 
     z, zb, c, f, i, g = inputs
     ∇c, ∇f, ∇i, ∇g = derivs
     P0, P1, P2, P3, P4, P5 = c, z, zb, f, g, i
-    _tanh_func = ifelse(isa(first(inputs), CuArray), CUDAnative.tanh, tanh)
-    tanh1 = broadcast!(_tanh_func, similar(P4), P4) # tanh.(g)
-    fusion2 = tf_fusion_2_or_5!(_tanh_func, similar(P5), P5) # sigm.(i)
-    fusion5 = tf_fusion_2_or_5!(_tanh_func, similar(P3), P3) # sigm.(f)
+    _tanh_func = ifelse(isa(first(inputs), CuArray), cuda_tanh, tanh)
+    tanh1 = broadcast!(_tanh_func, buffers[1], P4) # tanh.(g)
+    fusion2 = tf_fusion_2_or_5!(_tanh_func, buffers[2], P5) # sigm.(i)
+    fusion5 = tf_fusion_2_or_5!(_tanh_func, buffers[3], P3) # sigm.(f)
     fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
     fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
     fusion1 = tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
