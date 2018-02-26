@@ -115,7 +115,7 @@ function tf_fusion!(∇g, fusion2, tanh1, P1, P2)
         multiply19 = select5 * p1
         subtract3 = p2 - multiply17
         add5 = multiply19 + multiply18
-        return add5 - subtract3
+        return add5 * subtract3
     end
 end
 
@@ -173,7 +173,7 @@ function tf_fusion4!(∇c, fusion5, P1, P2)
         select4 = ifelse(equalto5, select14, p2)
         select13 = ifelse(equalto5, p2, select14)
         multiply29 = select13 * p0
-        return select4 * multiply29
+        return select4 + multiply29
     end
 end
 
