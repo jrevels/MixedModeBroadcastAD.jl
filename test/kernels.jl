@@ -91,10 +91,10 @@ function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
     fusion2 = tf_fusion_2_or_5!(_tanh_func, similar(P5), P5) # sigm.(i)
     fusion5 = tf_fusion_2_or_5!(_tanh_func, similar(P3), P3) # sigm.(f)
     # TODO: is fusion --> ∇i and fusion1 --> ∇g switched up here?
-    fusion1 = tf_fusion1!(∇g, fusion2, tanh1, P1, P2)
-    fusion = tf_fusion!(∇i, fusion2, tanh1, P1, P2)
-    fusion3 = tf_fusion3!(∇c, fusion5, P0, P1, P2)
-    fusion4 = tf_fusion4!(∇f, fusion5, P1, P2)
+    fusion1 = tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
+    fusion = tf_fusion!(∇g, fusion2, tanh1, P1, P2)
+    fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
+    fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
     return nothing
 end
 
