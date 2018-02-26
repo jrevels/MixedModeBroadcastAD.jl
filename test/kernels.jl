@@ -90,22 +90,21 @@ function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
     tanh1 = broadcast!(_tanh_func, similar(P4), P4) # tanh.(g)
     fusion2 = tf_fusion_2_or_5!(_tanh_func, similar(P5), P5) # sigm.(i)
     fusion5 = tf_fusion_2_or_5!(_tanh_func, similar(P3), P3) # sigm.(f)
-    # TODO: is fusion --> ∇i and fusion1 --> ∇g switched up here?
+    fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
+    fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
     fusion1 = tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
     fusion = tf_fusion!(∇g, fusion2, tanh1, P1, P2)
-    fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
-    fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
     return nothing
 end
 
-function tf_fusion!(∇i, fusion2, tanh1, P1, P2)
+function tf_fusion!(∇g, fusion2, tanh1, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
     P2 = 1.0f0
     P1 = fusion2
     P0 = tanh1
-    return broadcast!(∇i, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
+    return broadcast!(∇g, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
         equalto7 = p4 == p3
         equalto13 = p5 == p2
         select7 = ifelse(equalto13, p3, p2)
@@ -120,14 +119,14 @@ function tf_fusion!(∇i, fusion2, tanh1, P1, P2)
     end
 end
 
-function tf_fusion1!(∇g, fusion2, tanh1, P1, P2)
+function tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
     P2 = 1.0f0
     P1 = tanh1
     P0 = fusion2
-    return broadcast!(∇g, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
+    return broadcast!(∇i, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
         equalto9 = p3 == p4
         equalto15 = p2 == p5
         select8 = ifelse(equalto15, p2, p3)
@@ -142,14 +141,14 @@ function tf_fusion1!(∇g, fusion2, tanh1, P1, P2)
     end
 end
 
-function tf_fusion3!(∇c, fusion5, P0, P1, P2)
+function tf_fusion3!(∇f, fusion5, P0, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
     P2 = 1.0f0
     P1 = P0
     P0 = fusion5
-    return broadcast!(∇c, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
+    return broadcast!(∇f, P0, P1, P2, P3, P4, P5) do p0, p1, p2, p3, p4, p5
         equalto11 = p3 == p4
         equalto17 = p2 == p5
         select12 = ifelse(equalto17, p3, p2)
@@ -161,13 +160,13 @@ function tf_fusion3!(∇c, fusion5, P0, P1, P2)
     end
 end
 
-function tf_fusion4!(∇f, fusion5, P1, P2)
+function tf_fusion4!(∇c, fusion5, P1, P2)
     P4 = P1
     P3 = P2
     P2 = 0.0f0
     P1 = 1.0f0
     P0 = fusion5
-    return broadcast!(∇f, P0, P1, P2, P3, P4) do p0, p1, p2, p3, p4
+    return broadcast!(∇c, P0, P1, P2, P3, P4) do p0, p1, p2, p3, p4
         equalto5 = p3 == p2
         equalto19 = p4 == p1
         select14 = ifelse(equalto19, p2, p1)
