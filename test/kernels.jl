@@ -84,9 +84,9 @@ function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
     z, zb, c, f, i, g = inputs
     ∇c, ∇f, ∇i, ∇g = derivs
     P0, P1, P2, P3, P4, P5 = c, z, zb, f, g, i
-    tanh1 = tanh.(P4) # tanh.(g)
-    fusion2 = tf_fusion_2_or_5(P5) # sigm.(i)
-    fusion5 = tf_fusion_2_or_5(P3) # sigm.(f)
+    tanh1 = broadcast!(tanh, similar(P4), P4) # tanh.(g)
+    fusion2 = tf_fusion_2_or_5!(similar(P5), P5) # sigm.(i)
+    fusion5 = tf_fusion_2_or_5!(similar(P3), P3) # sigm.(f)
     # TODO: is fusion --> ∇i and fusion1 --> ∇g switched up here?
     fusion1 = tf_fusion1!(∇g, fusion2, tanh1, P1, P2)
     fusion = tf_fusion!(∇i, fusion2, tanh1, P1, P2)
@@ -177,10 +177,10 @@ end
 
 # fusion.2 and fusion.5 are exactly the same,
 # so we just use this method for both kernels
-function tf_fusion_2_or_5(P_3_or_5)
+function tf_fusion_2_or_5!(output, P_3_or_5)
     P1 = 0.5f0
     P0 = P_3_or_5
-    return broadcast(P0, P1) do p0, p1
+    return broadcast!(output, P0, P1) do p0, p1
         return p1 + (p1 * tanh(p1 * p0))
     end
 end
