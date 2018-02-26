@@ -9,6 +9,8 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 # kernel selector #
 ###################
 
+@noinline broadcast_wrapper(f::F) where {F} =  (inputs, derivs) -> broadcast_gradients!(f, inputs, derivs)
+
 function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
     @assert dims >= 3
     # set up control variables to ensure that we hit all three
@@ -39,7 +41,7 @@ function get_kernel(kind::Symbol, dims::Int = 2048, tfstyle::Bool = false)
         kernel! = tf_hmlstm_update_c_gradients!
         derivs = similar.(inputs[3:end])
     else
-        kernel! = (inputs, derivs) -> broadcast_gradients!(scalar_kernel, inputs, derivs)
+        kernel! = broadcast_wrapper(scalar_kernel)
         derivs = similar.(inputs)
     end
     return kernel!, inputs, derivs
