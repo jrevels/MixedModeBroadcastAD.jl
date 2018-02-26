@@ -44,7 +44,7 @@ function get_kernel(kind::Symbol, dims::Int = 2048, tfstyle::Bool = false)
     else
         kernel! = broadcast_wrapper(scalar_kernel)
         derivs = similar.(inputs)
-        buffers = (,)
+        buffers = ()
     end
     return kernel!, inputs, derivs, buffers
 end
