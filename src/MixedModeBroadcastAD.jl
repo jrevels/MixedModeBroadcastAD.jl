@@ -55,7 +55,7 @@ end
 Broadcast.broadcast_indices(::Type{<:CuArray}, A::Ref) = ()
 Broadcast.broadcast_indices(::Type{<:CuArray}, A) = axes(A)
 
-@inline function Broadcast.broadcast!(kernel, output::CuArray, ::Nothing, inputs...)
+@inline function Broadcast.broadcast!(kernel, output::CuArray, ::Nothing, inputs::Vararg{Any,N}) where {N}
     shape = Broadcast.broadcast_indices(output)
     @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
     keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
