@@ -1,7 +1,5 @@
 using BenchmarkTools
 using DelimitedFiles
-using Printf
-using CUDAnative
 import CUDAdrv
 
 include("kernels.jl")
