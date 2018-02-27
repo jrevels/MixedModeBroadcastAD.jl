@@ -90,13 +90,14 @@ function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
     ∇c, ∇f, ∇i, ∇g = derivs
     P0, P1, P2, P3, P4, P5 = c, z, zb, f, g, i
     _tanh_func = ifelse(isa(first(inputs), CuArray), cuda_tanh, tanh)
-    tanh1 = broadcast!(_tanh_func, buffers[1], P4) # tanh.(g)
-    fusion2 = tf_fusion_2_or_5!(_tanh_func, buffers[2], P5) # sigm.(i)
+    # these are executed in the same order as shown in `tf_hmlstm_profile.png`
+    fusion2 = tf_fusion_2_or_5!(_tanh_func, buffers[1], P5) # sigm.(i)
+    tanh1   = broadcast!(_tanh_func, buffers[2], P4) # tanh.(g)
     fusion5 = tf_fusion_2_or_5!(_tanh_func, buffers[3], P3) # sigm.(f)
-    fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
-    fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
+    fusion  = tf_fusion!(∇g, fusion2, tanh1, P1, P2)
     fusion1 = tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
-    fusion = tf_fusion!(∇g, fusion2, tanh1, P1, P2)
+    fusion3 = tf_fusion3!(∇f, fusion5, P0, P1, P2)
+    fusion4 = tf_fusion4!(∇c, fusion5, P1, P2)
     return nothing
 end
 
