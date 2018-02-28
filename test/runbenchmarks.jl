@@ -28,14 +28,29 @@ end
 # execution #
 #############
 
-rows = Any[["environment", "size", "TF-style?", "time"]]
-for kind in (:cpu, :gpu)
-    for dims in (2^i for i in 9:11)
-        for tfstyle in (false, true)
-            println("benchmarking kind=:", kind, "; dims=", dims, "; tfstyle=", tfstyle)
-            kernel!, inputs, derivs, buffers = get_kernel(kind, dims, tfstyle)
+println("### Benchmarking HMLSTM Kernels")
+hmlstm_rows = Any[["TF-style?", "on GPU?", "size", "time"]]
+for tfstyle in (false, true)
+    for usegpu in (false, true)
+        for dims in (2^i for i in 9:11)
+            println("benchmarking tfstyle=", tfstyle, "; usegpu=", usegpu, "; dims=", dims)
+            kernel!, inputs, derivs, buffers = get_hmlstm_kernel(tfstyle, usegpu, dims)
             time = @belapsed ($kernel!($inputs, $derivs, $buffers); CUDAdrv.synchronize()) evals=1
-            push!(rows, Any[kind, dims, tfstyle, time])
+            push!(hmlstm_rows, Any[tfstyle, usegpu, dims, time])
+            println("\ttime:  ", pretty_print_time(time))
+        end
+    end
+end
+
+println("### Benchmarking Arity-Scaling Kernels")
+arity_scaling_rows = Any[["on GPU?", "size", "arity", "time"]]
+for usegpu in (false, true)
+    for dims in (2^i for i in 9:11)
+        for arity in 1:10
+            println("benchmarking usegpu=", usegpu, "; dims=", dims, "; arity=", arity)
+            kernel!, inputs, derivs, buffers = get_arity_scaling_kernel(usegpu, dims, arity)
+            time = @belapsed ($kernel!($inputs, $derivs, $buffers); CUDAdrv.synchronize()) evals=1
+            push!(arity_scaling_rows, Any[usegpu, dims, arity, time])
             println("\ttime:  ", pretty_print_time(time))
         end
     end
@@ -45,11 +60,16 @@ end
 # writing output #
 ##################
 
-# raw output
-writedlm(joinpath(@__DIR__, "timings.csv"), rows, ',')
-
-# table output
-for row in rows[2:end]
-    row[end] = pretty_print_time(row[end])
+function generate_output!(filename, rows, ncols)
+    writedlm(joinpath(@__DIR__, filename), rows, ',')
+    for row in rows[2:end]
+        row[end] = pretty_print_time(row[end])
+    end
+    format = [:c for i in 1:ncols]
+    format[1] = :r
+    return Markdown.MD(Markdown.Table(rows, format))
 end
-println(Markdown.MD(Markdown.Table(rows, [:r, :c, :c, :c])))
+
+println(generate_output!("hmlstm_timings.csv", hmlstm_rows, 4))
+
+println(generate_output!("arity_scaling_timings.csv", arity_scaling_rows, 4))

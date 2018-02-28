@@ -26,15 +26,13 @@ function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
     return (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...)
 end
 
-function get_kernel(kind::Symbol, dims::Int = 2048, tfstyle::Bool = false)
-    if kind == :cpu
-        scalar_kernel = cpu_hmlstm_update_c_scalar
-        A = Array
-    elseif kind == :gpu
+function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048)
+    if usegpu
         scalar_kernel = gpu_hmlstm_update_c_scalar
         A = CuArray
     else
-        error("`kind` must be either `:cpu` or `:gpu`")
+        scalar_kernel = cpu_hmlstm_update_c_scalar
+        A = Array
     end
     inputs = initialize_inputs(A, dims)
     if tfstyle
@@ -46,6 +44,15 @@ function get_kernel(kind::Symbol, dims::Int = 2048, tfstyle::Bool = false)
         derivs = similar.(inputs)
         buffers = ()
     end
+    return kernel!, inputs, derivs, buffers
+end
+
+function get_arity_scaling_kernel(usegpu::Bool, dims::Int = 1024, arity::Int = 2)
+    A = usegpu ? CuArray : Array
+    kernel! = broadcast_wrapper(arity_scaling)
+    inputs = ((convert(A, rand(Float32, dims, dims)) for _ in 1:arity)...)
+    derivs = similar.(inputs)
+    buffers = ()
     return kernel!, inputs, derivs, buffers
 end
 
@@ -71,6 +78,11 @@ function gpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
     else # UPDATE
         return cuda_sigm(f) * c + cuda_sigm(i) * cuda_tanh(g)
     end
+end
+
+@generated function arity_scaling(args::Vararg{Any,N}) where {N}
+    mapped = [:(args[$i] > 0.5f0 ? args[$i] : -args[$i]) for i in 1:N]
+    return N == 1 ? mapped[1] : Expr(:call, :*, mapped...)
 end
 
 #########################################

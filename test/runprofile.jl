@@ -6,9 +6,9 @@ include("kernels.jl")
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
-const DIMS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 2048
-const TFSTYLE = length(ARGS) >= 2 ? parse(Bool, ARGS[2]) : false
-const KERNEL!, INPUTS, DERIVS, BUFFERS = get_kernel(:gpu, DIMS, TFSTYLE)
+const TFSTYLE = length(ARGS) >= 1 ? parse(Bool, ARGS[1]) : false
+const DIMS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 2048
+const KERNEL!, INPUTS, DERIVS, BUFFERS = get_hmlstm_kernel(TFSTYLE, true, DIMS)
 
 function benchmark(kernel!, inputs, derivs, buffers)
     NVTX.@range "kernel" (kernel!(inputs, derivs, buffers); CUDAdrv.synchronize())
