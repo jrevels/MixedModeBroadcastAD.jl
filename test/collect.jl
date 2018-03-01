@@ -1,3 +1,5 @@
+#!/usr/bin/env julia
+
 # this script runs each runprofile.* script, with different values for each argument,
 # collecting GPU and CUDA API traces in CSV files for further processing.
 
