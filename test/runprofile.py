@@ -8,6 +8,9 @@ from tensorflow.python.client import timeline
 import kernels
 import pycuda
 import pycuda.autoinit
+import ctypes
+
+nvtx = ctypes.CDLL("/usr/local/cuda-9.1/lib64/libnvToolsExt.so.1.0.0")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dims', nargs='?', default=2048, type=int, help='dimension of differentiable variables')
@@ -26,7 +29,9 @@ if __name__ == '__main__':
             b.warmup(sess)
             pycuda.driver.start_profiler()
             for i in range(args.iterations):
+                nvtx.nvtxRangePushA(ctypes.c_char_p(b"kernel"))
                 b.run(sess)
+                nvtx.nvtxRangePop()
             pycuda.driver.stop_profiler()
             # # alternatively, use TF's built-in tracer
             # # (this breaks nvprof as it uses CUPTI too, hence commented out)
