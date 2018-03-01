@@ -12,6 +12,7 @@ import pycuda.autoinit
 parser = argparse.ArgumentParser()
 parser.add_argument('dims', nargs='?', default=2048, type=int, help='dimension of differentiable variables')
 parser.add_argument('device', nargs='?', default="/device:GPU:0", type=str, help='which device should be used to execute the benchmark')
+parser.add_argument('iterations', nargs='?', default=1, type=int, help='iterations to run')
 
 # turn on the XLA JIT compiler
 config = tf.ConfigProto()
@@ -24,7 +25,8 @@ if __name__ == '__main__':
         with tf.device(args.device):
             b.warmup(sess)
             pycuda.driver.start_profiler()
-            b.run(sess)
+            for i in range(args.iterations):
+                b.run(sess)
             pycuda.driver.stop_profiler()
             # # alternatively, use TF's built-in tracer
             # # (this breaks nvprof as it uses CUPTI too, hence commented out)
