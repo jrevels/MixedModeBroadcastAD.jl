@@ -79,13 +79,20 @@ end
 const ITERATIONS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 1024
 
 cd(@__DIR__) do
-    for dims in [2048]
-        python = run_benchmark(`python3 runprofile.py $dims "/device:GPU:0" $ITERATIONS`)
-        writetable("python_$(dims).csv", python)
+    for dims in [512,1024,2048]
+        let
+            data = run_benchmark(`python3 runprofile.py $dims $ITERATIONS`)
+            writetable("python_$(dims).csv", data)
+        end
 
         for tfstyle in [true, false]
-            julia = run_benchmark(`julia --depwarn=no runprofile.jl $dims $tfstyle $ITERATIONS`)
-            writetable("julia_$(dims)_$(tfstyle ? "tf" : "notf").csv", julia)
+            data = run_benchmark(`julia --depwarn=no runprofile.jl $tfstyle $dims $ITERATIONS`)
+            writetable("julia_$(tfstyle ? "tf_" : "")$(dims).csv", data)
+        end
+
+        for arity in 1:10
+            data = run_benchmark(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`)
+            writetable("julia_arity$(arity)_$(dims).csv", data)
         end
     end
 end
