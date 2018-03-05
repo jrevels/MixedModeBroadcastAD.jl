@@ -76,13 +76,19 @@ const INPUT = ARGS[1]
 
 its = process_data(INPUT)
 popfirst!(its)
+
 avg_it = Iteration()
+
+# counters should be identical
 for field in (:kernel_count, :memcpy_count, :api_count)
     @assert all(it->getfield(its[1], field) == getfield(it, field), its)
     setfield!(avg_it, field, getfield(its[1], field))
 end
+
+# average timings
 for field in (:total_time, :kernel_time, :memcpy_time, :api_time)
     val = mean([getfield(it, field) for it in its])
     setfield!(avg_it, field, val)
 end
+
 println(avg_it)
