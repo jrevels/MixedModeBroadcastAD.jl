@@ -30,7 +30,9 @@ end
 
 info("#26278 workaround") # yeah no kiddin' printing something makes it work. fml
 function process_data(path)
-    table = readtable(path)
+    table = open(path, "r") do io
+        deserialize(io)
+    end
 
     its = Iteration[]
     it = nothing 

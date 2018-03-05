@@ -75,6 +75,11 @@ function read_data(input_path)
     return table
 end
 
+function save(path, data)
+    open(path, "w") do io
+        serialize(io, data)
+    end
+end
 
 const ITERATIONS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 1024
 
@@ -82,17 +87,17 @@ cd(@__DIR__) do
     for dims in [512,1024,2048]
         let
             data = run_benchmark(`python3 runprofile.py $dims $ITERATIONS`)
-            writetable("python_$(dims).csv", data)
+            save("python_$(dims).jls", data)
         end
 
         for tfstyle in [true, false]
             data = run_benchmark(`julia --depwarn=no runprofile.jl $tfstyle $dims $ITERATIONS`)
-            writetable("julia_$(tfstyle ? "tf_" : "")$(dims).csv", data)
+            save("julia_$(tfstyle ? "tf_" : "")$(dims).jls", data)
         end
 
         for arity in 1:10
             data = run_benchmark(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`)
-            writetable("julia_arity$(arity)_$(dims).csv", data)
+            save("julia_arity$(arity)_$(dims).jls", data)
         end
     end
 end
