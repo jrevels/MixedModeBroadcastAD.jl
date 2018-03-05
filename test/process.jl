@@ -1,23 +1,24 @@
 #!/usr/bin/env julia
 
 using DataFrames
+using Measurements
 
-mutable struct Iteration
-    total_time::Float64
+mutable struct Iteration{T<:AbstractFloat}
+    total_time::T
 
     # kernels
     kernel_count::Int
-    kernel_time::Float64
+    kernel_time::T
 
     # memory operations
     memcpy_count::Int
-    memcpy_time::Float64
+    memcpy_time::T
 
     # API calls
     api_count::Int
-    api_time::Float64
+    api_time::T
 
-    Iteration() = new(0, 0, 0, 0, 0, 0, 0)
+    Iteration{T}() where {T} = new{T}(zero(T), 0, zero(T), 0, zero(T), 0, zero(T))
 end
 
 function Base.show(io::IO, it::Iteration)
@@ -38,7 +39,7 @@ function process_data(path)
         # handle start/stop of a new iteration
         if contains(row[:Name], "[Range start]")
             @assert it == nothing
-            it = Iteration()
+            it = Iteration{Float64}()
             it_start = row[:Start]
             continue
         end
@@ -77,7 +78,7 @@ const INPUT = ARGS[1]
 its = process_data(INPUT)
 popfirst!(its)
 
-avg_it = Iteration()
+avg_it = Iteration{Measurement{Float64}}()
 
 # counters should be identical
 for field in (:kernel_count, :memcpy_count, :api_count)
@@ -87,7 +88,7 @@ end
 
 # average timings
 for field in (:total_time, :kernel_time, :memcpy_time, :api_time)
-    val = mean([getfield(it, field) for it in its])
+    val = mean([getfield(it, field) for it in its]) ± std([getfield(it, field) for it in its])
     setfield!(avg_it, field, val)
 end
 
