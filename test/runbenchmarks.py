@@ -1,3 +1,7 @@
+import os
+os.environ.setdefault('TF_XLA_FLAGS', '')
+os.environ['TF_XLA_FLAGS'] += ' --xla_enable_fast_math=false'
+
 import argparse
 import tensorflow as tf
 import kernels
