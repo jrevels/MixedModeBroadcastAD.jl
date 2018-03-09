@@ -27,6 +27,7 @@ benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS) # warmup
 NVTX.@activate CUDAdrv.@profile begin
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     for i in 1:ITERATIONS
+        GC.gc()
         benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS)
     end
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)

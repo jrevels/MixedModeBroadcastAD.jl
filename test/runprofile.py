@@ -9,6 +9,7 @@ import kernels
 import pycuda
 import pycuda.autoinit
 import ctypes
+import gc
 
 nvtx = ctypes.CDLL("/usr/local/cuda-9.1/lib64/libnvToolsExt.so.1.0.0")
 
@@ -28,6 +29,7 @@ if __name__ == '__main__':
             b.warmup(sess)
             pycuda.driver.start_profiler()
             for i in range(args.iterations):
+                gc.collect()
                 nvtx.nvtxRangePushA(ctypes.c_char_p(b"kernel"))
                 b.run(sess)
                 nvtx.nvtxRangePop()
