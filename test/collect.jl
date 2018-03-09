@@ -96,7 +96,7 @@ cd(@__DIR__) do
             save("julia_$(tfstyle ? "tf_" : "")$(dims).jls", data)
         end
 
-        for arity in 1:10
+        for arity in 1:13
             data = run_benchmark(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`)
             save("julia_arity$(arity)_$(dims).jls", data)
         end

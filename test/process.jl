@@ -129,7 +129,7 @@ cd(@__DIR__) do
             add_row!(df, it; dims=dims, system=:julia, TFstyle=tfstyle)
         end
 
-        for arity in 1:10
+        for arity in 1:13
             it = process("julia_arity$(arity)_$(dims).jls")
             add_row!(df, it; dims=dims, system=:julia, arity=arity)
         end
