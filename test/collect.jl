@@ -20,6 +20,7 @@ function run_benchmark(cmd)
     cmd = ```
         nvprof
         --profile-from-start off
+        --concurrent-kernels off
         --profile-child-processes
         --unified-memory-profiling off
         --print-api-trace
