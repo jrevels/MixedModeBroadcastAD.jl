@@ -248,10 +248,10 @@ end
 # DiffRules for CUDAnative primitives #
 #######################################
 
-DiffRules.@define_diffrule CUDAnative.exp(x) = :(CUDAnative.exp($x))
+DiffRules.@define_diffrule CUDAnative.exp_fast(x) = :(CUDAnative.exp_fast($x))
 DiffRules.@define_diffrule CUDAnative.tanh(x) = :(1 - CUDAnative.tanh($x)^2)
 
-@eval $(ForwardDiff.unary_dual_definition(:CUDAnative, :exp))
+@eval $(ForwardDiff.unary_dual_definition(:CUDAnative, :exp_fast))
 @eval $(ForwardDiff.unary_dual_definition(:CUDAnative, :tanh))
 
 end # module

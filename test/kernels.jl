@@ -2,7 +2,7 @@ using MixedModeBroadcastAD: broadcast_gradients!, Wrt
 using CUDAdrv, CUDAnative
 
 sigm(x) = 1 / (1 + exp(-x))
-cuda_sigm(x) = 1 / (1 + CUDAnative.exp(-x))
+cuda_sigm(x) = 1 / (1 + CUDAnative.exp_fast(-x))
 cuda_tanh(x) = CUDAnative.tanh(x)
 
 ###################
