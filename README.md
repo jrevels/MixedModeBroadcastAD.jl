@@ -6,8 +6,8 @@ kernels on the GPU.
 Do not depend on this package's implementation; it is merely example code and will not be
 maintained for any practical usage.
 
-The dependencies on which the test last passed are recored in `deps.json`. These
-are processed using the `dependencies.jl` script, which understands the
+The dependencies on which the test last passed are recorded in `deps.json`.
+These are processed using the `dependencies.jl` script, which understands the
 following options:
 
 - `-v`: verify the package state

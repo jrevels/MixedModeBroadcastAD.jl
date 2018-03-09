@@ -4,7 +4,7 @@
                      "FastSplat"],
     "refs": {
         "CUDAnative":       "ff2ac00d0050f80f176cf5c3158d8e54d8fce7e9",
-        "StaticArrays":     "d3c5662aa8a8a65ab391dbb3bc58441dac3a1461",
+        "StaticArrays":     "v0.7.0",
         "CUDAapi":          "v0.4.0",
         "ForwardDiff":      "3bff34cb6b7b0c7ad0b65216a52e37a5fefee316",
         "LLVM":             "v0.9.6",
