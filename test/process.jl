@@ -2,6 +2,7 @@
 
 using DataFrames
 using Measurements
+using DataStructures
 
 mutable struct Kernel{T<:AbstractFloat}
     name::String
@@ -114,8 +115,8 @@ function average_trace(its)
     return avg_it
 end
 
-function read_trace(path)
-    df = open(path, "r") do io
+function read_trace(tag)
+    df = open("$(tag)_trace.jls", "r") do io
         deserialize(io)
     end
 
@@ -123,36 +124,60 @@ function read_trace(path)
     return average_trace(its)
 end
 
-function add_row!(df, it; system, TFstyle=missing, arity=missing, dims)
-    push!(df, [system, TFstyle, arity, dims,
-               it.duration,
-               length(it.kernels), sum(registers, it.kernels), sum(duration, it.kernels),
-               it.memcpy_count, it.memcpy_duration,
-               it.api_count, it.api_duration])
+function read_metrics(tag)
+    df = open("$(tag)_metrics.jls", "r") do io
+        deserialize(io)
+    end
+
+    return df
 end
+
+function read(tag)
+    return read_metrics(tag), read_trace(tag)
+end
+
+function get_metric(df, kernel, metric)
+    mask = (df[:Kernel] .== kernel) .& (df[:Metric_Name] .== metric)
+    return first(eachrow(df[mask, [:Invocations, :Min, :Max, :Avg]]))
+end
+
+
+# basic timings
 
 df = DataFrame(system = Symbol[], TFstyle=Union{Missing,Bool}[], arity=Union{Missing,Int}[],
                dims=Int[],
                duration = AbstractFloat[],
-               kernel_count = Int[], kernel_registers = Int[], kernel_duration = AbstractFloat[],
+               kernel_count = Int[], kernel_registers = Int[],
+               kernel_duration = AbstractFloat[],  kernel_occupancy = AbstractFloat[],
                memcpy_count = Int[], memcpy_duration = AbstractFloat[],
                api_count = Int[], api_duration = AbstractFloat[])
+
+function add_row!(df, trace, metrics; system, TFstyle=missing, arity=missing, dims)
+    push!(df, [system, TFstyle, arity, dims,
+               trace.duration,
+               length(trace.kernels), sum(registers, trace.kernels),
+               sum(duration, trace.kernels),
+               mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy")[:Avg],
+                    trace.kernels),
+               trace.memcpy_count, trace.memcpy_duration,
+               trace.api_count, trace.api_duration])
+end
 
 cd(@__DIR__) do
     for dims in [512,1024,2048]
         let
-            it = read_trace("python_$(dims)_trace.jls")
-            add_row!(df, it; dims=dims, system=:python)
+            metrics, trace = read("python_$(dims)")
+            add_row!(df, trace, metrics; dims=dims, system=:python)
         end
 
         for tfstyle in [true, false]
-            it = read_trace("julia_$(tfstyle ? "tf_" : "")$(dims)_trace.jls")
-            add_row!(df, it; dims=dims, system=:julia, TFstyle=tfstyle)
+            metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(dims)")
+            add_row!(df, trace, metrics; dims=dims, system=:julia, TFstyle=tfstyle)
         end
 
         for arity in 1:13
-            it = read_trace("julia_arity$(arity)_$(dims)_trace.jls")
-            add_row!(df, it; dims=dims, system=:julia, arity=arity)
+            metrics, trace = read("julia_arity$(arity)_$(dims)")
+            add_row!(df, trace, metrics; dims=dims, system=:julia, arity=arity)
         end
     end
 end
