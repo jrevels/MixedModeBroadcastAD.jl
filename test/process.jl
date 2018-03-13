@@ -3,33 +3,40 @@
 using DataFrames
 using Measurements
 
+mutable struct Kernel{T<:AbstractFloat}
+    name::String
+    registers::Int
+    duration::T
+end
+duration(kernel::Kernel) = kernel.duration
+registers(kernel::Kernel) = kernel.registers
+
 mutable struct Iteration{T<:AbstractFloat}
-    total_time::T
+    duration::T
 
     # kernels
-    kernel_count::Int
-    kernel_time::T
+    kernels::Vector{Kernel{T}}
 
     # memory operations
     memcpy_count::Int
-    memcpy_time::T
+    memcpy_duration::T
 
     # API calls
     api_count::Int
-    api_time::T
+    api_duration::T
 
-    Iteration{T}() where {T} = new{T}(zero(T), 0, zero(T), 0, zero(T), 0, zero(T))
+    Iteration{T}() where {T} = new{T}(zero(T), Kernel{T}[], 0, zero(T), 0, zero(T))
 end
 
 function Base.show(io::IO, it::Iteration)
-    println(io, "Iteration taking $(round(it.total_time,2)) us:")
-    println(io, " - $(it.kernel_count) kernel launches: $(round(it.kernel_time, 2)) us")
-    println(io, " - $(it.memcpy_count) memory copies: $(round(it.memcpy_time, 2)) us")
-    print(io, " - $(it.api_count) API calls: $(round(it.api_time, 2)) us")
+    println(io, "Iteration taking $(round(it.duration,2)) us:")
+    println(io, " - $(length(it.kernels)) kernel launches: $(round(sum(duration, it.kernels), 2)) us")
+    println(io, " - $(it.memcpy_count) memory copies: $(round(it.memcpy_duration, 2)) us")
+    print(io, " - $(it.api_count) API calls: $(round(it.api_duration, 2)) us")
 end
 
 info("#26278 workaround") # yeah no kiddin' printing something makes it work. fml
-function process_data(table)
+function group_trace(table)
     its = Iteration[]
     it = nothing 
     it_start = 0.
@@ -44,7 +51,7 @@ function process_data(table)
         @assert it != nothing
         if contains(row[:Name], "[Range end]")
             it_stop = row[:Start]
-            it.total_time = it_stop - it_start
+            it.duration = it_stop - it_start
             push!(its, it)
             it = nothing
             continue
@@ -56,21 +63,20 @@ function process_data(table)
             # TODO: only count API calls that contribute to the total execution (ie. no
             # async calls, event queries, etc)
             if row[:Name] != "cuCtxSynchronize"
-                it.api_time += row[:Duration]
+                it.api_duration += row[:Duration]
             end
         elseif contains(row[:Name], "[CUDA memcpy")
             it.memcpy_count += 1
-            it.memcpy_time += row[:Duration]
+            it.memcpy_duration += row[:Duration]
         else
-            it.kernel_count += 1
-            it.kernel_time += row[:Duration]
+            push!(it.kernels, Kernel{Float64}(row[:Name], row[:Registers_Per_Thread], row[:Duration]))
         end
     end
 
     return its
 end
 
-function average_data(its)
+function average_trace(its)
     # NOTE: better just chuck everything in the DataFrame,
     #       and group+average when displaying
 
@@ -78,14 +84,29 @@ function average_data(its)
 
     avg_it = Iteration{Measurement{Float64}}()
 
-    # counters should be identical
-    for field in (:kernel_count, :memcpy_count, :api_count)
+    # kernels
+    @assert all(it->length(its[1].kernels)==length(it.kernels), its)
+    for i in 1:length(its[1].kernels)
+        @assert all(it->its[1].kernels[i].name==it.kernels[i].name, its)
+        @assert all(it->its[1].kernels[i].registers==it.kernels[i].registers, its)
+        push!(avg_it.kernels,
+            Kernel{Measurement{Float64}}(
+                its[1].kernels[i].name,
+                its[1].kernels[i].registers,
+                mean([it.kernels[i].duration for it in its]) ±
+                 std([it.kernels[i].duration for it in its]),
+            )
+        )
+    end
+
+    # other
+    ## counters
+    for field in (:memcpy_count, :api_count)
         @assert all(it->getfield(its[1], field) == getfield(it, field), its)
         setfield!(avg_it, field, getfield(its[1], field))
     end
-
-    # average timings
-    for field in (:total_time, :kernel_time, :memcpy_time, :api_time)
+    ## timings
+    for field in (:duration, :memcpy_duration, :api_duration)
         val = mean([getfield(it, field) for it in its]) ± std([getfield(it, field) for it in its])
         setfield!(avg_it, field, val)
     end
@@ -93,44 +114,44 @@ function average_data(its)
     return avg_it
 end
 
-function process(path)
+function read_trace(path)
     df = open(path, "r") do io
         deserialize(io)
     end
 
-    its = process_data(df)
-    return average_data(its)
+    its = group_trace(df)
+    return average_trace(its)
 end
 
 function add_row!(df, it; system, TFstyle=missing, arity=missing, dims)
     push!(df, [system, TFstyle, arity, dims,
-               it.total_time,
-               it.kernel_count, it.kernel_time,
-               it.memcpy_count, it.memcpy_time,
-               it.api_count, it.api_time])
+               it.duration,
+               length(it.kernels), sum(registers, it.kernels), sum(duration, it.kernels),
+               it.memcpy_count, it.memcpy_duration,
+               it.api_count, it.api_duration])
 end
 
 df = DataFrame(system = Symbol[], TFstyle=Union{Missing,Bool}[], arity=Union{Missing,Int}[],
                dims=Int[],
-               total_time = AbstractFloat[],
-               kernel_count = Int[], kernel_time = AbstractFloat[],
-               memcpy_count = Int[], memcpy_time = AbstractFloat[],
-               api_count = Int[], api_time = AbstractFloat[])
+               duration = AbstractFloat[],
+               kernel_count = Int[], kernel_registers = Int[], kernel_duration = AbstractFloat[],
+               memcpy_count = Int[], memcpy_duration = AbstractFloat[],
+               api_count = Int[], api_duration = AbstractFloat[])
 
 cd(@__DIR__) do
     for dims in [512,1024,2048]
         let
-            it = process("python_$(dims).jls")
+            it = read_trace("python_$(dims)_trace.jls")
             add_row!(df, it; dims=dims, system=:python)
         end
 
         for tfstyle in [true, false]
-            it = process("julia_$(tfstyle ? "tf_" : "")$(dims).jls")
+            it = read_trace("julia_$(tfstyle ? "tf_" : "")$(dims)_trace.jls")
             add_row!(df, it; dims=dims, system=:julia, TFstyle=tfstyle)
         end
 
         for arity in 1:13
-            it = process("julia_arity$(arity)_$(dims).jls")
+            it = read_trace("julia_arity$(arity)_$(dims)_trace.jls")
             add_row!(df, it; dims=dims, system=:julia, arity=arity)
         end
     end
