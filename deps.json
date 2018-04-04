@@ -3,7 +3,7 @@
         "julia":            "a55c280d1b28a4cb069b43cb5691ec8a3b248801",
         "LLVM":             "v0.9.6",
         "CUDAapi":          "v0.4.2",
-        "CUDAdrv":          "9849fa66c503a6e34c916204a376cacbdbc7c935",
+        "CUDAdrv":          "943dcbeaeb3656bf56fcb5be7735b656bfd024b0",
         "CUDAnative":       "v0.7.0",
         "NVTX":             "0b32ea12d942119b26e0178d486e71a9fc1a30fc",
         "FastSplat":        "8cb90d7b8331862cdf5f9feda77946accaccc9a2",
