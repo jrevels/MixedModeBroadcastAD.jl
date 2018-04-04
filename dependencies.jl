@@ -18,11 +18,10 @@ end
 
 function process(;install_cb=nothing, checkout_cb=nothing)
     shas = collect()
-    for dep in deps["dependencies"]
+    for (dep,ref) in deps["refs"]
         if !haskey(shas, dep)
             install_cb != nothing && install_cb(dep)
         else
-            ref = deps["refs"][dep]
             sha = if length(ref) == 40
                 ref
             else
