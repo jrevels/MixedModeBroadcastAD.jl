@@ -1,4 +1,4 @@
-using MixedModeBroadcastAD: broadcast_gradients!
+using MixedModeBroadcastAD: broadcast_gradients!, Wrt
 using CUDAdrv, CUDAnative
 
 sigm(x) = 1 / (1 + exp(-x))
@@ -41,7 +41,8 @@ function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048)
         buffers = similar.(derivs[2:end])
     else
         kernel! = broadcast_wrapper(scalar_kernel)
-        derivs = similar.(inputs)
+        derivs = similar.(inputs[3:end])
+        inputs = (inputs[1], inputs[2], Wrt.(inputs[3:end])...)
         buffers = ()
     end
     return kernel!, inputs, derivs, buffers
@@ -53,7 +54,7 @@ function get_arity_scaling_kernel(usegpu::Bool, dims::Int = 1024, arity::Int = 2
     inputs = ((convert(A, rand(Float32, dims, dims)) for _ in 1:arity)...)
     derivs = similar.(inputs)
     buffers = ()
-    return kernel!, inputs, derivs, buffers
+    return kernel!, Wrt.(inputs), derivs, buffers
 end
 
 ###############################################

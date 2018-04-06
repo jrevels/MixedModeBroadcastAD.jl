@@ -1,4 +1,5 @@
 using ForwardDiff, Test
+using MixedModeBroadcastAD: unwrt
 
 include("kernels.jl")
 
@@ -9,12 +10,12 @@ include("kernels.jl")
         tfkernel!, _, tfderivs, tfbuffers = get_hmlstm_kernel(true, usegpu, dims)
         kernel!, inputs, derivs, buffers = get_hmlstm_kernel(false, usegpu, dims)
         kernel!(inputs, derivs, buffers)
-        tfkernel!(inputs, tfderivs, tfbuffers)
+        tfkernel!(unwrt.(inputs), tfderivs, tfbuffers)
         @test Array(derivs[3]) ≈ Array(tfderivs[1])
         @test Array(derivs[4]) ≈ Array(tfderivs[2])
         @test Array(derivs[5]) ≈ Array(tfderivs[3])
         @test Array(derivs[6]) ≈ Array(tfderivs[4])
-        cpu_inputs = Array.(inputs)
+        cpu_inputs = Array.(unwrt.(inputs))
         for (i, cpu_input) in enumerate(cpu_inputs)
             println("\t...checking gradient for input $i")
             cpu_kernel_i = x -> begin
@@ -33,7 +34,7 @@ end
         println("testing arity scaling kernel for usegpu=", usegpu)
         kernel!, inputs, derivs, buffers = get_arity_scaling_kernel(usegpu, dims, arity)
         kernel!(inputs, derivs, buffers)
-        cpu_inputs = Array.(inputs)
+        cpu_inputs = Array.(unwrt.(inputs))
         for (i, cpu_input) in enumerate(cpu_inputs)
             println("\t...checking gradient for input $i")
             cpu_kernel_i = x -> begin

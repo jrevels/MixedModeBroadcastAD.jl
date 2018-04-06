@@ -90,17 +90,81 @@ end
 # broadcast_gradients! #
 ########################
 
-@inline function dual_call(kernel::K, inputs...) where {K}
-    dual_inputs = ForwardDiff.dualize(Nothing, StaticArrays.SVector(inputs))
-    return @fastsplat(kernel(dual_inputs...))
+struct Wrt{X}
+    value::X
 end
 
-# a fused forwards/backwards pass to compute value and gradients of broadcast(kernel, inputs...)
+unwrt(x) = x
+unwrt(x::Wrt) = x.value
+
+struct DualKernel{K,I}
+    kernel::K
+    DualKernel(kernel::K, ::Type{T}) where {K,T} = new{K,wrtidx(T)}(kernel)
+end
+
+@generated function wrtidx(::Type{T}) where {T<:Tuple}
+    body = Expr(:tuple)
+    for i in 1:fieldcount(T)
+        if T.parameters[i] <: Wrt
+            push!(body.args, i)
+        end
+    end
+    return quote
+        $(Expr(:meta, :inline))
+        $body
+    end
+end
+
+@generated function (dk::DualKernel{K,I})(inputs...) where {K,I}
+    vars = Expr(:tuple)
+    varsyms = Symbol[]
+    varsyms_and_fixed = Union{Symbol,Expr}[]
+    duals = Expr[]
+    nduals = 0
+    for i in 1:fieldcount(inputs)
+        if in(i, I)
+            push!(varsyms_and_fixed, :(inputs[$i]))
+        else
+            nduals += 1
+            push!(duals.args, :(duals[$nduals]))
+            push!(vars.args, :(inputs[$i]))
+            varsym = Symbol("var_"*i)
+            push!(varsyms, varsym)
+            push!(varsyms_and_fixed, varsym)
+        end
+    end
+    return quote
+        $(Expr(:meta, :inline))
+        closure = ($(varsyms...)) -> dk.kernel($(varsyms_and_fixed)...)
+        duals = ForwardDiff.dualize(Nothing, StaticArrays.SVector($vars))
+        return closure($(duals...))
+    end
+end
+
+@generated function is_valid_input_and_derivs(inputs::NTuple{N,Union{AbstractArray,Wrt}},
+                                              derivs::NTuple{D,AbstractArray}) where {N,D}
+    predicates = Expr(:tuple)
+    i_deriv = 0
+    for i in 1:N
+        if inputs.parameters[i] <: Wrt
+            i_deriv += 1
+            push!(predicates.args, :(axes(unwrt(inputs[$i])) === axes(derivs[$i_deriv])))
+        end
+    end
+    if i_deriv == D
+        return :(all($predicates))
+    else
+        return :(false)
+    end
+end
+
+# a fused forwards pass to compute value and gradients of broadcast(kernel, inputs...)
 function broadcast_gradients!(kernel::K,
-                              inputs::NTuple{N,AbstractArray},
-                              derivs::NTuple{N,AbstractArray}) where {K,N}
-    @inline dual_kernel(elements...) = @fastsplat(dual_call(kernel, elements...))
-    @assert all(axes(derivs[i]) === axes(inputs[i]) for i in 1:N)
+                              wrtinputs::NTuple{N,Union{AbstractArray,Wrt}},
+                              derivs::NTuple{D,AbstractArray}) where {K,N,D}
+    @assert is_valid_input_and_derivs(wrtinput, derivs)
+    dual_kernel = DualKernel(kernel, typeof(wrtinputs))
+    inputs = unwrt.(wrtinputs)
     shape = Broadcast.combine_indices(inputs...)
     @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
     keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
@@ -112,10 +176,10 @@ end
 
 @generated function _dual_broadcast_kernel!(dual_kernel::K,
                                             inputs::NTuple{N,AbstractArray{T}},
-                                            derivs::NTuple{N,AbstractArray{T}},
+                                            derivs::NTuple{D,AbstractArray{T}},
                                             keep_bools,
                                             default_indices,
-                                            shape) where {K,T,N}
+                                            shape) where {K,T,N,D}
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
@@ -125,8 +189,8 @@ end
         @simd for idx in CartesianIndices(shape)
             @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
             @nexprs $N i -> (@inbounds element_i = input_i[idx_i])
-            dual::ForwardDiff.Dual{Nothing,$T,$N} = @ncall $N dual_kernel element
-            @nexprs $N i -> (deriv_i[idx_i] = ForwardDiff.partials(dual, i))
+            dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
+            @nexprs $D i -> (deriv_i[idx_i] = ForwardDiff.partials(dual, i))
         end
         return nothing
     end
@@ -136,10 +200,10 @@ end
 
 function _dual_broadcast_kernel!(dual_kernel::K,
                                  inputs::NTuple{N,CuArray{T}},
-                                 derivs::NTuple{N,CuArray{T}},
+                                 derivs::NTuple{D,CuArray{T}},
                                  keep_bools,
                                  default_indices,
-                                 shape) where {K,T,N}
+                                 shape) where {K,T,N,D}
     blocks, threads = cuda_dimensions(prod(length, shape))
     @cuda(blocks=blocks,
           threads=threads,
@@ -151,10 +215,10 @@ end
 
 @generated function _cuda_dual_broadcast_kernel!(dual_kernel::K,
                                                  inputs::NTuple{N,CuDeviceArray{T}},
-                                                 derivs::NTuple{N,CuDeviceArray{T}},
+                                                 derivs::NTuple{D,CuDeviceArray{T}},
                                                  keep_bools,
                                                  default_indices,
-                                                 shape) where {K,T,N}
+                                                 shape) where {K,T,N,D}
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
@@ -164,8 +228,8 @@ end
         let idx = @cuda_index(shape)
             @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
             @nexprs $N i -> (@inbounds element_i = input_i[idx_i])
-            dual::ForwardDiff.Dual{Nothing,$T,$N} = @ncall $N dual_kernel element
-            @nexprs $N i -> (@inbounds deriv_i[idx_i] = ForwardDiff.partials(dual, i))
+            dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
+            @nexprs $D i -> (@inbounds deriv_i[idx_i] = ForwardDiff.partials(dual, i))
         end
         return nothing
     end
