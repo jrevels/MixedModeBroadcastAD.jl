@@ -162,7 +162,7 @@ end
 function broadcast_gradients!(kernel::K,
                               wrtinputs::NTuple{N,Union{AbstractArray,Wrt}},
                               derivs::NTuple{D,AbstractArray}) where {K,N,D}
-    @assert is_valid_input_and_derivs(wrtinput, derivs)
+    @assert is_valid_input_and_derivs(wrtinputs, derivs)
     dual_kernel = DualKernel(kernel, typeof(wrtinputs))
     inputs = unwrt.(wrtinputs)
     shape = Broadcast.combine_indices(inputs...)
