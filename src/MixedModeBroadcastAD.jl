@@ -121,7 +121,7 @@ end
     varsyms_and_fixed = Union{Symbol,Expr}[]
     duals = Expr[]
     nduals = 0
-    for i in 1:fieldcount(inputs)
+    for i in 1:fieldcount(typeof(inputs))
         if in(i, I)
             push!(varsyms_and_fixed, :(inputs[$i]))
         else

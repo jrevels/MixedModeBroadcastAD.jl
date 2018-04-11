@@ -23,7 +23,7 @@ function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
     control[1][3] = 0.0f0 # UPDATE case
     control[2][3] = 1.0f0
     control = (convert(A, control[1]), convert(A, control[2]))
-    return (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...)
+    return (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...,)
 end
 
 function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048)
@@ -51,7 +51,7 @@ end
 function get_arity_scaling_kernel(usegpu::Bool, dims::Int = 1024, arity::Int = 2)
     A = usegpu ? CuArray : Array
     kernel! = broadcast_wrapper(arity_scaling)
-    inputs = ((convert(A, rand(Float32, dims, dims)) for _ in 1:arity)...)
+    inputs = ((convert(A, rand(Float32, dims, dims)) for _ in 1:arity)...,)
     derivs = similar.(inputs)
     buffers = ()
     return kernel!, Wrt.(inputs), derivs, buffers
