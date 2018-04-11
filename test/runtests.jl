@@ -16,14 +16,18 @@ include("kernels.jl")
         @test Array(derivs[3]) ≈ Array(tfderivs[3])
         @test Array(derivs[4]) ≈ Array(tfderivs[4])
         cpu_inputs = Array.(unwrt.(inputs))
-        for (i, cpu_input) in enumerate(cpu_inputs)
-            println("\t...checking gradient for input $i")
-            cpu_kernel_i = x -> begin
-                before = cpu_inputs[1:(i - 1)]
-                after = cpu_inputs[(i + 1):end]
-                return sum(broadcast(cpu_hmlstm_update_c_scalar, before..., x, after...))
+        deriv_i = 1
+        for i in 1:length(inputs)
+            if isa(inputs[i], Wrt)
+                println("\t...checking gradient for input $i")
+                cpu_kernel_i = x -> begin
+                    before = cpu_inputs[1:(i - 1)]
+                    after = cpu_inputs[(i + 1):end]
+                    return sum(broadcast(cpu_hmlstm_update_c_scalar, before..., x, after...))
+                end
+                @test Array(derivs[deriv_i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_inputs[i])
+                deriv_i += 1
             end
-            @test Array(derivs[i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_input)
         end
     end
 end
