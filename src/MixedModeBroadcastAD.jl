@@ -126,7 +126,7 @@ end
             push!(varsyms_and_fixed, :(inputs[$i]))
         else
             nduals += 1
-            push!(duals.args, :(duals[$nduals]))
+            push!(duals, :(duals[$nduals]))
             push!(vars.args, :(inputs[$i]))
             varsym = Symbol("var_"*i)
             push!(varsyms, varsym)
