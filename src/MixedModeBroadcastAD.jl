@@ -183,7 +183,7 @@ end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
-        @nexprs $N i -> (deriv_i = derivs[i])
+        @nexprs $D i -> (deriv_i = derivs[i])
         @nexprs $N i -> (keep_bools_i = keep_bools[i])
         @nexprs $N i -> (default_indices_i = default_indices[i])
         @simd for idx in CartesianIndices(shape)
@@ -222,7 +222,7 @@ end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
-        @nexprs $N i -> (deriv_i = derivs[i])
+        @nexprs $D i -> (deriv_i = derivs[i])
         @nexprs $N i -> (keep_bools_i = keep_bools[i])
         @nexprs $N i -> (default_indices_i = default_indices[i])
         let idx = @cuda_index(shape)
