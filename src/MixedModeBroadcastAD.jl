@@ -97,6 +97,9 @@ end
 unwrt(x) = x
 unwrt(x::Wrt) = x.value
 
+# `I` here is a tuple of indices of the inputs that are marked for differentiation, computed
+# from the input type tuple `T`. For example, if `T` specifies that the first and third
+# inputs are marked `Wrt`, then `I === (1, 3)`.
 struct DualKernel{K,I}
     kernel::K
     DualKernel(kernel::K, ::Type{T}) where {K,T} = new{K,wrtidx(T)}(kernel)
