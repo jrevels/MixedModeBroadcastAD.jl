@@ -116,28 +116,22 @@ end
 end
 
 @generated function (dk::DualKernel{K,I})(inputs...) where {K,I}
-    vars = Expr(:tuple)
-    varsyms = Symbol[]
-    varsyms_and_fixed = Union{Symbol,Expr}[]
-    duals = Expr[]
-    nduals = 0
+    wrts = Expr(:tuple)
+    duals_and_fixed = Expr[]
+    dual_i = 1
     for i in 1:fieldcount(typeof(inputs))
         if in(i, I)
-            push!(varsyms_and_fixed, :(inputs[$i]))
+            push!(wrts, :(inputs[$i]))
+            push!(duals_and_fixed, :(duals[$dual_i]))
+            dual_i += 1
         else
-            nduals += 1
-            push!(duals, :(duals[$nduals]))
-            push!(vars.args, :(inputs[$i]))
-            varsym = Symbol(string("var_", i))
-            push!(varsyms, varsym)
-            push!(varsyms_and_fixed, varsym)
+            push!(duals_and_fixed, :(inputs[$i]))
         end
     end
     return quote
         $(Expr(:meta, :inline))
-        closure = ($(varsyms...)) -> dk.kernel($(varsyms_and_fixed)...)
-        duals = ForwardDiff.dualize(Nothing, StaticArrays.SVector($vars))
-        return closure($(duals...))
+        duals = ForwardDiff.dualize(Nothing, StaticArrays.SVector($wrts))
+        return dk.kernel($(duals_and_fixed...))
     end
 end
 
