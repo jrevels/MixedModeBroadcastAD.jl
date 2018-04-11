@@ -171,12 +171,18 @@ end
 
 #=== Generic/CPU ===#
 
-@generated function _dual_broadcast_kernel!(dual_kernel::K,
+@generated function _dual_broadcast_kernel!(dual_kernel::DualKernel{K,I},
                                             inputs::NTuple{N,AbstractArray{T}},
                                             derivs::NTuple{D,AbstractArray{T}},
                                             keep_bools,
                                             default_indices,
-                                            shape) where {K,T,N,D}
+                                            shape) where {K,I,T,N,D}
+    deriv_loads = Expr[]
+    for i in 1:D
+        idx_sym = Symbol("idx_", I[i])
+        deriv_sym = Symbol("deriv_", i)
+        push!(deriv_loads, :(@inbounds $deriv_sym[$idx_sym] = ForwardDiff.partials(dual, $i)))
+    end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
@@ -187,7 +193,7 @@ end
             @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
             @nexprs $N i -> (@inbounds element_i = input_i[idx_i])
             dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
-            @nexprs $D i -> (deriv_i[idx_i] = ForwardDiff.partials(dual, i))
+            $(deriv_loads...)
         end
         return nothing
     end
@@ -195,12 +201,12 @@ end
 
 #=== GPU ===#
 
-function _dual_broadcast_kernel!(dual_kernel::K,
+function _dual_broadcast_kernel!(dual_kernel::DualKernel{K,I},
                                  inputs::NTuple{N,CuArray{T}},
                                  derivs::NTuple{D,CuArray{T}},
                                  keep_bools,
                                  default_indices,
-                                 shape) where {K,T,N,D}
+                                 shape) where {K,I,T,N,D}
     blocks, threads = cuda_dimensions(prod(length, shape))
     @cuda(blocks=blocks,
           threads=threads,
@@ -210,12 +216,18 @@ function _dual_broadcast_kernel!(dual_kernel::K,
     return nothing
 end
 
-@generated function _cuda_dual_broadcast_kernel!(dual_kernel::K,
+@generated function _cuda_dual_broadcast_kernel!(dual_kernel::DualKernel{K,I},
                                                  inputs::NTuple{N,CuDeviceArray{T}},
                                                  derivs::NTuple{D,CuDeviceArray{T}},
                                                  keep_bools,
                                                  default_indices,
-                                                 shape) where {K,T,N,D}
+                                                 shape) where {K,I,T,N,D}
+    deriv_loads = Expr[]
+    for i in 1:D
+        idx_sym = Symbol("idx_", I[i])
+        deriv_sym = Symbol("deriv_", i)
+        push!(deriv_loads, :(@inbounds $deriv_sym[$idx_sym] = ForwardDiff.partials(dual, $i)))
+    end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
@@ -226,7 +238,7 @@ end
             @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
             @nexprs $N i -> (@inbounds element_i = input_i[idx_i])
             dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
-            @nexprs $D i -> (@inbounds deriv_i[idx_i] = ForwardDiff.partials(dual, i))
+            $(deriv_loads...)
         end
         return nothing
     end
