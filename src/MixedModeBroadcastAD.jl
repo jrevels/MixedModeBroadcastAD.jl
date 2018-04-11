@@ -121,7 +121,7 @@ end
     dual_i = 1
     for i in 1:fieldcount(typeof(inputs))
         if in(i, I)
-            push!(wrts, :(inputs[$i]))
+            push!(wrts.args, :(inputs[$i]))
             push!(duals_and_fixed, :(duals[$dual_i]))
             dual_i += 1
         else
