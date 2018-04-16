@@ -103,12 +103,18 @@ function collect_metrics(cmd)
 end
 
 function collect(cmd, tag)
-    let data = collect_metrics(cmd)
-        save("$(tag)_metrics.jls", data)
+    let fn = "$(tag)_metrics.jls"
+        if !isfile(fn)
+            data = collect_metrics(cmd)
+            save("$(tag)_metrics.jls", data)
+        end
     end
 
-    let data = collect_trace(cmd)
-        save("$(tag)_trace.jls", data)
+    let fn = "$(tag)_trace.jls"
+        if !isfile(fn)
+            data = collect_trace(cmd)
+            save("$(tag)_metrics.jls", data)
+        end
     end
 end
 
