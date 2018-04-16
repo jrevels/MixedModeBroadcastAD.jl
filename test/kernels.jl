@@ -1,8 +1,8 @@
 using MixedModeBroadcastAD: broadcast_gradients!, Wrt
 using CUDAdrv, CUDAnative
 
-sigm(x) = 1 / (1 + exp(-x))
-cuda_sigm(x) = 1 / (1 + CUDAnative.exp_fast(-x))
+sigm(x)      = @fastmath 1 / (1 + exp(-x))
+cuda_sigm(x) = @fastmath 1 / (1 + CUDAnative.exp_fast(-x))
 cuda_tanh(x) = CUDAnative.tanh(x)
 
 ###################
@@ -61,7 +61,7 @@ end
 # idiomatic Julia forward-pass scalar kernels #
 ###############################################
 
-function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+@fastmath function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
     if z == 1.0f0 # FLUSH
         return sigm(i) * tanh(g)
     elseif zb == 0.0f0 # COPY
@@ -71,7 +71,7 @@ function cpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
     end
 end
 
-function gpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
+@fastmath function gpu_hmlstm_update_c_scalar(z, zb, c, f, i, g)
     if z == 1.0f0 # FLUSH
         return cuda_sigm(i) * cuda_tanh(g)
     elseif zb == 0.0f0 # COPY
