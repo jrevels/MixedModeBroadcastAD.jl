@@ -15,7 +15,6 @@ function run_nvprof(callback, cmd, args)
     rm.(glob(output_pattern, tempdir()))
 
     # run and measure
-    @info "Profiling command" cmd
     out = Pipe()
     nvprof = ```
         nvprof
@@ -65,6 +64,7 @@ function save(path, data)
 end
 
 function collect_trace(cmd)
+    @info "Collecting trace" cmd
     return run_nvprof(cmd, ```
         --print-api-trace
         --print-gpu-trace
@@ -85,6 +85,7 @@ function collect_trace(cmd)
     end
 end
 function collect_metrics(cmd)
+    @info "Collecting metrics" cmd
     return run_nvprof(cmd, ```
         --metrics achieved_occupancy
     ```) do input_path
