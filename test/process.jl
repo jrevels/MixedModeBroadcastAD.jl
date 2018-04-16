@@ -144,14 +144,6 @@ end
 
 # basic timings
 
-df = DataFrame(system = Symbol[], TFstyle=Union{Missing,Bool}[], arity=Union{Missing,Int}[],
-               dims=Int[],
-               duration = AbstractFloat[],
-               kernel_count = Int[], kernel_registers = Int[],
-               kernel_duration = AbstractFloat[],  kernel_occupancy = AbstractFloat[],
-               memcpy_count = Int[], memcpy_duration = AbstractFloat[],
-               api_count = Int[], api_duration = AbstractFloat[])
-
 function add_row!(df, trace, metrics; system, TFstyle=missing, arity=missing, dims)
     push!(df, [system, TFstyle, arity, dims,
                trace.duration,
@@ -163,23 +155,41 @@ function add_row!(df, trace, metrics; system, TFstyle=missing, arity=missing, di
                trace.api_count, trace.api_duration])
 end
 
-cd(@__DIR__) do
-    for dims in [512,1024,2048]
-        let
-            metrics, trace = read("python_$(dims)")
-            add_row!(df, trace, metrics; dims=dims, system=:python)
-        end
+function process(dir)
+    df = DataFrame(system = Symbol[], TFstyle=Union{Missing,Bool}[], arity=Union{Missing,Int}[],
+                   dims=Int[],
+                   duration = AbstractFloat[],
+                   kernel_count = Int[], kernel_registers = Int[],
+                   kernel_duration = AbstractFloat[],  kernel_occupancy = AbstractFloat[],
+                   memcpy_count = Int[], memcpy_duration = AbstractFloat[],
+                   api_count = Int[], api_duration = AbstractFloat[])
 
-        for tfstyle in [true, false]
-            metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(dims)")
-            add_row!(df, trace, metrics; dims=dims, system=:julia, TFstyle=tfstyle)
-        end
+    cd(dir) do
+        for dims in [512,1024,2048]
+            let
+                metrics, trace = read("python_$(dims)")
+                add_row!(df, trace, metrics; dims=dims, system=:python)
+            end
 
-        for arity in 1:13
-            metrics, trace = read("julia_arity$(arity)_$(dims)")
-            add_row!(df, trace, metrics; dims=dims, system=:julia, arity=arity)
+            for tfstyle in [true, false]
+                metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(dims)")
+                add_row!(df, trace, metrics; dims=dims, system=:julia, TFstyle=tfstyle)
+            end
+
+            for arity in 1:3:10
+                metrics, trace = read("julia_arity$(arity)_$(dims)")
+                add_row!(df, trace, metrics; dims=dims, system=:julia, arity=arity)
+            end
         end
     end
+
+    df
 end
 
-println(df)
+dir = if length(ARGS) >= 1
+    ARGS[1]
+else
+    @__DIR__
+end
+
+println(process(dir))
