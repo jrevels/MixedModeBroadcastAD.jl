@@ -132,7 +132,7 @@ cd(@__DIR__) do
                     "julia_$(tfstyle ? "tf_" : "")$(dims)")
         end
 
-        for arity in 1:13
+        for arity in 1:3:10
             collect(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`,
                     "julia_arity$(arity)_$(dims)")
         end
