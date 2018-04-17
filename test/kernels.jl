@@ -114,7 +114,7 @@ function tf_hmlstm_update_c_gradients!(inputs::NTuple{6,AbstractArray},
     return nothing
 end
 
-function tf_fusion!(∇g, fusion2, tanh1, P1, P2)
+@fastmath function tf_fusion!(∇g, fusion2, tanh1, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
@@ -136,7 +136,7 @@ function tf_fusion!(∇g, fusion2, tanh1, P1, P2)
     end
 end
 
-function tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
+@fastmath function tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
@@ -158,7 +158,7 @@ function tf_fusion1!(∇i, fusion2, tanh1, P1, P2)
     end
 end
 
-function tf_fusion3!(∇f, fusion5, P0, P1, P2)
+@fastmath function tf_fusion3!(∇f, fusion5, P0, P1, P2)
     P5 = P1
     P4 = P2
     P3 = 0.0f0
@@ -177,7 +177,7 @@ function tf_fusion3!(∇f, fusion5, P0, P1, P2)
     end
 end
 
-function tf_fusion4!(∇c, fusion5, P1, P2)
+@fastmath function tf_fusion4!(∇c, fusion5, P1, P2)
     P4 = P1
     P3 = P2
     P2 = 0.0f0
@@ -196,7 +196,7 @@ end
 
 # fusion.2 and fusion.5 are exactly the same,
 # so we just use this method for both kernels
-function tf_fusion_2_or_5!(_tanh_func, output, P_3_or_5)
+@fastmath function tf_fusion_2_or_5!(_tanh_func, output, P_3_or_5)
     P1 = 0.5f0
     P0 = P_3_or_5
     return broadcast!(output, P0, P1) do p0, p1
