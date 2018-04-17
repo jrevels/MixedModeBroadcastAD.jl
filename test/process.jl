@@ -36,10 +36,9 @@ function Base.show(io::IO, it::Iteration)
     print(io, " - $(it.api_count) API calls: $(round(it.api_duration, 2)) us")
 end
 
-info("#26278 workaround") # yeah no kiddin' printing something makes it work. fml
 function group_trace(table)
     its = Iteration[]
-    it = nothing 
+    it = nothing
     it_start = 0.
     for row in eachrow(table)
         # handle start/stop of a new iteration
