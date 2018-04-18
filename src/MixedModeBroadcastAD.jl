@@ -3,7 +3,6 @@ module MixedModeBroadcastAD
 using ForwardDiff
 using DiffRules
 using StaticArrays
-using FastSplat
 using Base.Broadcast
 using Base.Cartesian
 using CUDAdrv
