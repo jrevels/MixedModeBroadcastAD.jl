@@ -240,7 +240,6 @@ end
             dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
             $(deriv_loads...)
         end
-        return nothing
     end
 end
 
