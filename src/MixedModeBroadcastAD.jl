@@ -8,6 +8,16 @@ using Base.Cartesian
 using CUDAdrv
 using CUDAnative
 
+@inline function allequal(x)
+    length(x) < 2 && return true
+    e1 = x[1]
+    i = 2
+    @inbounds for i=2:length(x)
+        x[i] == e1 || return false
+    end
+    return true
+end
+
 ##################
 # CUDA utilities #
 ##################
@@ -43,8 +53,7 @@ end
 
 macro cuda_index(shape)
     return esc(quote
-        i = @cuda_linear_index(lengthproduct($shape))
-        @inbounds CartesianIndices($shape)[i]
+        @cuda_linear_index(lengthproduct($shape))
     end)
 end
 
@@ -59,6 +68,11 @@ Broadcast.broadcast_indices(::Type{<:CuArray}, A) = axes(A)
     shape = Broadcast.broadcast_indices(output)
     @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
     keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
+    @show size(output)
+    for input in inputs
+        @show size(input)
+    end
+    @assert allequal(size.([output, inputs...]))
     blocks, threads = cuda_dimensions(prod(length, shape))
     @cuda(blocks=blocks,
           threads=threads,
@@ -75,11 +89,8 @@ end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
-        @nexprs $N i -> (keep_bools_i = keep_bools[i])
-        @nexprs $N i -> (default_indices_i = default_indices[i])
         let idx = @cuda_index(shape)
-            @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
-            @nexprs $N i -> (@inbounds element_i = Broadcast._broadcast_getindex(input_i, idx_i))
+            @nexprs $N i -> (@inbounds element_i = input_i[idx])
             output[idx] = @ncall $N kernel element
         end
         return nothing
@@ -207,6 +218,7 @@ function _dual_broadcast_kernel!(dual_kernel::DualKernel{K,I},
                                  keep_bools,
                                  default_indices,
                                  shape) where {K,I,T,N,D}
+    @assert allequal(size.([inputs..., derivs...]))
     blocks, threads = cuda_dimensions(prod(length, shape))
     @cuda(blocks=blocks,
           threads=threads,
@@ -224,19 +236,15 @@ end
                                                  shape) where {K,I,T,N,D}
     deriv_loads = Expr[]
     for i in 1:D
-        idx_sym = Symbol("idx_", I[i])
         deriv_sym = Symbol("deriv_", i)
-        push!(deriv_loads, :(@inbounds $deriv_sym[$idx_sym] = ForwardDiff.partials(dual, $i)))
+        push!(deriv_loads, :(@inbounds $deriv_sym[idx] = ForwardDiff.partials(dual, $i)))
     end
     quote
         $(Expr(:meta, :inline))
         @nexprs $N i -> (input_i = inputs[i])
         @nexprs $D i -> (deriv_i = derivs[i])
-        @nexprs $N i -> (keep_bools_i = keep_bools[i])
-        @nexprs $N i -> (default_indices_i = default_indices[i])
         let idx = @cuda_index(shape)
-            @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
-            @nexprs $N i -> (@inbounds element_i = input_i[idx_i])
+            @nexprs $N i -> (@inbounds element_i = input_i[idx])
             dual::ForwardDiff.Dual{Nothing,$T,$D} = @ncall $N dual_kernel element
             $(deriv_loads...)
         end
