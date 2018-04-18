@@ -26,6 +26,7 @@ macro cuda_linear_index(n)
 end
 
 # this is just `prod(length, x)`, but works on the GPU
+# see JuliaLang/julia#26247 (but even with @inbounds, Base's mapreduce-based prod is slow)
 @generated function lengthproduct(x::NTuple{N,Any}) where {N}
     if N == 0
         body = :(Int32(0))
