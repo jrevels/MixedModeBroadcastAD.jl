@@ -1,0 +1,55 @@
+
+	code for sm_62
+		Function : fusion_1
+	.headerflags    @"EF_CUDA_SM62 EF_CUDA_PTX_SM(EF_CUDA_SM62)"
+
+                   MOV R1, c[0x0][0x20];
+                   S2R R0, SR_CTAID.X;
+                   S2R R2, SR_TID.X;
+
+                   SHL R0, R0, 0x6;
+                   LOP.OR R0, R0, R2;
+                   SHL R10, R0.reuse, 0x2;
+
+                   SHR.U32 R2, R0.reuse, 0x9;
+                   SHR.U32 R11, R0, 0x1e;
+                   IADD R4.CC, R10, c[0x0][0x148];
+
+                   LOP32I.AND R6, R2, 0x1ffc;
+                   IADD.X R5, R11, c[0x0][0x14c];
+         {         IADD R2.CC, R6, c[0x0][0x158];
+                   LDG.E.CI R4, [R4];        }
+
+                   IADD.X R3, RZ, c[0x0][0x15c];
+         {         IADD R6.CC, R6, c[0x0][0x150];
+                   LDG.E.CI R2, [R2];        }
+
+                   IADD.X R7, RZ, c[0x0][0x154];
+         {         IADD R8.CC, R10, c[0x0][0x140];
+                   LDG.E.CI R6, [R6];        }
+
+                   IADD.X R9, R11, c[0x0][0x144];
+                   LDG.E.CI R9, [R8];
+
+                   IADD R10.CC, R10, c[0x0][0x160];
+                   FSETP.EQ.AND P0, PT, R2.reuse, 1, PT;
+                   FSET.BF.EQ.AND R2, R2, 1, PT;
+
+                   FSET.BF.NEU.AND R0, R6, RZ, PT;
+                   SEL R0, R0, RZ, !P0;
+                   FMUL R3, R4, R9;
+
+                   FADD R0, R2, R0;
+                   FFMA R6, R9, -R3, R3;
+                   IADD.X R3, R11, c[0x0][0x164];
+
+                   MOV R2, R10;
+                   FMUL R0, R0, R6;
+                   STG.E [R2], R0;
+
+                   EXIT;
+                   BRA 0x170;
+                   NOP;
+		...................
+
+

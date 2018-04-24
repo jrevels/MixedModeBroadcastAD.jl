@@ -1,0 +1,111 @@
+
+	code for sm_62
+		Function : ptxcall_Kernel_7
+	.headerflags    @"EF_CUDA_SM62 EF_CUDA_PTX_SM(EF_CUDA_SM62)"
+
+                   MOV R1, c[0x0][0x20];
+         {         MOV R7, c[0x0][0x1ec];
+                   S2R R0, SR_CTAID.X;        }
+
+         {         MOV R9, c[0x0][0x1e8];
+                   S2R R2, SR_TID.X;        }
+                   XMAD R3, R0.reuse, c[0x0] [0x8], RZ;
+
+                   XMAD R5, R0.reuse, c[0x0] [0x8], RZ;
+                   XMAD.MRG R6, R0.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R4, R0.reuse, c[0x0] [0x8].H1, RZ;
+
+                   XMAD R10, R0.H1, c[0x0] [0x8].H1, RZ;
+                   XMAD.CHI R11, R0.H1.reuse, c[0x0] [0x8], R3;
+                   MOV R3, c[0x0][0x1f0];
+
+                   XMAD.PSL.CBCC R5, R0.H1, R6.H1, R5;
+                   IADD3.RS R6, R11, R4, R10;
+                   XMAD R4, R3, c[0x0] [0x1e8], RZ;
+
+                   IADD R5.CC, R5, R2;
+                   XMAD R14, R7.reuse, c[0x0] [0x1f0], RZ;
+                   XMAD.MRG R16, R7, c[0x0] [0x1f0].H1, RZ;
+
+                   XMAD R15, R9.reuse, c[0x0] [0x1f4], RZ;
+                   XMAD.MRG R18, R9, c[0x0] [0x1f4].H1, RZ;
+                   XMAD R11, R3.reuse, c[0x0] [0x1e8].H1, RZ;
+
+                   XMAD R12, R3.H1, c[0x0] [0x1e8].H1, RZ;
+                   XMAD.CHI R13, R3.H1.reuse, c[0x0] [0x1e8], R4;
+                   XMAD R8, R3.reuse, c[0x0] [0x1e8], RZ;
+
+                   XMAD.MRG R10, R3, c[0x0] [0x1e8].H1, RZ;
+                   IADD.X R6, R6, RZ;
+                   IADD32I R5.CC, R5, 0x1;
+
+                   XMAD.PSL.CBCC R7, R7.H1, R16.H1, R14;
+                   XMAD.PSL.CBCC R9, R9.H1, R18.H1, R15;
+                   IADD3.RS R4, R13, R11, R12;
+
+                   XMAD.PSL.CBCC R3, R3.H1, R10.H1, R8;
+                   IADD.X R6, RZ, R6;
+                   IADD3 R4, R9, R4, R7;
+
+                   IADD RZ.CC, R3, -R5;
+                   ISETP.LT.X.AND P0, PT, R4, R6, PT;
+               @P0 EXIT;
+
+                   XMAD R6, R0.reuse, c[0x0] [0x8], RZ;
+                   XMAD R3, R0.reuse, c[0x0] [0x8], RZ;
+                   XMAD.MRG R5, R0.reuse, c[0x0] [0x8].H1, RZ;
+
+                   XMAD R4, R0.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R7, R0.H1.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD.CHI R6, R0.H1, c[0x0] [0x8], R6;
+
+                   XMAD.PSL.CBCC R0, R0.H1, R5.H1, R3;
+                   IADD3.RS R4, R6, R4, R7;
+                   IADD R2.CC, R0, R2;
+
+                   IADD.X R11, R4, RZ;
+                   SHL R10, R2.reuse, 0x2;
+                   SHF.L.U64 R11, R2, 0x2, R11;
+
+                   IADD R8.CC, R10.reuse, c[0x0][0x1a8];
+                   IADD.X R9, R11.reuse, c[0x0][0x1ac];
+         {         IADD R6.CC, R10.reuse, c[0x0][0x198];
+                   LDG.E R8, [R8];        }
+
+                   IADD.X R7, R11.reuse, c[0x0][0x19c];
+         {         IADD R2.CC, R10, c[0x0][0x168];
+                   LDG.E R6, [R6];        }
+
+                   IADD.X R3, R11, c[0x0][0x16c];
+         {         IADD R4.CC, R10.reuse, c[0x0][0x180];
+                   LDG.E R2, [R2];        }
+
+                   IADD.X R5, R11.reuse, c[0x0][0x184];
+                   LDG.E R4, [R4];
+
+                   MOV R0, c[0x0][0x18c];
+                   IADD R10.CC, R10, c[0x0][0x150];
+                   IADD.X R3, R11, c[0x0][0x154];
+
+                   FSETP.EQ.AND P0, PT, R8, c[0x0][0x188], PT;
+                   FSETP.NEU.AND P1, PT, R6, c[0x0][0x18c], PT;
+                   SEL R8, R0.reuse, c[0x0][0x188], P0;
+
+                   SEL R0, R0, c[0x0][0x188], !P0;
+                   DEPBAR.LE SB5, 0x1;
+                   FADD R7, -R2, c[0x0][0x188];
+
+                   SEL R6, R8, c[0x0][0x18c], P1;
+                   FMUL R9, R2, R4;
+                   FADD R0, R0, R6;
+
+                   FMUL R7, R7, R9;
+                   MOV R2, R10;
+                   FMUL R0, R0, R7;
+
+                   STG.E [R2], R0;
+                   EXIT;
+                   BRA 0x338;
+		...........................
+
+

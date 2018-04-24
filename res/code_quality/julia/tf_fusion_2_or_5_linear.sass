@@ -1,0 +1,543 @@
+
+	code for sm_62
+		Function : ptxcall_Kernel_1
+	.headerflags    @"EF_CUDA_SM62 EF_CUDA_PTX_SM(EF_CUDA_SM62)"
+
+                   MOV R1, c[0x0][0x20];
+         {         MOV R8, c[0x0][0x194];
+                   S2R R0, SR_CTAID.X;        }
+
+         {         XMAD.MRG R14, R8, c[0x0] [0x198].H1, RZ;
+                   S2R R4, SR_TID.X;        }
+                   XMAD R2, R0.reuse, c[0x0] [0x8], RZ;
+
+                   XMAD R6, R0.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R7, R0.H1.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R3, R0.reuse, c[0x0] [0x8], RZ;
+
+                   XMAD.MRG R5, R0, c[0x0] [0x8].H1, RZ;
+                   XMAD.CHI R9, R0.H1.reuse, c[0x0] [0x8], R2;
+                   MOV R2, c[0x0][0x198];
+
+                   XMAD.PSL.CBCC R3, R0.H1, R5.H1, R3;
+                   IADD3.RS R6, R9, R6, R7;
+                   XMAD R7, R2, c[0x0] [0x190], RZ;
+
+                   MOV R5, c[0x0][0x190];
+                   XMAD R9, R8, c[0x0] [0x198], RZ;
+                   XMAD R10, R2.reuse, c[0x0] [0x190].H1, RZ;
+
+                   XMAD.CHI R15, R2.H1.reuse, c[0x0] [0x190], R7;
+                   IADD R7.CC, R3, R4;
+                   XMAD R13, R2.H1, c[0x0] [0x190].H1, RZ;
+
+                   XMAD R16, R5, c[0x0] [0x19c], RZ;
+                   XMAD.MRG R18, R5, c[0x0] [0x19c].H1, RZ;
+                   XMAD R11, R2.reuse, c[0x0] [0x190], RZ;
+
+                   XMAD.MRG R12, R2, c[0x0] [0x190].H1, RZ;
+                   IADD.X R6, R6, RZ;
+                   XMAD.PSL.CBCC R8, R8.H1, R14.H1, R9;
+
+                   IADD32I R7.CC, R7, 0x1;
+                   XMAD.PSL.CBCC R9, R5.H1, R18.H1, R16;
+                   IADD3.RS R3, R15, R10, R13;
+
+                   XMAD.PSL.CBCC R2, R2.H1, R12.H1, R11;
+                   IADD.X R6, RZ, R6;
+                   IADD3 R3, R9, R3, R8;
+
+                   IADD RZ.CC, R2, -R7;
+                   ISETP.LT.X.AND P0, PT, R3, R6, PT;
+               @P0 EXIT;
+
+                   IADD RZ.CC, -RZ, c[0x0][0x190];
+                   ISETP.NE.X.AND P0, PT, RZ, c[0x0][0x194], PT;
+               @P0 BRA 0x1d0;
+
+                   BPT.TRAP 0x1;
+                   NOP;
+                   NOP;
+
+                   EXIT;
+         {         XMAD R2, R0.reuse, c[0x0] [0x8], RZ;
+                   SSY 0x3e0;        }
+
+                   XMAD R6, R0.reuse, c[0x0] [0x8], RZ;
+                   XMAD.MRG R3, R0.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R7, R0.reuse, c[0x0] [0x8].H1, RZ;
+
+                   XMAD R8, R0.H1.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD.CHI R6, R0.H1, c[0x0] [0x8], R6;
+         {         XMAD.PSL.CBCC R2, R0.H1, R3.H1, R2;
+                   LDC.U8 R0, c[0x0][0x178];        }
+
+                   IADD3.RS R3, R6, R7, R8;
+         {         IADD R4.CC, R2, R4;
+                   LDC.U8 R2, c[0x0][0x179];        }
+
+         {         IADD.X R3, R3, RZ;
+                   F2F.F32.F32 RZ.CC, RZ;        }
+
+                   LOP.OR R6, R3, c[0x0][0x194];
+                   LOP.AND.X.NZ P0, RZ, R6, -0x1;
+               @P0 BRA 0x3d0;
+
+         {         ISETP.EQ.U32.AND P2, PT, R5, RZ, PT;
+                   I2F.F32.U32.RP R6, c[0x0] [0x190];        }
+                   MUFU.RCP R6, R6;
+
+                   IADD32I R7, R6, 0xffffffe;
+                   F2I.FTZ.U32.F32.TRUNC R7, R7;
+                   XMAD R8, R7.reuse, c[0x0] [0x190], RZ;
+
+                   XMAD.MRG R9, R7.reuse, c[0x0] [0x190].H1, RZ;
+                   XMAD.PSL.CBCC R8, R7.H1, R9.H1, R8;
+                   IADD R13, -R8, RZ;
+
+                   XMAD R8, R7.reuse, R13.reuse, RZ;
+                   XMAD R9, R7.reuse, R13.H1.reuse, RZ;
+                   XMAD R10, R7.H1.reuse, R13.H1.reuse, R7;
+
+                   XMAD.CHI R8, R7.H1, R13, R8;
+                   IADD3.RS R6, R8, R9, R10;
+                   XMAD R9, R6, R4, RZ;
+
+                   XMAD R7, R6.reuse, R4.H1.reuse, RZ;
+                   XMAD R8, R6.H1.reuse, R4.H1.reuse, RZ;
+                   XMAD.CHI R6, R6.H1, R4, R9;
+
+                   IADD3.RS R6, R6, R7, R8;
+                   IADD R7, -R6, RZ;
+                   XMAD R8, R7.reuse, c[0x0] [0x190], R4;
+
+                   XMAD.MRG R9, R7, c[0x0] [0x190].H1, RZ;
+                   XMAD.PSL.CBCC R7, R7.H1, R9.H1, R8;
+                   ISETP.GE.U32.AND P0, PT, R7, c[0x0][0x190], PT;
+
+               @P0 IADD R7, R7, -c[0x0][0x190];
+                   ISETP.GE.U32.AND P1, PT, R7, c[0x0][0x190], PT;
+               @P0 IADD32I R6, R6, 0x1;
+
+                   MOV R5, RZ;
+               @P1 IADD32I R6, R6, 0x1;
+         {     @P2 LOP.PASS_B R6, RZ, ~c[0x0][0x190];
+                   SYNC;        }
+
+                   CAL 0x8d8;
+                   SYNC;
+
+         {         IADD R10.CC, RZ, -R6;
+                   SSY 0x7b8;        }
+                   XMAD R11, R10, c[0x0] [0x190], RZ;
+
+                   IADD.X R9, RZ, -R5;
+                   XMAD R7, R10, c[0x0] [0x190], RZ;
+                   XMAD.MRG R8, R10, c[0x0] [0x190].H1, RZ;
+
+                   XMAD R12, R10, c[0x0] [0x190].H1, RZ;
+                   XMAD R13, R10.H1, c[0x0] [0x190].H1, RZ;
+                   XMAD R16, R10, c[0x0] [0x194], RZ;
+
+                   XMAD.MRG R17, R10, c[0x0] [0x194].H1, RZ;
+                   XMAD.CHI R11, R10.H1, c[0x0] [0x190], R11;
+                   XMAD R14, R9, c[0x0] [0x190], RZ;
+
+                   XMAD.MRG R15, R9, c[0x0] [0x190].H1, RZ;
+                   XMAD.PSL.CBCC R7, R10.H1, R8.H1, R7;
+                   XMAD.PSL.CBCC R10, R10.H1, R17.H1, R16;
+
+                   IADD3.RS R8, R11, R12, R13;
+                   XMAD.PSL.CBCC R9, R9.H1, R15.H1, R14;
+                   IADD R4.CC, R4, R7;
+
+                   LOP32I.AND R2, R2, 0x1;
+                   IADD3 R8, R10, R8, R9;
+                   ISETP.EQ.U32.AND P0, PT, R2, 0x1, PT;
+
+                   IADD.X R3, R3, R8;
+                   IADD32I R7.CC, R6, 0x1;
+                   MOV R8, c[0x0][0x15c];
+
+                   IADD.X R9, RZ, R5;
+                   IMNMX.XHI R8.CC, R8, RZ, !PT;
+                   MOV R10, c[0x0][0x158];
+
+                   SEL R2, R7, c[0x0][0x188], P0;
+                   LOP32I.AND R0, R0, 0x1;
+                   SEL R9, R9, c[0x0][0x18c], P0;
+
+                   IMNMX.U32.XLO R7, R10, RZ, !PT;
+                   IADD32I R2.CC, R2, -0x1;
+                   ISETP.EQ.U32.AND P0, PT, R0, 0x1, PT;
+
+                   IADD32I.X R0, R9, -0x1;
+                   XMAD R12, R2, R7, RZ;
+                   XMAD R16, R2, R8, RZ;
+
+                   XMAD.MRG R19, R2, R8.H1, RZ;
+                   XMAD R8, R2, R7, RZ;
+                   XMAD.MRG R11, R2, R7.H1, RZ;
+
+                   IADD32I R9.CC, R4, 0x1;
+                   XMAD R15, R0, R7, RZ;
+                   XMAD.MRG R17, R0, R7.H1, RZ;
+
+                   XMAD R13, R2, R7.H1, RZ;
+                   XMAD R14, R2.H1, R7.H1, RZ;
+                   XMAD.CHI R12, R2.H1, R7, R12;
+
+                   XMAD.PSL.CBCC R10, R2.H1, R19.H1, R16;
+                   XMAD.PSL.CBCC R2, R2.H1, R11.H1, R8;
+                   SEL R9, R9, c[0x0][0x180], P0;
+
+                   XMAD.PSL.CBCC R8, R0.H1, R17.H1, R15;
+                   IADD.X R0, RZ, R3;
+                   IADD3.RS R7, R12, R13, R14;
+
+                   IADD R9.CC, R9, R2;
+                   SEL R0, R0, c[0x0][0x184], P0;
+                   IADD3 R2, R10, R7, R8;
+
+                   IADD.X R0, R0, R2;
+                   LEA R8.CC, R9.reuse, c[0x0][0x168], 0x2;
+                   LEA.HI.X R9, R9, c[0x0][0x16c], R0, 0x2;
+
+                   LDG.E R8, [R8+-0x4];
+                   FMUL R10, R8, c[0x0][0x170];
+                   FSETP.LTU.AND P0, PT, |R10|, c[0x2][0x0], PT;
+
+               @P0 BRA 0x750;
+                   FADD R0, |R10|, |R10|;
+                   FMUL32I R2, R0, 1.4426950216293334961;
+
+                   F2F.F32.F32.TRUNC R7, R2;
+                   FSETP.LT.AND P0, PT, R7, -126, PT;
+                   FFMA R0, R7, c[0x2][0x4], R0;
+
+                   FFMA R0, R7, c[0x2][0x8], R0;
+               @P0 FMUL R7, R7, 0.5;
+                   FMUL32I R8, R0, 1.4426950216293334961;
+
+                   RRO.EX2 R9, R7;
+                   MUFU.EX2 R0, R9;
+                   RRO.EX2 R8, R8;
+
+                   MUFU.EX2 R7, R8;
+               @P0 FMUL R0, R0, R0;
+                   FFMA R7, R0, R7, c[0x2][0xc];
+
+                   MUFU.RCP R7, R7;
+                   FSETP.GE.AND P0, PT, |R10|, 88, PT;
+                   MOV32I R0, 0x3f800000;
+
+                   FFMA R0, R7, -2, R0;
+                   SEL R0, R0, c[0x2][0xc], !P0;
+         {         LOP3.LUT R0, R0, c[0x2][0x1c], R10, 0xf8;
+                   SYNC;        }
+
+                   FMUL R0, R10.reuse, R10;
+                   MOV32I R2, 0x3d57be66;
+
+                   FFMA R2, R0.reuse, c[0x2][0x10], -R2;
+                   FFMA R2, R0.reuse, R2, c[0x2][0x14];
+                   FSETP.EQ.AND P0, PT, R10, RZ, PT;
+
+                   FFMA R2, R0, R2, c[0x2][0x18];
+                   FMUL R0, R0, R2;
+                   FFMA R0, R10.reuse, R0, R10.reuse;
+
+         {     @P0 FADD R0, R10, R10;
+                   SYNC;        }
+                   MOV R8, c[0x0][0x144];
+
+                   IMNMX.XHI R8.CC, R8, RZ, !PT;
+                   MOV R7, c[0x0][0x140];
+                   IMNMX.U32.XLO R7, R7, RZ, !PT;
+
+                   XMAD R9, R6, R7, RZ;
+                   XMAD R12, R7.reuse, R5.reuse, RZ;
+                   XMAD.MRG R13, R7, R5.H1, RZ;
+
+                   XMAD R2, R7.reuse, R6.reuse, RZ;
+                   XMAD.MRG R5, R7, R6.H1.reuse, RZ;
+                   XMAD R14, R8.reuse, R6.reuse, RZ;
+
+                   XMAD.CHI R11, R6.H1.reuse, R7.reuse, R9;
+                   XMAD.MRG R15, R8, R6.H1, RZ;
+                   XMAD R10, R6, R7.H1, RZ;
+
+                   XMAD R9, R6.H1, R7.H1, RZ;
+                   XMAD.PSL.CBCC R2, R7.H1.reuse, R5.H1, R2;
+                   XMAD.PSL.CBCC R7, R7.H1, R13.H1, R12;
+
+                   XMAD.PSL.CBCC R8, R8.H1, R15.H1, R14;
+                   IADD3.RS R5, R11, R10, R9;
+                   IADD R4.CC, R4, R2;
+
+                   IADD3 R2, R8, R5, R7;
+                   MOV R5, c[0x0][0x170];
+                   IADD.X R3, R3, R2;
+
+                   LEA R2.CC, R4.reuse, c[0x0][0x150], 0x2;
+                   FFMA R0, R0, R5, c[0x0][0x170];
+                   LEA.HI.X R3, R4, c[0x0][0x154], R3, 0x2;
+
+                   STG.E [R2], R0;
+                   EXIT;
+                   IADD R6.CC, RZ, -c[0x0][0x190];
+
+                   MOV R7, c[0x0][0x194];
+                   IADD.X R5, RZ, -c[0x0][0x194];
+                   ICMP.LT R6, R6, c[0x0][0x190], R7.reuse;
+
+                   ICMP.LT R5, R5, c[0x0][0x194], R7;
+                   MOV R7, R5;
+                   I2F.F32.U64.RP R7, R6;
+
+                   MUFU.RCP R7, R7;
+                   IADD32I R8, R7, 0x1ffffffe;
+                   F2I.U64.F32.TRUNC R8, R8;
+
+                   XMAD R13, R8.reuse, R6.reuse, RZ;
+                   XMAD R10, R8.reuse, R6.H1.reuse, RZ;
+                   XMAD R11, R8.H1.reuse, R6.H1.reuse, RZ;
+
+                   XMAD.CHI R12, R8.H1, R6, R13;
+                   IADD3.RS R10, R12, R10, R11;
+                   XMAD.MRG R14, R8.reuse, R5.H1.reuse, RZ;
+
+                   XMAD R11, R8.reuse, R5, R10;
+                   XMAD.MRG R10, R8.reuse, R6.H1, RZ;
+                   XMAD.PSL.CBCC R11, R8.H1.reuse, R14.H1, R11;
+
+                   XMAD.PSL.CBCC R7, R8.H1, R10.H1, R13;
+                   XMAD.MRG R13, R9.reuse, R6.H1.reuse, RZ;
+                   XMAD R10, R9.reuse, R6, R11;
+
+                   IADD R7.CC, RZ, -R7;
+                   XMAD.PSL.CBCC R10, R9.H1, R13.H1, R10;
+                   XMAD R13, R8, R7, RZ;
+
+                   IADD.X R10, RZ, -R10;
+                   XMAD R12, R8.reuse, R7.H1.reuse, RZ;
+                   XMAD R11, R8.H1.reuse, R7.H1.reuse, RZ;
+
+                   XMAD.CHI R13, R8.H1.reuse, R7, R13;
+                   XMAD R15, R8.reuse, R10.reuse, RZ;
+                   XMAD.MRG R14, R8.reuse, R10.H1.reuse, RZ;
+
+                   XMAD R16, R8.H1, R10.H1, RZ;
+                   IADD3.RS R12, R13, R12, R11;
+                   XMAD R13, R8.reuse, R10.H1.reuse, RZ;
+
+                   XMAD R11, R9.reuse, R10.reuse, RZ;
+                   XMAD.CHI R18, R8.H1.reuse, R10.reuse, R15.reuse;
+                   XMAD.PSL.CBCC R14, R8.H1, R14.H1, R15;
+
+                   XMAD R15, R9, R10.H1, RZ;
+                   XMAD R17, R9.H1.reuse, R10.H1.reuse, RZ;
+                   XMAD.CHI R20, R9.H1.reuse, R10, R11;
+
+                   IADD3.RS R13, R18, R13, R16;
+                   XMAD R18, R9.reuse, R7.reuse, RZ;
+                   IADD R12.CC, R12, R14;
+
+                   XMAD.MRG R19, R9, R7.H1, RZ;
+                   XMAD R14, R9.reuse, R7.H1.reuse, RZ;
+                   IADD3.RS R15, R20, R15, R17;
+
+                   XMAD R16, R9.H1.reuse, R7.H1.reuse, RZ;
+                   XMAD.CHI R17, R9.H1.reuse, R7, R18.reuse;
+                   IADD.X R7.CC, R8, R13;
+
+                   XMAD.PSL.CBCC R18, R9.H1, R19.H1, R18;
+                   XMAD.MRG R10, R9.reuse, R10.H1, RZ;
+                   IADD3.RS R14, R17, R14, R16;
+
+                   IADD.X R8, R9.reuse, R15;
+                   IADD RZ.CC, R12, R18;
+                   XMAD.PSL.CBCC R9, R9.H1, R10.H1, R11;
+
+                   IADD.X R7.CC, R7, R14;
+                   IADD.X R8, RZ, R8;
+                   IADD R7.CC, R7, R9;
+
+                   XMAD R9, R7.reuse, R6.reuse, RZ;
+                   XMAD R10, R7.reuse, R6.H1.reuse, RZ;
+                   XMAD R11, R7.H1.reuse, R6.H1.reuse, RZ;
+
+                   XMAD.CHI R12, R7.H1, R6, R9;
+                   IADD3.RS R10, R12, R10, R11;
+                   XMAD.MRG R13, R7.reuse, R5.H1.reuse, RZ;
+
+                   XMAD R12, R7.reuse, R5, R10;
+                   XMAD.MRG R10, R7.reuse, R6.H1, RZ;
+                   IADD.X R8, RZ, R8;
+
+                   XMAD.PSL.CBCC R11, R7.H1.reuse, R13.H1, R12;
+                   XMAD.PSL.CBCC R9, R7.H1, R10.H1, R9;
+                   XMAD.MRG R13, R8.reuse, R6.H1.reuse, RZ;
+
+                   XMAD R10, R8.reuse, R6, R11;
+                   IADD R9.CC, RZ, -R9;
+                   XMAD.PSL.CBCC R10, R8.H1, R13.H1, R10;
+
+                   XMAD R12, R7.reuse, R9.reuse, RZ;
+                   XMAD R14, R7, R9.H1, RZ;
+                   IADD.X R10, RZ, -R10;
+
+                   XMAD R11, R7.H1.reuse, R9.H1.reuse, RZ;
+                   XMAD.CHI R12, R7.H1.reuse, R9, R12;
+                   XMAD R16, R7.reuse, R10.reuse, RZ;
+
+                   XMAD.MRG R17, R7, R10.H1, RZ;
+                   IADD3.RS R14, R12, R14, R11;
+                   XMAD R11, R8, R10.reuse, RZ;
+
+                   XMAD R12, R7.reuse, R10.H1.reuse, RZ;
+                   XMAD R15, R7.H1.reuse, R10.H1.reuse, RZ;
+                   XMAD.CHI R18, R7.H1.reuse, R10, R16.reuse;
+
+                   IADD R13.CC, RZ, -R4;
+                   XMAD.PSL.CBCC R16, R7.H1, R17.H1, R16;
+                   XMAD R17, R8.reuse, R10.H1.reuse, RZ;
+
+                   XMAD R19, R8.H1.reuse, R10.H1.reuse, RZ;
+                   XMAD.CHI R20, R8.H1.reuse, R10, R11;
+                   IADD3.RS R18, R18, R12, R15;
+
+                   IADD.X R12, RZ, -R3;
+                   XMAD R15, R8, R9, RZ;
+                   IADD R14.CC, R14, R16;
+
+                   XMAD.MRG R21, R8.reuse, R9.H1.reuse, RZ;
+                   IADD3.RS R17, R20, R17, R19;
+                   XMAD R16, R8.reuse, R9.H1.reuse, RZ;
+
+                   XMAD R19, R8.H1.reuse, R9.H1.reuse, RZ;
+                   XMAD.CHI R9, R8.H1, R9, R15;
+                   IADD.X R7.CC, R7, R18;
+
+                   XMAD.PSL.CBCC R15, R8.H1.reuse, R21.H1, R15;
+                   XMAD.MRG R10, R8.reuse, R10.H1, RZ;
+                   IADD3.RS R16, R9, R16, R19;
+
+                   IADD.X R9, R8, R17;
+                   IADD RZ.CC, R14, R15;
+                   XMAD.PSL.CBCC R10, R8.H1, R10.H1, R11;
+
+                   IADD.X R7.CC, R7, R16;
+                   ICMP.LT R13, R13, R4, R3.reuse;
+                   IADD.X R9, RZ, R9;
+
+                   IADD R10.CC, R7, R10;
+                   ICMP.LT R12, R12, R3, R3;
+                   XMAD R7, R10.reuse, R13.reuse, RZ;
+
+                   XMAD R8, R10.reuse, R13.H1.reuse, RZ;
+                   XMAD R11, R10.H1.reuse, R13.H1.reuse, RZ;
+                   XMAD R15, R10.reuse, R12.reuse, RZ;
+
+                   XMAD.MRG R16, R10.reuse, R12.H1, RZ;
+                   XMAD.CHI R14, R10.H1, R13, R7;
+                   IADD.X R7, RZ, R9;
+
+                   XMAD.PSL.CBCC R9, R10.H1.reuse, R16.H1, R15.reuse;
+                   XMAD.CHI R16, R10.H1.reuse, R12.reuse, R15;
+                   IADD3.RS R8, R14, R8, R11;
+
+                   XMAD R11, R10, R12.H1, RZ;
+                   XMAD R14, R7, R13, RZ;
+                   XMAD R10, R10.H1, R12.H1, RZ;
+
+                   XMAD.MRG R17, R7.reuse, R13.H1.reuse, RZ;
+                   XMAD R15, R7.reuse, R13.H1.reuse, RZ;
+                   IADD R8.CC, R8, R9;
+
+                   XMAD R18, R7.H1.reuse, R13.H1.reuse, RZ;
+                   XMAD.CHI R20, R7.H1, R13, R14;
+                   IADD3.RS R10, R16, R11, R10;
+
+                   XMAD R21, R7.reuse, R12.reuse, RZ;
+                   XMAD.PSL.CBCC R14, R7.H1.reuse, R17.H1, R14;
+                   XMAD R11, R7.reuse, R12.H1.reuse, RZ;
+
+                   XMAD R16, R7.H1, R12.H1, RZ;
+                   IADD3.RS R15, R20, R15, R18;
+                   IADD.X R9, RZ, R10;
+
+                   XMAD.CHI R17, R7.H1.reuse, R12.reuse, R21;
+                   IADD RZ.CC, R8, R14;
+                   XMAD.MRG R10, R7, R12.H1, RZ;
+
+                   IADD3.RS R8, R17, R11, R16;
+                   IADD.X R9.CC, R9, R15;
+                   XMAD.PSL.CBCC R7, R7.H1, R10.H1, R21;
+
+                   IADD.X R8, RZ, R8;
+                   IADD R7.CC, R9, R7;
+                   XMAD R16, R7.reuse, R6.reuse, RZ;
+
+                   XMAD R10, R7.reuse, R6.H1.reuse, RZ;
+                   XMAD R9, R7.H1, R6.H1, RZ;
+                   XMAD.CHI R11, R7.H1, R6, R16;
+
+                   IADD3.RS R10, R11, R10, R9;
+                   XMAD.MRG R14, R7.reuse, R5.H1.reuse, RZ;
+                   XMAD R9, R7.reuse, R5, R10;
+
+                   XMAD.MRG R10, R7.reuse, R6.H1, RZ;
+                   IADD.X R8, RZ, R8;
+                   XMAD.PSL.CBCC R9, R7.H1, R14.H1, R9;
+
+                   XMAD.PSL.CBCC R10, R7.H1, R10.H1, R16;
+                   XMAD.MRG R11, R8.reuse, R6.H1.reuse, RZ;
+                   XMAD R9, R8.reuse, R6, R9;
+
+                   IADD R13.CC, -R10, R13;
+                   XMAD.PSL.CBCC R9, R8.H1, R11.H1, R9;
+                   IADD.X R14, -R9, R12;
+
+                   IADD RZ.CC, R13.reuse, -R6.reuse;
+                   ISETP.GE.U32.X.AND P0, PT, R14.reuse, R5.reuse, PT;
+                   IADD R11.CC, R13, -R6;
+
+                   IADD.X R12, R14, -R5;
+                   IADD32I R9.CC, R7, 0x1;
+                   SEL R11, R11, R13, P0;
+
+                   IADD.X R10, RZ, R8.reuse;
+                   SEL R12, R12, R14, P0;
+                   IADD RZ.CC, R11, -R6;
+
+                   SEL R9, R9, R7, P0;
+                   ISETP.GE.U32.X.AND P1, PT, R12, R5, PT;
+                   SEL R8, R10, R8, P0;
+
+                   IADD32I R6.CC, R9, 0x1;
+                   IADD.X R7, RZ, R8.reuse;
+                   IADD RZ.CC, -RZ, c[0x0][0x190];
+
+                   SEL R6, R6, R9, P1;
+                   SEL R7, R7, R8, P1;
+                   ISETP.EQ.X.AND P0, PT, RZ, c[0x0][0x194], PT;
+
+                   IADD R8.CC, RZ, -R6.reuse;
+                   LOP.XOR R5, R3, c[0x0][0x194];
+                   IADD.X R10, RZ, -R7.reuse;
+
+                   ICMP.LT R6, R8, R6, R5.reuse;
+                   ICMP.LT R5, R10, R7, R5;
+                   SEL R6, R6, -0x1, !P0;
+
+         {         SEL R5, R5, -0x1, !P0;
+                   RET;        }
+                   BRA 0x1098;
+
+                   NOP;
+                   NOP;
+                   NOP;
+		...........................
+
+

@@ -1,0 +1,79 @@
+
+	code for sm_62
+		Function : fusion_5
+	.headerflags    @"EF_CUDA_SM62 EF_CUDA_PTX_SM(EF_CUDA_SM62)"
+
+                   MOV R1, c[0x0][0x20];
+                   S2R R0, SR_CTAID.X;
+                   S2R R2, SR_TID.X;
+
+         {         SHL R0, R0, 0x6;
+                   SSY 0x1d8;        }
+                   LOP.OR R0, R0, R2;
+
+                   SHR.U32 R3, R0.reuse, 0x1e;
+                   ISCADD R2.CC, R0, c[0x0][0x140], 0x2;
+                   IADD.X R3, R3, c[0x0][0x144];
+
+                   LDG.E.CI R2, [R2];
+                   FMUL R4, R2, 0.5;
+                   FSETP.LT.AND P0, PT, |R4|, c[0x2][0x0], PT;
+
+               @P0 BRA 0x170;
+                   FADD R2, |R4|, |R4|;
+                   FMUL32I R3, R2, 1.4426950216293334961;
+
+                   F2F.F32.F32.TRUNC R5, R3;
+                   FSETP.LT.AND P0, PT, R5, -126, PT;
+                   FFMA R2, R5, c[0x2][0x4], R2;
+
+                   FFMA R2, R5, c[0x2][0x8], R2;
+               @P0 FMUL R5, R5, 0.5;
+                   FMUL32I R2, R2, 1.4426950216293334961;
+
+                   RRO.EX2 R7, R5;
+                   MUFU.EX2 R5, R7;
+                   RRO.EX2 R6, R2;
+
+                   MUFU.EX2 R2, R6;
+               @P0 FMUL R5, R5, R5;
+                   FFMA R5, R2, R5, c[0x2][0xc];
+
+                   MUFU.RCP R5, R5;
+                   FSETP.GE.AND P0, PT, |R4|, 88, PT;
+                   MOV32I R2, 0x3f800000;
+
+                   FFMA R2, R5, -2, R2;
+                   SEL R2, R2, c[0x2][0xc], !P0;
+         {         LOP3.LUT R2, R2, c[0x2][0x1c], R4, 0xf8;
+                   SYNC;        }
+
+                   FMUL R2, R4.reuse, R4;
+                   MOV32I R3, 0x3d57be66;
+
+                   FFMA R3, R2.reuse, c[0x2][0x10], -R3;
+                   FFMA R3, R2.reuse, R3, c[0x2][0x14];
+                   FSETP.EQ.AND P0, PT, R4, RZ, PT;
+
+                   FFMA R3, R2, R3, c[0x2][0x18];
+                   FMUL R2, R2, R3;
+                   FFMA R2, R4.reuse, R2, R4.reuse;
+
+         {     @P0 FADD R2, R4, R4;
+                   SYNC;        }
+                   LEA R4.CC, R0, c[0x0][0x148], 0x2;
+
+                   MOV32I R5, 0x3f000000;
+                   LEA.HI.X R3, R0, c[0x0][0x14c], RZ, 0x2;
+                   FFMA R0, R2, 0.5, R5;
+
+                   MOV R2, R4;
+                   STG.E [R2], R0;
+                   EXIT;
+
+                   BRA 0x220;
+                   NOP;
+                   NOP;
+		...................
+
+

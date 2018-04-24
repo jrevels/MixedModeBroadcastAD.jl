@@ -1,0 +1,648 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+<head>
+  <title></title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <style type="text/css">
+td.linenos { background-color: #f0f0f0; padding-right: 10px; }
+span.lineno { background-color: #f0f0f0; padding: 0 5px 0 5px; }
+pre { line-height: 125%; }
+body .hll { background-color: #ffffcc }
+body  { background: #f8f8f8; }
+body .c { color: #408080; font-style: italic } /* Comment */
+body .err { border: 1px solid #FF0000 } /* Error */
+body .k { color: #008000; font-weight: bold } /* Keyword */
+body .o { color: #666666 } /* Operator */
+body .ch { color: #408080; font-style: italic } /* Comment.Hashbang */
+body .cm { color: #408080; font-style: italic } /* Comment.Multiline */
+body .cp { color: #BC7A00 } /* Comment.Preproc */
+body .cpf { color: #408080; font-style: italic } /* Comment.PreprocFile */
+body .c1 { color: #408080; font-style: italic } /* Comment.Single */
+body .cs { color: #408080; font-style: italic } /* Comment.Special */
+body .gd { color: #A00000 } /* Generic.Deleted */
+body .ge { font-style: italic } /* Generic.Emph */
+body .gr { color: #FF0000 } /* Generic.Error */
+body .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+body .gi { color: #00A000 } /* Generic.Inserted */
+body .go { color: #888888 } /* Generic.Output */
+body .gp { color: #000080; font-weight: bold } /* Generic.Prompt */
+body .gs { font-weight: bold } /* Generic.Strong */
+body .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+body .gt { color: #0044DD } /* Generic.Traceback */
+body .kc { color: #008000; font-weight: bold } /* Keyword.Constant */
+body .kd { color: #008000; font-weight: bold } /* Keyword.Declaration */
+body .kn { color: #008000; font-weight: bold } /* Keyword.Namespace */
+body .kp { color: #008000 } /* Keyword.Pseudo */
+body .kr { color: #008000; font-weight: bold } /* Keyword.Reserved */
+body .kt { color: #B00040 } /* Keyword.Type */
+body .m { color: #666666 } /* Literal.Number */
+body .s { color: #BA2121 } /* Literal.String */
+body .na { color: #7D9029 } /* Name.Attribute */
+body .nb { color: #008000 } /* Name.Builtin */
+body .nc { color: #0000FF; font-weight: bold } /* Name.Class */
+body .no { color: #880000 } /* Name.Constant */
+body .nd { color: #AA22FF } /* Name.Decorator */
+body .ni { color: #999999; font-weight: bold } /* Name.Entity */
+body .ne { color: #D2413A; font-weight: bold } /* Name.Exception */
+body .nf { color: #0000FF } /* Name.Function */
+body .nl { color: #A0A000 } /* Name.Label */
+body .nn { color: #0000FF; font-weight: bold } /* Name.Namespace */
+body .nt { color: #008000; font-weight: bold } /* Name.Tag */
+body .nv { color: #19177C } /* Name.Variable */
+body .ow { color: #AA22FF; font-weight: bold } /* Operator.Word */
+body .w { color: #bbbbbb } /* Text.Whitespace */
+body .mb { color: #666666 } /* Literal.Number.Bin */
+body .mf { color: #666666 } /* Literal.Number.Float */
+body .mh { color: #666666 } /* Literal.Number.Hex */
+body .mi { color: #666666 } /* Literal.Number.Integer */
+body .mo { color: #666666 } /* Literal.Number.Oct */
+body .sa { color: #BA2121 } /* Literal.String.Affix */
+body .sb { color: #BA2121 } /* Literal.String.Backtick */
+body .sc { color: #BA2121 } /* Literal.String.Char */
+body .dl { color: #BA2121 } /* Literal.String.Delimiter */
+body .sd { color: #BA2121; font-style: italic } /* Literal.String.Doc */
+body .s2 { color: #BA2121 } /* Literal.String.Double */
+body .se { color: #BB6622; font-weight: bold } /* Literal.String.Escape */
+body .sh { color: #BA2121 } /* Literal.String.Heredoc */
+body .si { color: #BB6688; font-weight: bold } /* Literal.String.Interpol */
+body .sx { color: #008000 } /* Literal.String.Other */
+body .sr { color: #BB6688 } /* Literal.String.Regex */
+body .s1 { color: #BA2121 } /* Literal.String.Single */
+body .ss { color: #19177C } /* Literal.String.Symbol */
+body .bp { color: #008000 } /* Name.Builtin.Pseudo */
+body .fm { color: #0000FF } /* Name.Function.Magic */
+body .vc { color: #19177C } /* Name.Variable.Class */
+body .vg { color: #19177C } /* Name.Variable.Global */
+body .vi { color: #19177C } /* Name.Variable.Instance */
+body .vm { color: #19177C } /* Name.Variable.Magic */
+body .il { color: #666666 } /* Literal.Number.Integer.Long */
+
+  </style>
+</head>
+<body>
+<h2></h2>
+
+<table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="c">; ModuleID = &#39;/home/tbesard/Julia/MixedModeBroadcastAD/viewer//res/tf_fusion4.ll&#39;</span>
+<span class="k">source_filename</span> <span class="p">=</span> <span class="s">&quot;Kernel&quot;</span>
+<span class="k">target</span> <span class="k">datalayout</span> <span class="p">=</span> <span class="s">&quot;e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64&quot;</span>
+<span class="k">target</span> <span class="k">triple</span> <span class="p">=</span> <span class="s">&quot;nvptx64-nvidia-cuda&quot;</span>
+
+<span class="c">; Function Attrs: nounwind readnone</span>
+<span class="k">declare</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.ctaid.x</span><span class="p">()</span> <span class="vg">#0</span>
+
+<span class="c">; Function Attrs: nounwind readnone</span>
+<span class="k">declare</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.ntid.x</span><span class="p">()</span> <span class="vg">#0</span>
+
+<span class="c">; Function Attrs: nounwind readnone</span>
+<span class="k">declare</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.tid.x</span><span class="p">()</span> <span class="vg">#0</span>
+
+<span class="c">; Function Attrs: noreturn nounwind</span>
+<span class="k">declare</span> <span class="kt">void</span> <span class="vg">@llvm.trap</span><span class="p">()</span> <span class="vg">#1</span>
+
+<span class="k">define</span> <span class="kt">void</span> <span class="vg">@ptxcall_Kernel_11</span><span class="p">({</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="p">},</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}])</span> <span class="k">local_unnamed_addr</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="nv">%.elt39</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}]</span> <span class="nv nv-Anonymous">%4</span><span class="p">,</span> <span class="m">0</span>
+  <span class="nv nv-Anonymous">%5</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt39</span><span class="p">,</span> <span class="m">0</span>
+  <span class="nv">%.elt41</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}]</span> <span class="nv nv-Anonymous">%4</span><span class="p">,</span> <span class="m">1</span>
+  <span class="nv nv-Anonymous">%6</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt41</span><span class="p">,</span> <span class="m">0</span>
+<span >┌</span> <span class="c">; Kerne at /home/maleadt/Julia/CUDAnative/src/execution.jl:53                           (k.f)($(params...))</span>
+<span >│</span> <span >┌</span> <span class="c">; _cuda_broadcast_kernel! at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:75 quote</span>
+<span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:22 i = (blockIdx().x - UInt32(1)) * blockDim().x + threadIdx().x</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; blockIdx at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:75 @inline blockIdx() =  (x=blockIdx_x(),  y=blockIdx_y(),  z=blockIdx_z())</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; blockIdx_x at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:55 @eval @inline $fn() = Int(_index($(Val(intr)), $(Val(0:max_grid_size[dim]-1)))) + 1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _index at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42      Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%7</span> <span class="p">=</span> <span class="k">call</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.ctaid.x</span><span class="p">()</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at boot.jl:721                                                         Int64(x::BuiltinInts)   = toInt64(x)::Int64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; toInt64 at boot.jl:645                                                    toInt64(x::UInt32)    = zext_int(Int64, x)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%8</span> <span class="p">=</span> <span class="k">zext</span> <span class="k">i32</span> <span class="nv nv-Anonymous">%7</span> <span class="k">to</span> <span class="k">i64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; blockDim at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:82 @inline blockDim() =  (x=blockDim_x(),  y=blockDim_y(),  z=blockDim_z())</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; blockDim_x at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:50 @eval @inline $fn() = Int(_index($(Val(intr)), $(Val(1:max_block_size[dim]))))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _index at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42      Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%9</span> <span class="p">=</span> <span class="k">call</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.ntid.x</span><span class="p">()</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at boot.jl:721                                                         Int64(x::BuiltinInts)   = toInt64(x)::Int64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; toInt64 at boot.jl:645                                                    toInt64(x::UInt32)    = zext_int(Int64, x)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%10</span> <span class="p">=</span> <span class="k">zext</span> <span class="k">i32</span> <span class="nv nv-Anonymous">%9</span> <span class="k">to</span> <span class="k">i64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; * at int.jl:54                                                                  (*)(x::T, y::T) where {T&lt;:BitInteger} = mul_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%11</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">nuw</span> <span class="k">nsw</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%10</span><span class="p">,</span> <span class="nv nv-Anonymous">%8</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; threadIdx at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:89 @inline threadIdx() = (x=threadIdx_x(), y=threadIdx_y(), z=threadIdx_z())</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; threadIdx_x at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:45 @eval @inline $fn() = Int(_index($(Val(intr)), $(Val(0:max_block_size[dim]-1)))) + 1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _index at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/device/intrinsics/indexing.jl:8 T_int32 = LLVM.Int32Type(jlctx[])</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42      Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%12</span> <span class="p">=</span> <span class="k">call</span> <span class="k">i32</span> <span class="vg">@llvm.nvvm.read.ptx.sreg.tid.x</span><span class="p">()</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at boot.jl:721                                                         Int64(x::BuiltinInts)   = toInt64(x)::Int64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; toInt64 at boot.jl:645                                                    toInt64(x::UInt32)    = zext_int(Int64, x)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%13</span> <span class="p">=</span> <span class="k">zext</span> <span class="k">i32</span> <span class="nv nv-Anonymous">%12</span> <span class="k">to</span> <span class="k">i64</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; + at int.jl:53                                                              (+)(x::T, y::T) where {T&lt;:BitInteger} = add_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%14</span> <span class="p">=</span> <span class="k">add</span> <span class="k">nuw</span> <span class="k">nsw</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%13</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; + at int.jl:53                                                                  (+)(x::T, y::T) where {T&lt;:BitInteger} = add_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%15</span> <span class="p">=</span> <span class="k">add</span> <span class="k">nuw</span> <span class="k">nsw</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%14</span><span class="p">,</span> <span class="nv nv-Anonymous">%11</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:23           i &gt; $n &amp;&amp; return</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; lengthproduct at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:31 if N == 0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:40 $body</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; * at int.jl:54                                                              (*)(x::T, y::T) where {T&lt;:BitInteger} = mul_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%16</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%5</span><span class="p">,</span> <span class="nv nv-Anonymous">%6</span>
+<span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%17</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">slt</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%16</span><span class="p">,</span> <span class="nv nv-Anonymous">%15</span>
+<span >│</span> <span >│</span> <span >│</span>   <span class="k">br</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%17</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%julia_Kernel_34889.exit</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%L234.i</span>
+
+<span class="nl">L234.i:</span>                                           <span class="c">; preds = %entry</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:47           @inbounds CartesianIndices($shape)[i]</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; getindex at abstractarray.jl:942                                                _getindex(IndexStyle(A), A, to_indices(A, I)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _getindex at abstractarray.jl:977                                             @inbounds r = getindex(A, _to_subscript_indices(A, I...)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _to_subscript_indices at abstractarray.jl:984                               _to_subscript_indices(A::AbstractArray, i::Int) = (@_inline_meta; _unsafe_ind2sub(A, i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _unsafe_ind2sub at abstractarray.jl:1006                                  _unsafe_ind2sub(sz, i) = (@_inline_meta; _ind2sub(sz, i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub at abstractarray.jl:1710                                       _ind2sub(axes(A), ind)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub at abstractarray.jl:1747                                     _ind2sub(inds::Indices, ind::Integer)     = (@_inline_meta; _ind2sub_recurse(inds, ind-1))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub_recurse at abstractarray.jl:1760                           indnext, f, l = _div(ind, r1)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _div at abstractarray.jl:1767                                     _div(ind, r::AbstractUnitRange) = (d = unsafe_length(r); (div(ind, d), first(r), d))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; div at int.jl:229                                               div(x::T, y::T) where {T&lt;:BitSigned64} = checked_sdiv_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%18</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">eq</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%5</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="k">br</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%18</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%fail.i</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%pass.i</span>
+
+<span class="nl">fail.i:</span>                                           <span class="c">; preds = %L234.i</span>
+<span >│</span>   <span class="k">call</span> <span class="kt">void</span> <span class="vg">@llvm.trap</span><span class="p">()</span>
+<span >│</span> <span >┌</span> <span class="c">; _cuda_broadcast_kernel! at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:75 quote</span>
+<span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:47 @inbounds CartesianIndices($shape)[i]</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; getindex at abstractarray.jl:942                                                _getindex(IndexStyle(A), A, to_indices(A, I)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _getindex at abstractarray.jl:977                                             @inbounds r = getindex(A, _to_subscript_indices(A, I...)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _to_subscript_indices at abstractarray.jl:984                               _to_subscript_indices(A::AbstractArray, i::Int) = (@_inline_meta; _unsafe_ind2sub(A, i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _unsafe_ind2sub at abstractarray.jl:1006                                  _unsafe_ind2sub(sz, i) = (@_inline_meta; _ind2sub(sz, i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub at abstractarray.jl:1710                                       _ind2sub(axes(A), ind)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub at abstractarray.jl:1747                                     _ind2sub(inds::Indices, ind::Integer)     = (@_inline_meta; _ind2sub_recurse(inds, ind-1))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub_recurse at abstractarray.jl:1760                           indnext, f, l = _div(ind, r1)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _div at abstractarray.jl:1767                                     _div(ind, r::AbstractUnitRange) = (d = unsafe_length(r); (div(ind, d), first(r), d))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; div at int.jl:229                                               div(x::T, y::T) where {T&lt;:BitSigned64} = checked_sdiv_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="k">unreachable</span>
+
+<span class="nl">pass.i:</span>                                           <span class="c">; preds = %L234.i</span>
+                          <span class="nv">%.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%0</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt2</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%0</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%19</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt2</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt5</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%1</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt5.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv">%.elt5</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt5.elt.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt5.elt</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt5.elt20</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv">%.elt5</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%20</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt5.elt20</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt7</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%1</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv">%.elt9</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%1</span><span class="p">,</span> <span class="m">2</span>
+                          <span class="nv">%.elt11</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%1</span><span class="p">,</span> <span class="m">3</span>
+                          <span class="nv">%.elt11.elt17</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv">%.elt11</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%21</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt11.elt17</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt13</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">}</span> <span class="nv nv-Anonymous">%1</span><span class="p">,</span> <span class="m">4</span>
+                          <span class="nv">%.elt13.elt15</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="nv">%.elt13</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%22</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="nv">%.elt13.elt15</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt23</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%2</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt23.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="nv">%.elt23</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt23.elt30</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="nv">%.elt23</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv">%.elt25</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%2</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%23</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="nv">%.elt25</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt27</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%2</span><span class="p">,</span> <span class="m">2</span>
+                          <span class="nv nv-Anonymous">%24</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="nv">%.elt27</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt31</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%3</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt31.elt</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt31</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt31.elt38</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt31</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv">%.elt33</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%3</span><span class="p">,</span> <span class="m">1</span>
+                          <span class="nv nv-Anonymous">%25</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt33</span><span class="p">,</span> <span class="m">0</span>
+                          <span class="nv">%.elt35</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="p">}</span> <span class="nv nv-Anonymous">%3</span><span class="p">,</span> <span class="m">2</span>
+                          <span class="nv nv-Anonymous">%26</span> <span class="p">=</span> <span class="k">extractvalue</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="nv">%.elt35</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                      (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%27</span> <span class="p">=</span> <span class="k">add</span> <span class="k">nuw</span> <span class="k">nsw</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%11</span><span class="p">,</span> <span class="nv nv-Anonymous">%13</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub_recurse at abstractarray.jl:1760                           indnext, f, l = _div(ind, r1)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _div at abstractarray.jl:1767                                     _div(ind, r::AbstractUnitRange) = (d = unsafe_length(r); (div(ind, d), first(r), d))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; div at int.jl:229                                               div(x::T, y::T) where {T&lt;:BitSigned64} = checked_sdiv_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%28</span> <span class="p">=</span> <span class="k">sdiv</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%27</span><span class="p">,</span> <span class="nv nv-Anonymous">%5</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; abstractarray.jl:1761                                               (ind-l*indnext+f, _ind2sub_recurse(tail(inds), indnext)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; * at int.jl:54                                                    (*)(x::T, y::T) where {T&lt;:BitInteger} = mul_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%29</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%28</span><span class="p">,</span> <span class="nv nv-Anonymous">%5</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                    (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%30</span> <span class="p">=</span> <span class="k">sub</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%27</span><span class="p">,</span> <span class="nv nv-Anonymous">%29</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; + at int.jl:53                                                    (+)(x::T, y::T) where {T&lt;:BitInteger} = add_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%31</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%30</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _ind2sub_recurse at abstractarray.jl:1755                         (_lookup(ind, indslast[1]),)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _lookup at abstractarray.jl:1765                                _lookup(ind, r::AbstractUnitRange) = ind+first(r)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; + at int.jl:53                                                (+)(x::T, y::T) where {T&lt;:BitInteger} = add_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%32</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%28</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:81           @nexprs $N i -&gt; (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; newindex at broadcast.jl:286                                                    @inline newindex(I::CartesianIndex, keep, Idefault) = CartesianIndex(_newindex(I.I, keep, Idefault))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _newindex at broadcast.jl:287                                                 @inline _newindex(I, keep, Idefault) =</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                  ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%33</span> <span class="p">=</span> <span class="k">and</span> <span class="k">i8</span> <span class="nv">%.elt23.elt</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%34</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">eq</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%33</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%35</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%34</span><span class="p">,</span> <span class="k">i64</span> <span class="nv">%.elt31.elt</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%31</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _newindex at broadcast.jl:287                                               @inline _newindex(I, keep, Idefault) =</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%36</span> <span class="p">=</span> <span class="k">and</span> <span class="k">i8</span> <span class="nv">%.elt23.elt30</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%37</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">eq</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%36</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%38</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%37</span><span class="p">,</span> <span class="k">i64</span> <span class="nv">%.elt31.elt38</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%32</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                  ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%39</span> <span class="p">=</span> <span class="k">and</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%23</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%40</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">eq</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%39</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%41</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%40</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%25</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%31</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%42</span> <span class="p">=</span> <span class="k">and</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%24</span><span class="p">,</span> <span class="m">1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%43</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">eq</span> <span class="k">i8</span> <span class="nv nv-Anonymous">%42</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%44</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%43</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%26</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%31</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:82           @nexprs $N i -&gt; (@inbounds element_i = Broadcast._broadcast_getindex(input_i, idx_i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _broadcast_getindex at broadcast.jl:318                                         Base.@propagate_inbounds _broadcast_getindex(A, I) = _broadcast_getindex(combine_styles(A), A, I)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _broadcast_getindex at broadcast.jl:320                                       Base.@propagate_inbounds _broadcast_getindex(::Any, A, I) = A[I]</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; getindex at abstractarray.jl:942                                            _getindex(IndexStyle(A), A, to_indices(A, I)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _getindex at abstractarray.jl:965                                         @inbounds r = getindex(A, _to_linear_index(A, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _to_linear_index at abstractarray.jl:971                                _to_linear_index(A::AbstractArray, I::Int...) = (@_inline_meta; _sub2ind(A, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind at abstractarray.jl:1705                                     _sub2ind(axes(A), I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; axes at abstractarray.jl:83                                         map(OneTo, size(A))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; map at tuple.jl:152                                               map(f, t::Tuple{Any, Any})      = (f(t[1]), f(t[2]))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at range.jl:197                                            OneTo(stop::T) where {T&lt;:Integer} = OneTo{T}(stop)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at range.jl:195                                          OneTo{T}(stop) where {T&lt;:Integer} = new(max(zero(T), stop))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; max at promotion.jl:435                                     max(x::T, y::T) where {T&lt;:Real} = select_value(y &lt; x, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%45</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">slt</span> <span class="k">i64</span> <span class="nv">%.elt5.elt.elt</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%46</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%45</span><span class="p">,</span> <span class="k">i64</span> <span class="m">0</span><span class="p">,</span> <span class="k">i64</span> <span class="nv">%.elt5.elt.elt</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind at abstractarray.jl:1721                                   _sub2ind(inds::Indices, I::Integer...) = (@_inline_meta; _sub2ind_recurse(inds, 1, 1, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind_recurse at abstractarray.jl:1737                         _sub2ind_recurse(tail(inds), nextL(L, r1), ind+offsetin(i, r1)*L, I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind_recurse at abstractarray.jl:1737                       _sub2ind_recurse(tail(inds), nextL(L, r1), ind+offsetin(i, r1)*L, I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; offsetin at abstractarray.jl:1743                             offsetin(i, r::AbstractUnitRange) = i-first(r)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                              (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%47</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%38</span><span class="p">,</span> <span class="m">-1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; * at int.jl:54                                                (*)(x::T, y::T) where {T&lt;:BitInteger} = mul_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%48</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%47</span><span class="p">,</span> <span class="nv nv-Anonymous">%46</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; + at int.jl:53                                                (+)(x::T, y::T) where {T&lt;:BitInteger} = add_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%49</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%48</span><span class="p">,</span> <span class="m">-1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; getindex at /home/maleadt/Julia/CUDAnative/src/device/array.jl:78       Base.unsafe_load(pointer(A), index, Val(align))::T</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; unsafe_load at /home/maleadt/Julia/CUDAnative/src/pointer.jl:103      eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/pointer.jl:103 eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42 Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                  (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%50</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%49</span><span class="p">,</span> <span class="nv nv-Anonymous">%35</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%51</span> <span class="p">=</span> <span class="k">inttoptr</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%20</span> <span class="k">to</span> <span class="kt">float</span><span class="p">*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%52</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%51</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%50</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%53</span> <span class="p">=</span> <span class="k">addrspacecast</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%52</span> <span class="k">to</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%54</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span> <span class="nv nv-Anonymous">%53</span><span class="p">,</span> <span class="k">align</span> <span class="m">4</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; abstractarray.jl:961                                                      _getindex(::IndexLinear, A::AbstractArray, i::Int) = (@_propagate_inbounds_meta; getindex(A, i))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; getindex at /home/maleadt/Julia/CUDAnative/src/device/array.jl:78       Base.unsafe_load(pointer(A), index, Val(align))::T</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; unsafe_load at /home/maleadt/Julia/CUDAnative/src/pointer.jl:103      eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/pointer.jl:103 eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42 Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                  (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%55</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%41</span><span class="p">,</span> <span class="m">-1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%56</span> <span class="p">=</span> <span class="k">inttoptr</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%21</span> <span class="k">to</span> <span class="kt">float</span><span class="p">*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%57</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%56</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%55</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%58</span> <span class="p">=</span> <span class="k">addrspacecast</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%57</span> <span class="k">to</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%59</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span> <span class="nv nv-Anonymous">%58</span><span class="p">,</span> <span class="k">align</span> <span class="m">4</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                  (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%60</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%44</span><span class="p">,</span> <span class="m">-1</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%61</span> <span class="p">=</span> <span class="k">inttoptr</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%22</span> <span class="k">to</span> <span class="kt">float</span><span class="p">*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%62</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%61</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%60</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%63</span> <span class="p">=</span> <span class="k">addrspacecast</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%62</span> <span class="k">to</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%64</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span> <span class="nv nv-Anonymous">%63</span><span class="p">,</span> <span class="k">align</span> <span class="m">4</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:83           output[idx] = @ncall $N kernel element</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; #20 at /home/maleadt/Julia/MixedModeBroadcastAD/test/kernels.jl:187             equalto5 = p3 == p2</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; eq_fast at fastmath.jl:179                                                    eq_fast(x::T, y::T) where {T&lt;:FloatTypes} = eq_float_fast(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%65</span> <span class="p">=</span> <span class="k">fcmp</span> <span class="k">fast</span> <span class="k">oeq</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%59</span><span class="p">,</span> <span class="nv">%.elt9</span>
+<span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/test/kernels.jl:189                    select14 = ifelse(equalto19, p2, p1)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                    ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%66</span> <span class="p">=</span> <span class="k">fcmp</span> <span class="k">une</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%64</span><span class="p">,</span> <span class="nv">%.elt7</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%67</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%66</span><span class="p">,</span> <span class="kt">float</span> <span class="nv">%.elt7</span><span class="p">,</span> <span class="kt">float</span> <span class="nv">%.elt9</span>
+<span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/test/kernels.jl:190                    select4 = ifelse(equalto5, select14, p2)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                    ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%68</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%65</span><span class="p">,</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%67</span><span class="p">,</span> <span class="kt">float</span> <span class="nv">%.elt9</span>
+<span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/test/kernels.jl:191                    select13 = ifelse(equalto5, p2, select14)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; ifelse at operators.jl:351                                                    ifelse(c::Bool, x, y) = select_value(c, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%69</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%65</span><span class="p">,</span> <span class="kt">float</span> <span class="nv">%.elt9</span><span class="p">,</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%67</span>
+<span >│</span> <span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/test/kernels.jl:193                    return select4 + multiply29</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; add_fast at fastmath.jl:163                                                   add_fast(x::T, y::T) where {T&lt;:FloatTypes} = add_float_fast(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%70</span> <span class="p">=</span> <span class="k">call</span> <span class="k">fast</span> <span class="kt">float</span> <span class="vg">@llvm.fmuladd.f32</span><span class="p">(</span><span class="kt">float</span> <span class="nv nv-Anonymous">%69</span><span class="p">,</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%54</span><span class="p">,</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%68</span><span class="p">)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; setindex! at abstractarray.jl:1019                                              _setindex!(IndexStyle(A), A, v, to_indices(A, I)...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _setindex! at abstractarray.jl:1042                                           @inbounds r = setindex!(A, v, _to_linear_index(A, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _to_linear_index at abstractarray.jl:971                                    _to_linear_index(A::AbstractArray, I::Int...) = (@_inline_meta; _sub2ind(A, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind at abstractarray.jl:1705                                         _sub2ind(axes(A), I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; axes at abstractarray.jl:83                                             map(OneTo, size(A))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; map at tuple.jl:152                                                   map(f, t::Tuple{Any, Any})      = (f(t[1]), f(t[2]))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at range.jl:197                                                OneTo(stop::T) where {T&lt;:Integer} = OneTo{T}(stop)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; Type at range.jl:195                                              OneTo{T}(stop) where {T&lt;:Integer} = new(max(zero(T), stop))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; max at promotion.jl:435                                         max(x::T, y::T) where {T&lt;:Real} = select_value(y &lt; x, x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%71</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">slt</span> <span class="k">i64</span> <span class="nv">%.elt.elt</span><span class="p">,</span> <span class="m">0</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%72</span> <span class="p">=</span> <span class="k">select</span> <span class="k">i1</span> <span class="nv nv-Anonymous">%71</span><span class="p">,</span> <span class="k">i64</span> <span class="m">0</span><span class="p">,</span> <span class="k">i64</span> <span class="nv">%.elt.elt</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind at abstractarray.jl:1721                                       _sub2ind(inds::Indices, I::Integer...) = (@_inline_meta; _sub2ind_recurse(inds, 1, 1, I...))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind_recurse at abstractarray.jl:1737                             _sub2ind_recurse(tail(inds), nextL(L, r1), ind+offsetin(i, r1)*L, I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; _sub2ind_recurse at abstractarray.jl:1737                           _sub2ind_recurse(tail(inds), nextL(L, r1), ind+offsetin(i, r1)*L, I...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; * at int.jl:54                                                    (*)(x::T, y::T) where {T&lt;:BitInteger} = mul_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%73</span> <span class="p">=</span> <span class="k">mul</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%28</span><span class="p">,</span> <span class="nv nv-Anonymous">%72</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; setindex! at /home/maleadt/Julia/CUDAnative/src/device/array.jl:84          Base.unsafe_store!(pointer(A), x, index, Val(align))</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; unsafe_store! at /home/maleadt/Julia/CUDAnative/src/pointer.jl:133        eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; @generated body at /home/maleadt/Julia/CUDAnative/src/pointer.jl:133    eltyp = convert(LLVMType, T)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; macro expansion at /home/maleadt/Julia/LLVM/src/interop/base.jl:42    Base.llvmcall($(convert(Ptr{Cvoid},ref)), $rettyp, $argtyp, $args...)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >┌</span> <span class="c">; - at int.jl:52                                                      (-)(x::T, y::T) where {T&lt;:BitInteger} = sub_int(x, y)</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%74</span> <span class="p">=</span> <span class="k">add</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%30</span><span class="p">,</span> <span class="nv nv-Anonymous">%73</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%75</span> <span class="p">=</span> <span class="k">inttoptr</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%19</span> <span class="k">to</span> <span class="kt">float</span><span class="p">*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%76</span> <span class="p">=</span> <span class="k">getelementptr</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%75</span><span class="p">,</span> <span class="k">i64</span> <span class="nv nv-Anonymous">%74</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="nv nv-Anonymous">%77</span> <span class="p">=</span> <span class="k">addrspacecast</span> <span class="kt">float</span><span class="p">*</span> <span class="nv nv-Anonymous">%76</span> <span class="k">to</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span>
+<span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span> <span >│</span>   <span class="k">store</span> <span class="kt">float</span> <span class="nv nv-Anonymous">%70</span><span class="p">,</span> <span class="kt">float</span> <span class="k">addrspace</span><span class="p">(</span><span class="m">1</span><span class="p">)*</span> <span class="nv nv-Anonymous">%77</span><span class="p">,</span> <span class="k">align</span> <span class="m">4</span>
+<span >│</span> <span >│</span> <span >├</span> <span class="c">; /home/maleadt/Julia/MixedModeBroadcastAD/src/MixedModeBroadcastAD.jl:85           return nothing</span>
+<span >│</span> <span >│</span> <span >│</span>   <span class="k">br</span> <span class="kt">label</span> <span class="nv">%julia_Kernel_34889.exit</span>
+
+<span class="nl">julia_Kernel_34889.exit:</span>                          <span class="c">; preds = %pass.i, %entry</span>
+        <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span>
+
+<span class="c">; Function Attrs: nounwind readnone</span>
+<span class="k">declare</span> <span class="kt">float</span> <span class="vg">@llvm.fmuladd.f32</span><span class="p">(</span><span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">)</span> <span class="vg">#0</span>
+
+<span class="k">attributes</span> <span class="vg">#0</span> <span class="p">=</span> <span class="p">{</span> <span class="k">nounwind</span> <span class="k">readnone</span> <span class="p">}</span>
+<span class="k">attributes</span> <span class="vg">#1</span> <span class="p">=</span> <span class="p">{</span> <span class="k">noreturn</span> <span class="k">nounwind</span> <span class="p">}</span>
+
+<span class="nv">!llvm.module.flags</span> <span class="p">=</span> <span class="p">!{</span><span class="nv nv-Anonymous">!0</span><span class="p">}</span>
+<span class="nv">!llvm.dbg.cu</span> <span class="p">=</span> <span class="p">!{</span><span class="nv nv-Anonymous">!1</span><span class="p">}</span>
+<span class="nv">!nvvm.annotations</span> <span class="p">=</span> <span class="p">!{</span><span class="nv nv-Anonymous">!4</span><span class="p">}</span>
+
+<span class="nv nv-Anonymous">!0</span> <span class="p">=</span> <span class="p">!{</span><span class="k">i32</span> <span class="m">1</span><span class="p">,</span> <span class="nv">!&quot;Debug Info Version&quot;</span><span class="p">,</span> <span class="k">i32</span> <span class="m">3</span><span class="p">}</span>
+<span class="nv nv-Anonymous">!1</span> <span class="p">=</span> <span class="k">distinct</span> <span class="nv">!DICompileUnit</span><span class="p">(</span><span class="nl">language:</span> <span >DW_LANG_C</span><span class="m">89</span><span class="p">,</span> <span class="nl">file:</span> <span class="nv nv-Anonymous">!2</span><span class="p">,</span> <span class="nl">producer:</span> <span class="s">&quot;julia&quot;</span><span class="p">,</span> <span class="nl">isOptimized:</span> <span class="k">true</span><span class="p">,</span> <span class="nl">runtimeVersion:</span> <span class="m">0</span><span class="p">,</span> <span class="nl">emissionKind:</span> <span >FullDebug</span><span class="p">,</span> <span class="nl">enums:</span> <span class="nv nv-Anonymous">!3</span><span class="p">)</span>
+<span class="nv nv-Anonymous">!2</span> <span class="p">=</span> <span class="nv">!DIFile</span><span class="p">(</span><span class="nl">filename:</span> <span class="s">&quot;/home/maleadt/Julia/CUDAnative/src/execution.jl&quot;</span><span class="p">,</span> <span class="nl">directory:</span> <span class="s">&quot;.&quot;</span><span class="p">)</span>
+<span class="nv nv-Anonymous">!3</span> <span class="p">=</span> <span class="p">!{}</span>
+<span class="nv nv-Anonymous">!4</span> <span class="p">=</span> <span class="p">!{</span><span class="kt">void</span> <span class="p">({</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="kt">float</span><span class="p">,</span> <span class="kt">float</span><span class="p">,</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}</span> <span class="p">}</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i8</span><span class="p">]</span> <span class="p">},</span> <span class="p">{</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">],</span> <span class="p">[</span><span class="m">1</span> <span class="k">x</span> <span class="k">i64</span><span class="p">]</span> <span class="p">},</span> <span class="p">[</span><span class="m">2</span> <span class="k">x</span> <span class="p">{</span> <span class="k">i64</span> <span class="p">}])*</span> <span class="vg">@ptxcall_Kernel_11</span><span class="p">,</span> <span class="nv">!&quot;kernel&quot;</span><span class="p">,</span> <span class="k">i32</span> <span class="m">1</span><span class="p">}</span>
+</pre></div>
+</td></tr></table></body>
+</html>

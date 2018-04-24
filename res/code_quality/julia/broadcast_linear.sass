@@ -1,0 +1,135 @@
+
+	code for sm_62
+		Function : ptxcall_Kernel_3
+	.headerflags    @"EF_CUDA_SM62 EF_CUDA_PTX_SM(EF_CUDA_SM62)"
+
+                   MOV R1, c[0x0][0x20];
+         {         MOV R7, c[0x0][0x18c];
+                   S2R R0, SR_CTAID.X;        }
+
+         {         MOV R9, c[0x0][0x188];
+                   S2R R2, SR_TID.X;        }
+                   XMAD R3, R0.reuse, c[0x0] [0x8], RZ;
+
+                   XMAD R5, R0.reuse, c[0x0] [0x8], RZ;
+                   XMAD.MRG R6, R0.reuse, c[0x0] [0x8].H1, RZ;
+                   XMAD R4, R0.reuse, c[0x0] [0x8].H1, RZ;
+
+                   XMAD R10, R0.H1, c[0x0] [0x8].H1, RZ;
+                   XMAD.CHI R11, R0.H1.reuse, c[0x0] [0x8], R3;
+                   MOV R3, c[0x0][0x190];
+
+                   XMAD.PSL.CBCC R5, R0.H1, R6.H1, R5;
+                   IADD3.RS R6, R11, R4, R10;
+                   XMAD R4, R3, c[0x0] [0x188], RZ;
+
+                   IADD R5.CC, R5, R2;
+                   XMAD R14, R7.reuse, c[0x0] [0x190], RZ;
+                   XMAD.MRG R16, R7, c[0x0] [0x190].H1, RZ;
+
+                   XMAD R15, R9.reuse, c[0x0] [0x194], RZ;
+                   XMAD.MRG R18, R9, c[0x0] [0x194].H1, RZ;
+                   XMAD R11, R3.reuse, c[0x0] [0x188].H1, RZ;
+
+                   XMAD R12, R3.H1, c[0x0] [0x188].H1, RZ;
+                   XMAD.CHI R13, R3.H1.reuse, c[0x0] [0x188], R4;
+                   XMAD R8, R3.reuse, c[0x0] [0x188], RZ;
+
+                   XMAD.MRG R10, R3, c[0x0] [0x188].H1, RZ;
+                   IADD.X R6, R6, RZ;
+                   IADD32I R5.CC, R5, 0x1;
+
+                   XMAD.PSL.CBCC R7, R7.H1, R16.H1, R14;
+                   XMAD.PSL.CBCC R9, R9.H1, R18.H1, R15;
+                   IADD3.RS R4, R13, R11, R12;
+
+                   XMAD.PSL.CBCC R3, R3.H1, R10.H1, R8;
+                   IADD.X R6, RZ, R6;
+                   IADD3 R4, R9, R4, R7;
+
+                   IADD RZ.CC, R3, -R5;
+                   ISETP.LT.X.AND P0, PT, R4, R6, PT;
+               @P0 EXIT;
+
+         {         XMAD R6, R0.reuse, c[0x0] [0x8], RZ;
+                   SSY 0x398;        }
+                   XMAD R3, R0, c[0x0] [0x8], RZ;
+
+                   XMAD.MRG R5, R0, c[0x0] [0x8].H1, RZ;
+                   XMAD R4, R0, c[0x0] [0x8].H1, RZ;
+                   XMAD R7, R0.H1, c[0x0] [0x8].H1, RZ;
+
+                   XMAD.CHI R6, R0.H1, c[0x0] [0x8], R6;
+                   XMAD.PSL.CBCC R0, R0.H1, R5.H1, R3;
+                   IADD3.RS R4, R6, R4, R7;
+
+                   IADD R2.CC, R0, R2;
+                   IADD.X R8, R4, RZ;
+                   SHL R0, R2.reuse, 0x2;
+
+                   SHF.L.U64 R8, R2, 0x2, R8;
+                   IADD R2.CC, R0, c[0x0][0x168];
+                   IADD.X R3, R8, c[0x0][0x16c];
+
+                   LDG.E R2, [R2];
+                   FSETP.LTU.AND P0, PT, |R2|, c[0x2][0x0], PT;
+               @P0 BRA 0x320;
+
+                   FADD R3, |R2|, |R2|;
+                   FMUL32I R4, R3, 1.4426950216293334961;
+                   F2F.F32.F32.TRUNC R5, R4;
+
+                   FSETP.LT.AND P0, PT, R5, -126, PT;
+                   FFMA R3, R5, c[0x2][0x4], R3;
+                   FFMA R3, R5, c[0x2][0x8], R3;
+
+               @P0 FMUL R5, R5, 0.5;
+                   FMUL32I R6, R3, 1.4426950216293334961;
+                   RRO.EX2 R7, R5;
+
+                   MUFU.EX2 R3, R7;
+                   RRO.EX2 R5, R6;
+                   MUFU.EX2 R5, R5;
+
+               @P0 FMUL R3, R3, R3;
+                   FFMA R3, R3, R5, c[0x2][0xc];
+                   MUFU.RCP R3, R3;
+
+                   FSETP.GE.AND P0, PT, |R2|, 88, PT;
+                   MOV32I R4, 0x3f800000;
+                   FFMA R4, R3, -2, R4;
+
+                   SEL R4, R4, c[0x2][0xc], !P0;
+         {         LOP3.LUT R4, R4, c[0x2][0x1c], R2, 0xf8;
+                   SYNC;        }
+
+                   FMUL R3, R2.reuse, R2;
+                   MOV32I R4, 0x3d57be66;
+                   FFMA R4, R3.reuse, c[0x2][0x10], -R4;
+
+                   FFMA R4, R3.reuse, R4, c[0x2][0x14];
+                   FSETP.EQ.AND P0, PT, R2, RZ, PT;
+                   FFMA R4, R3, R4, c[0x2][0x18];
+
+                   FMUL R3, R3, R4;
+                   FFMA R3, R2.reuse, R3, R2.reuse;
+               @P0 FADD R3, R2, R2;
+
+         {         MOV R4, R3;
+                   SYNC;        }
+                   IADD R2.CC, R0, c[0x0][0x150];
+
+                   IADD.X R3, R8, c[0x0][0x154];
+                   STG.E [R2], R4;
+                   EXIT;
+
+                   BRA 0x3c0;
+                   NOP;
+                   NOP;
+
+                   NOP;
+                   NOP;
+                   NOP;
+		...........................
+
+
