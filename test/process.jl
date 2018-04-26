@@ -182,7 +182,19 @@ function process(dir)
         end
     end
 
-    df
+    let df = df[.!ismissing.(df[:arity]),:]
+        df = df[[:arity, :dims, :kernel_registers, :kernel_duration, :kernel_occupancy]]
+
+        df[:duration_val] = Measurements.value.(df[:kernel_duration])
+        df[:duration_err] = Measurements.uncertainty.(df[:kernel_duration])
+        delete!(df, :kernel_duration)
+
+        rename!(df, :kernel_registers, :registers)
+
+        rename!(df, :kernel_occupancy, :occupancy)
+
+        writetable(joinpath(dirname(@__DIR__), "res", "arity.csv"), df)
+    end
 end
 
 dir = if length(ARGS) >= 1
