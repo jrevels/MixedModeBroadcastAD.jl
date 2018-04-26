@@ -175,7 +175,7 @@ function process(dir)
                 add_row!(df, trace, metrics; dims=dims, system=:julia, TFstyle=tfstyle)
             end
 
-            for arity in 1:3:10
+            for arity in 1:10
                 metrics, trace = read("julia_arity$(arity)_$(dims)")
                 add_row!(df, trace, metrics; dims=dims, system=:julia, arity=arity)
             end
