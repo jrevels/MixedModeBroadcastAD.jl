@@ -18,8 +18,24 @@ else
     get_arity_scaling_kernel(true, DIMS, ARITY)
 end
 
+# to mimick TF, we'll copy back the results to the CPU.
+# preallocate a page-locked memory buffer to avoid API call overhead.
+# TODO: wrap in CUDAdrv
+const buffer = Ref{Ptr{Cvoid}}()
+const buffer_size = DIMS*DIMS*sizeof(Float32)
+CUDAdrv.@apicall(:cuMemAllocHost, (Ptr{Ptr{Cvoid}}, Csize_t), buffer, buffer_size)
+
 function benchmark(kernel!, inputs, derivs, buffers)
-    NVTX.@range "kernel" (kernel!(inputs, derivs, buffers); CUDAdrv.synchronize())
+    NVTX.@range "kernel" begin
+        kernel!(inputs, derivs, buffers)
+        for i in 1:4
+            # we download results asynchronously to avoid API overhead
+            # TODO: `Base.copyto!(; async)` in CUDAdrv
+            @assert buffer_size == sizeof(DERIVS[i])
+            CUDAdrv.Mem.download!(buffer[], DERIVS[i].buf, buffer_size; async=true)
+        end
+        CUDAdrv.synchronize()
+    end
 end
 
 benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS) # warmup
@@ -32,3 +48,5 @@ NVTX.@activate CUDAdrv.@profile begin
     end
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end
+
+CUDAdrv.@apicall(:cuMemFreeHost, (Ptr{Cvoid},), buffer[])
