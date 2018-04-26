@@ -13,7 +13,7 @@ using CUDAnative
 ##################
 
 function cuda_dimensions(n::Integer)
-    threads = min(n, 256)
+    threads = min(n, 64)
     return ceil(Int, n / threads), threads
 end
 
