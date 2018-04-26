@@ -146,7 +146,7 @@ end
 function add_row!(df, trace, metrics; system, TFstyle=missing, arity=missing, dims)
     push!(df, [system, TFstyle, arity, dims,
                trace.duration,
-               length(trace.kernels), sum(registers, trace.kernels),
+               length(trace.kernels), maximum(registers.(trace.kernels)),
                sum(duration, trace.kernels),
                mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy")[:Avg],
                     trace.kernels),
