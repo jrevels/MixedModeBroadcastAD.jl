@@ -84,6 +84,7 @@ function collect_trace(cmd)
         return table
     end
 end
+
 function collect_metrics(cmd)
     @info "Collecting metrics" cmd
     return run_nvprof(cmd, ```
@@ -103,17 +104,17 @@ function collect_metrics(cmd)
     end
 end
 
-function collect(cmd, tag)
-    let fn = "$(tag)_metrics.jls"
+function collect(cmd_trace, cmd_metrics, tag)
+    let fn = "$(tag)_trace.jls"
         if !isfile(fn)
-            data = collect_metrics(cmd)
+            data = collect_trace(cmd_trace)
             save(fn, data)
         end
     end
 
-    let fn = "$(tag)_trace.jls"
+    let fn = "$(tag)_metrics.jls"
         if !isfile(fn)
-            data = collect_trace(cmd)
+            data = collect_metrics(cmd_metrics)
             save(fn, data)
         end
     end
@@ -125,16 +126,19 @@ cd(@__DIR__) do
     for dims in [512,1024,2048]
         let
             collect(`python3 runprofile.py $dims $ITERATIONS`,
+                    `python3 runprofile.py $dims 1`,
                     "python_$(dims)")
         end
 
         for tfstyle in [true, false]
             collect(`julia --depwarn=no runprofile.jl $tfstyle $dims $ITERATIONS`,
+                    `julia --depwarn=no runprofile.jl $tfstyle $dims 1`,
                     "julia_$(tfstyle ? "tf_" : "")$(dims)")
         end
 
         for arity in 1:3:10
             collect(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`,
+                    `julia --depwarn=no runprofile.jl false $dims 1 $arity`,
                     "julia_arity$(arity)_$(dims)")
         end
     end
