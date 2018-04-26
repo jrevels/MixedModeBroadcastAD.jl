@@ -28,11 +28,11 @@ CUDAdrv.@apicall(:cuMemAllocHost, (Ptr{Ptr{Cvoid}}, Csize_t), buffer, buffer_siz
 function benchmark(kernel!, inputs, derivs, buffers)
     NVTX.@range "kernel" begin
         kernel!(inputs, derivs, buffers)
-        for i in 1:4
+        for deriv in DERIVS
             # we download results asynchronously to avoid API overhead
             # TODO: `Base.copyto!(; async)` in CUDAdrv
-            @assert buffer_size == sizeof(DERIVS[i])
-            CUDAdrv.Mem.download!(buffer[], DERIVS[i].buf, buffer_size; async=true)
+            @assert buffer_size == sizeof(deriv)
+            CUDAdrv.Mem.download!(buffer[], deriv.buf, buffer_size; async=true)
         end
         CUDAdrv.synchronize()
     end
