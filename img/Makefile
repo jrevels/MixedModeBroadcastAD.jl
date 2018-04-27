@@ -1,4 +1,4 @@
-SRCS = arity
+SRCS = arity compute
 PDFS = $(SRCS:=.pdf)
 
 .PHONY: all

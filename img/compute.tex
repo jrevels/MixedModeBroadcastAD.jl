@@ -1,0 +1,52 @@
+\documentclass{standalone}
+
+\input{common.tex}
+
+\providecommand{\datatable}{compute.csv}
+
+\begin{document}
+
+\begin{tikzpicture}[]
+
+\begin{axis}[
+    ybar,
+    ylabel=compute time,
+    xlabel=number of elements,
+    y SI prefix=micro,y unit=s,
+    ymode=log,
+    ymin=10, ymax=1000,
+    %
+    % PGF's mode=log is log10, so we use symbolic ticks
+    xtick=data,
+    symbolic x coords={
+      512,
+      1024,
+      2048
+    },
+    xticklabel={\pgfmathparse{\tick}\pgfmathprintnumber{\pgfmathresult}},
+    %
+    enlarge x limits={abs=1cm},
+    bar width=8pt,
+    legend style={at={(0.02,0.98)},anchor=north west}]
+]
+
+\addplot     +[error bars/.cd, y dir=both, y explicit] %
+         table[x=dims,y=compute_val,y error=compute_err,
+               /tr/rowfilter={system}{python}]{\datatable};
+\addlegendentry{python}
+
+\addplot     +[error bars/.cd, y dir=both, y explicit] %
+         table[x=dims,y=compute_val,y error=compute_err,
+               /tr/rowfilter={system}{julia_tfstyle}]{\datatable};
+\addlegendentry{tfstyle}
+
+\addplot     +[error bars/.cd, y dir=both, y explicit] %
+         table[x=dims,y=compute_val,y error=compute_err,
+               /tr/rowfilter={system}{julia}]{\datatable};
+\addlegendentry{julia}
+
+\end{axis}
+
+\end{tikzpicture}
+
+\end{document}

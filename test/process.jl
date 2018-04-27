@@ -182,7 +182,8 @@ function process(dir)
         end
     end
 
-    let df = df[.!ismissing.(df[:arity]),:]
+    let df = df
+        df = df[.!ismissing.(df[:arity]),:]
         df = df[[:arity, :dims, :kernel_registers, :kernel_duration, :kernel_occupancy]]
 
         df[:duration_val] = Measurements.value.(df[:kernel_duration])
@@ -194,6 +195,26 @@ function process(dir)
         rename!(df, :kernel_occupancy, :occupancy)
 
         writetable(joinpath(dirname(@__DIR__), "img", "arity.csv"), df)
+    end
+
+    let df = df
+        df = df[ismissing.(df[:arity]),:]
+        df = df[[:system, :TFstyle, :dims, :kernel_duration, :memcpy_duration]]
+
+        df[(df[:system] .== :julia) .& (df[:TFstyle] .== true), :system] = :julia_tfstyle
+        delete!(df, :TFstyle)
+
+        df[:compute_val] = Measurements.value.(df[:kernel_duration])
+        df[:compute_err] = Measurements.uncertainty.(df[:kernel_duration])
+        delete!(df, :kernel_duration)
+
+        df[:memory_val] = Measurements.value.(df[:memcpy_duration])
+        df[:memory_err] = Measurements.uncertainty.(df[:memcpy_duration])
+        delete!(df, :memcpy_duration)
+
+        display(df)
+
+        writetable(joinpath(dirname(@__DIR__), "img", "compute.csv"), df)
     end
 end
 
