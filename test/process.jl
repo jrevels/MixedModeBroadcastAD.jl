@@ -19,6 +19,7 @@ mutable struct Iteration{T<:AbstractFloat}
     kernels::Vector{Kernel{T}}
 
     # memory operations
+    memcpy_size::Float64
     memcpy_count::Int
     memcpy_duration::T
 
@@ -26,13 +27,13 @@ mutable struct Iteration{T<:AbstractFloat}
     api_count::Int
     api_duration::T
 
-    Iteration{T}() where {T} = new{T}(zero(T), Kernel{T}[], 0, zero(T), 0, zero(T))
+    Iteration{T}() where {T} = new{T}(zero(T), Kernel{T}[], 0.0, 0, zero(T), 0, zero(T))
 end
 
 function Base.show(io::IO, it::Iteration)
     println(io, "Iteration taking $(round(it.duration,2)) us:")
     println(io, " - $(length(it.kernels)) kernel launches: $(round(sum(duration, it.kernels), 2)) us")
-    println(io, " - $(it.memcpy_count) memory copies: $(round(it.memcpy_duration, 2)) us")
+    println(io, " - $(it.memcpy_count) memory copies: $(round(it.memcpy_size, 2)) MB in $(round(it.memcpy_duration, 2)) us")
     print(io, " - $(it.api_count) API calls: $(round(it.api_duration, 2)) us")
 end
 
@@ -66,6 +67,7 @@ function group_trace(table)
                 it.api_duration += row[:Duration]
             end
         elseif contains(row[:Name], "[CUDA memcpy")
+            it.memcpy_size += row[:Size]
             it.memcpy_count += 1
             it.memcpy_duration += row[:Duration]
         else
@@ -101,7 +103,7 @@ function average_trace(its)
 
     # other
     ## counters
-    for field in (:memcpy_count, :api_count)
+    for field in (:memcpy_size, :memcpy_count, :api_count)
         @assert all(it->getfield(its[1], field) == getfield(it, field), its)
         setfield!(avg_it, field, getfield(its[1], field))
     end
@@ -150,7 +152,7 @@ function add_row!(df, trace, metrics; system, TFstyle=missing, arity=missing, di
                sum(duration, trace.kernels),
                mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy")[:Avg],
                     trace.kernels),
-               trace.memcpy_count, trace.memcpy_duration,
+               trace.memcpy_size, trace.memcpy_count, trace.memcpy_duration,
                trace.api_count, trace.api_duration])
 end
 
@@ -160,7 +162,7 @@ function process(dir)
                    duration = AbstractFloat[],
                    kernel_count = Int[], kernel_registers = Int[],
                    kernel_duration = AbstractFloat[],  kernel_occupancy = AbstractFloat[],
-                   memcpy_count = Int[], memcpy_duration = AbstractFloat[],
+                   memcpy_size = Float64[], memcpy_count = Int[], memcpy_duration = AbstractFloat[],
                    api_count = Int[], api_duration = AbstractFloat[])
 
     cd(dir) do
@@ -212,10 +214,10 @@ function process(dir)
         df[:memory_err] = Measurements.uncertainty.(df[:memcpy_duration])
         delete!(df, :memcpy_duration)
 
-        display(df)
-
         writetable(joinpath(dirname(@__DIR__), "img", "compute.csv"), df)
     end
+
+    df
 end
 
 dir = if length(ARGS) >= 1
