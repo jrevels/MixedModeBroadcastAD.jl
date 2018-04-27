@@ -1,0 +1,23 @@
+\usepackage{pgfplots, pgfplotstable}
+\usepgfplotslibrary{units}
+\pgfplotsset{compat=1.13}
+
+% command for filtering rows based on a column value
+\pgfkeys{
+    /tr/rowfilter/.style 2 args={
+        /pgfplots/x filter/.append code={
+            \edef\arga{\thisrow{#1}}
+            \edef\argb{#2}
+            \ifx\arga\argb
+            \else
+                \def\pgfmathresult{}
+            \fi
+        }
+    }
+}
+
+% DataFrames.writetable uses quotes, which PGF doesn't handle
+\pgfplotstableset{ignore chars={"}, col sep=comma}
+
+\usepackage{tikz}
+\usetikzlibrary{patterns}

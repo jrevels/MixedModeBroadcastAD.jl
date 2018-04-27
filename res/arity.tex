@@ -1,33 +1,9 @@
 \documentclass{standalone}
 
-\usepackage[utf8]{inputenc}
-\usepackage{textcomp}
+\input{common.tex}
 
-\usepackage{pgfplots, pgfplotstable}
-\usepgfplotslibrary{units}
-\pgfplotsset{compat=1.13}
-
-\pgfkeys{
-    /tr/rowfilter/.style 2 args={
-        /pgfplots/x filter/.append code={
-            \edef\arga{\thisrow{#1}}
-            \edef\argb{#2}
-            \ifx\arga\argb
-            \else
-                \def\pgfmathresult{}
-            \fi
-        }
-    }
-}
-
-\usepackage{tikz}
-\usetikzlibrary{patterns}
-
-\pgfplotstableset{ignore chars={"}, col sep=comma}
-%\pgfplotstableread{arity.csv}\datatable % incompatible with rowfilter
 \providecommand{\datatable}{arity.csv}
-
-\newcommand{\dims}{2048}
+\providecommand{\dims}{2048}
 
 \begin{document}
 
@@ -42,8 +18,7 @@
     ytick pos=left
 ]
 
-
-\addplot +[error bars/.cd, y dir=both, y explicit] %
+\addplot     +[error bars/.cd, y dir=both, y explicit] %
          table[x=arity,y=duration_val,y error=duration_err,
                /tr/rowfilter={dims}{\dims}]{\datatable};
 
@@ -53,13 +28,12 @@
     axis y line*=right,
     axis x line=none,
     ymin=0, ymax=1,
-    ylabel=occupancy,
+    ylabel={achieved occupancy},
     ylabel style={rotate=-180},
     yticklabel={\pgfmathparse{\tick*100}\pgfmathprintnumber{\pgfmathresult}\%}
 ]
 
-
-\addplot [ybar, pattern=north east lines] %
+\addplot      [ybar, pattern=north east lines] %
          table[x=arity,y=occupancy, /tr/rowfilter={dims}{\dims}]{\datatable};
 
 \end{axis}
