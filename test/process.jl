@@ -193,7 +193,7 @@ function process(dir)
 
         rename!(df, :kernel_occupancy, :occupancy)
 
-        writetable(joinpath(dirname(@__DIR__), "res", "arity.csv"), df)
+        writetable(joinpath(dirname(@__DIR__), "img", "arity.csv"), df)
     end
 end
 
