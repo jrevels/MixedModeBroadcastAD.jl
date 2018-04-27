@@ -9,6 +9,8 @@ import gc
 
 nvtx = ctypes.CDLL("/usr/local/cuda-9.1/lib64/libnvToolsExt.so.1.0.0")
 
+memory_initial = pycuda.driver.mem_get_info()[0]
+
 parser = argparse.ArgumentParser()
 parser.add_argument('dims', nargs='?', default=2048, type=int, help='dimension of differentiable variables')
 parser.add_argument('iterations', nargs='?', default=1, type=int, help='iterations to run')
@@ -23,7 +25,9 @@ if __name__ == '__main__':
     with tf.Session(config=config) as sess:
         with tf.device("/device:GPU:0"):
             b.warmup(sess)
+            memory = pycuda.driver.mem_get_info()[0]
             pycuda.driver.start_profiler()
+            nvtx.nvtxMarkA(ctypes.c_char_p(b"Memory usage: %d" % (memory_initial-memory)))
             for i in range(args.iterations):
                 gc.collect()
                 nvtx.nvtxRangePushA(ctypes.c_char_p(b"kernel"))

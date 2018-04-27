@@ -6,6 +6,8 @@ include("kernels.jl")
 # NOTE: use with `--profile-from-start off`
 NVTX.stop()
 
+memory_initial = CUDAdrv.Mem.free()
+
 const TFSTYLE = length(ARGS) >= 1 ? parse(Bool, ARGS[1]) : false
 const DIMS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 2048
 const ITERATIONS = length(ARGS) >= 3 ? parse(Int, ARGS[3]) : 1
@@ -40,7 +42,10 @@ end
 
 benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS) # warmup
 
+memory = CUDAdrv.Mem.free()
 NVTX.@activate CUDAdrv.@profile begin
+    NVTX.mark("Used Memory: $(memory_initial-memory)")
+
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     for i in 1:ITERATIONS
         GC.gc()
