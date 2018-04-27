@@ -8,5 +8,5 @@ all: $(PDFS)
 clean:
 	$(RM) $(PDFS)
 
-%.pdf: %.tex common.tex
+%.pdf: %.tex common.tex *.csv
 	rubber --pdf $<

@@ -3,7 +3,7 @@
 \input{common.tex}
 
 \providecommand{\datatable}{arity.csv}
-\providecommand{\dims}{2048}
+\providecommand{\problemsize}{2048}
 
 \begin{document}
 
@@ -16,15 +16,15 @@
 \begin{axis}[
     ylabel=compute time,
     y SI prefix=micro,y unit=s,
-    xlabel={arity for $N=\dims$},
+    xlabel={arity for $N=\problemsize$},
     xticklabels from table={\datatable}{arity},
     xtick=data,
     ytick pos=left
 ]
 
 \addplot     +[error bars/.cd, y dir=both, y explicit] %
-         table[x=arity,y=duration_val,y error=duration_err,
-               /tr/rowfilter={dims}{\dims}]{\datatable};
+         table[x=arity,y=kernel_runtime,y error=kernel_runtime_err,
+               /tr/rowfilter={problem_size}{\problemsize}]{\datatable};
 
 \end{axis}
 
@@ -38,7 +38,7 @@
 ]
 
 \addplot      [ybar, pattern=north east lines] %
-         table[x=arity,y=occupancy, /tr/rowfilter={dims}{\dims}]{\datatable};
+         table[x=arity,y=kernel_occupancy, /tr/rowfilter={problem_size}{\problemsize}]{\datatable};
 
 \end{axis}
 

@@ -2,7 +2,7 @@
 
 \input{common.tex}
 
-\providecommand{\datatable}{compute.csv}
+\providecommand{\datatable}{hmlstm.csv}
 
 \begin{document}
 
@@ -31,18 +31,18 @@
 ]
 
 \addplot     +[error bars/.cd, y dir=both, y explicit] %
-         table[x=dims,y=compute_val,y error=compute_err,
-               /tr/rowfilter={system}{python}]{\datatable};
+         table[x=problem_size,y=kernel_runtime,y error=kernel_runtime_err,
+               /tr/rowfilter={implementation}{python}]{\datatable};
 \addlegendentry{python}
 
 \addplot     +[error bars/.cd, y dir=both, y explicit] %
-         table[x=dims,y=compute_val,y error=compute_err,
-               /tr/rowfilter={system}{julia_tfstyle}]{\datatable};
+         table[x=problem_size,y=kernel_runtime,y error=kernel_runtime_err,
+               /tr/rowfilter={implementation}{julia_tfstyle}]{\datatable};
 \addlegendentry{tfstyle}
 
 \addplot     +[error bars/.cd, y dir=both, y explicit] %
-         table[x=dims,y=compute_val,y error=compute_err,
-               /tr/rowfilter={system}{julia}]{\datatable};
+         table[x=problem_size,y=kernel_runtime,y error=kernel_runtime_err,
+               /tr/rowfilter={implementation}{julia}]{\datatable};
 \addlegendentry{julia}
 
 \end{axis}
