@@ -52,37 +52,35 @@ end
 # broadcast!(f, ::CuArray, inputs...) #
 #######################################
 
-Broadcast.broadcast_indices(::Type{<:CuArray}, A::Ref) = ()
-Broadcast.broadcast_indices(::Type{<:CuArray}, A) = axes(A)
-
-@inline function Broadcast.broadcast!(kernel, output::CuArray, ::Nothing, inputs::Vararg{Any,N}) where {N}
-    shape = Broadcast.broadcast_indices(output)
-    @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
-    keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
-    blocks, threads = cuda_dimensions(prod(length, shape))
-    @cuda(blocks=blocks,
-          threads=threads,
-          _cuda_broadcast_kernel!(kernel, output, inputs, keep_bools, default_indices, shape))
-    return output
+function CUDAnative.cudaconvert(bc::Broadcast.Broadcasted{Style}) where Style
+    Broadcast.Broadcasted{Style}(bc.f, map(CUDAnative.cudaconvert, bc.args), bc.axes)
 end
 
-@generated function _cuda_broadcast_kernel!(kernel::K,
-                                            output::CuDeviceArray,
-                                            inputs::NTuple{N,Any},
-                                            keep_bools,
-                                            default_indices,
-                                            shape) where {K,N}
-    quote
-        $(Expr(:meta, :inline))
-        @nexprs $N i -> (input_i = inputs[i])
-        @nexprs $N i -> (keep_bools_i = keep_bools[i])
-        @nexprs $N i -> (default_indices_i = default_indices[i])
-        let idx = @cuda_index(shape)
-            @nexprs $N i -> (idx_i = Broadcast.newindex(idx, keep_bools_i, default_indices_i))
-            @nexprs $N i -> (@inbounds element_i = Broadcast._broadcast_getindex(input_i, idx_i))
-            output[idx] = @ncall $N kernel element
-        end
-        return nothing
+function CUDAnative.cudaconvert(ex::Broadcast.Extruded)
+    Broadcast.Extruded(CUDAnative.cudaconvert(ex.x), ex.keeps, ex.defaults)
+end
+
+@inline function Base.copyto!(dest::CuArray, bc::Broadcast.Broadcasted{Nothing})
+    axes(dest) == axes(bc) || Broadcast.throwdm(axes(dest), axes(bc))
+    # # Performance optimization: broadcast!(identity, dest, A) is equivalent to copyto!(dest, A) if indices match
+    # if bc.f === identity && bc.args isa Tuple{AbstractArray} # only a single input argument to broadcast!
+    #     A = bc.args[1]
+    #     if axes(dest) == axes(A)
+    #         return copyto!(dest, A)
+    #     end
+    # end
+    bc′ = Broadcast.preprocess(dest, bc)
+    blocks, threads = cuda_dimensions(prod(length, axes(dest)))
+    @cuda(blocks=blocks,
+          threads=threads,
+          _cuda_copyto_kernel!(dest, bc′))
+    return dest
+end
+
+function _cuda_copyto_kernel!(dest::CuDeviceArray, bc::Broadcast.Broadcasted{Nothing})
+    shape = axes(dest)
+    let I = @cuda_index(shape)
+        @inbounds dest[I] = bc[I]
     end
 end
 
