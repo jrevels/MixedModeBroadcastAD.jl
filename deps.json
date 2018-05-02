@@ -1,9 +1,9 @@
 {
     "refs": {
-        "julia":            "a55c280d1b28a4cb069b43cb5691ec8a3b248801",
+        "julia":            "f4349c14dcf08e4b4e6e2806c5f389bcabbd0cf2",
         "LLVM":             "v0.9.6",
         "CUDAapi":          "v0.4.2",
-        "CUDAdrv":          "943dcbeaeb3656bf56fcb5be7735b656bfd024b0",
+        "CUDAdrv":          "v0.8.3",
         "CUDAnative":       "v0.7.0",
         "NVTX":             "0b32ea12d942119b26e0178d486e71a9fc1a30fc",
         "StaticArrays":     "v0.7.0",
