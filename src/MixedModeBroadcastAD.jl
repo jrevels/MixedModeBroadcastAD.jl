@@ -160,9 +160,9 @@ function broadcast_gradients!(kernel::K,
     @assert is_valid_input_and_derivs(wrtinputs, derivs)
     dual_kernel = DualKernel(kernel, typeof(wrtinputs))
     inputs = unwrt.(wrtinputs)
-    shape = Broadcast.combine_indices(inputs...)
-    @boundscheck Broadcast.check_broadcast_indices(shape, inputs...)
-    keep_bools, default_indices = Broadcast.map_newindexer(shape, first(inputs), Base.tail(inputs))
+    shape = Broadcast.combine_axes(inputs...)
+    @boundscheck Broadcast.check_broadcast_axes(shape, inputs...)
+    keep_bools, default_indices = zip(map(Broadcast.newindexer, inputs)...)
     _dual_broadcast_kernel!(dual_kernel, inputs, derivs, keep_bools, default_indices, shape)
     return nothing
 end
