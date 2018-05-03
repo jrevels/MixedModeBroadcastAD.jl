@@ -49,6 +49,9 @@ function group_trace(table)
             it_start = row[:Start]
             continue
         end
+        if contains(row[:Name], "[Marker]")
+            continue
+        end
         @assert it != nothing
         if contains(row[:Name], "[Range end]")
             it_stop = row[:Start]
