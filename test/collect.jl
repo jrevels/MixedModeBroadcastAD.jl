@@ -104,15 +104,15 @@ function collect_metrics(cmd)
     end
 end
 
-function collect(cmd_trace, cmd_metrics, tag)
-    let fn = "$(tag)_trace.jls"
+function collect(cmd_trace, cmd_metrics, tag, dir)
+    let fn = joinpath(dir, "$(tag)_trace.jls")
         if !isfile(fn)
             data = collect_trace(cmd_trace)
             save(fn, data)
         end
     end
 
-    let fn = "$(tag)_metrics.jls"
+    let fn = joinpath(dir, "$(tag)_metrics.jls")
         if !isfile(fn)
             data = collect_metrics(cmd_metrics)
             save(fn, data)
@@ -122,24 +122,34 @@ end
 
 const ITERATIONS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 1024
 
+dir = if length(ARGS) >= 2
+    abspath(ARGS[2])
+else
+    @__DIR__
+end
+mkpath(dir)
+
 cd(@__DIR__) do
     for dims in [512,1024,2048]
         let
             collect(`python3 runprofile.py $dims $ITERATIONS`,
                     `python3 runprofile.py $dims 1`,
-                    "python_$(dims)")
+                    "python_$(dims)",
+                    dir)
         end
 
         for tfstyle in [true, false]
             collect(`julia --depwarn=no runprofile.jl $tfstyle $dims $ITERATIONS`,
                     `julia --depwarn=no runprofile.jl $tfstyle $dims 1`,
-                    "julia_$(tfstyle ? "tf_" : "")$(dims)")
+                    "julia_$(tfstyle ? "tf_" : "")$(dims)",
+                    dir)
         end
 
         for arity in 1:10
             collect(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`,
                     `julia --depwarn=no runprofile.jl false $dims 1 $arity`,
-                    "julia_arity$(arity)_$(dims)")
+                    "julia_arity$(arity)_$(dims)",
+                    dir)
         end
     end
 end
