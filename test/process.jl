@@ -205,8 +205,6 @@ function process(dir)
         delete!(df, :arity)
         prepare_properties!(df)
 
-        display(df)
-
         writetable(joinpath(dirname(@__DIR__), "img", "hmlstm.csv"), df)
     end
 
@@ -217,7 +215,7 @@ function process(dir)
         writetable(joinpath(dirname(@__DIR__), "img", "arity.csv"), df)
     end
 
-    nothing
+    df
 end
 
 dir = if length(ARGS) >= 1
