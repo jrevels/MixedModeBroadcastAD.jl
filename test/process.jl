@@ -170,19 +170,29 @@ function process(dir)
 
     cd(dir) do
         for problem_size in [512,1024,2048]
-            let
+            try
                 metrics, trace = read("python_$(problem_size)")
                 add_row!(df, trace, metrics; problem_size=problem_size, implementation=:python)
+            catch exception
+                @warn "Could not read Python measurements" problem_size exception
             end
 
             for tfstyle in [true, false]
-                metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(problem_size)")
-                add_row!(df, trace, metrics; problem_size=problem_size, implementation=(tfstyle ? :julia_tfstyle : :julia))
+                try
+                    metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(problem_size)")
+                    add_row!(df, trace, metrics; problem_size=problem_size, implementation=(tfstyle ? :julia_tfstyle : :julia))
+                catch exception
+                    @warn "Could not read Julia measurements" problem_size tfstyle exception
+                end
             end
 
             for arity in 1:10
-                metrics, trace = read("julia_arity$(arity)_$(problem_size)")
-                add_row!(df, trace, metrics; problem_size=problem_size, implementation=:julia, arity=arity)
+                try
+                    metrics, trace = read("julia_arity$(arity)_$(problem_size)")
+                    add_row!(df, trace, metrics; problem_size=problem_size, implementation=:julia, arity=arity)
+                catch exception
+                    @warn "Could not read arity measurements" problem_size arity exception
+                end
             end
         end
     end
