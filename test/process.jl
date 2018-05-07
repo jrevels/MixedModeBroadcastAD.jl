@@ -174,7 +174,7 @@ function process(dir)
                 metrics, trace = read("python_$(problem_size)")
                 add_row!(df, trace, metrics; problem_size=problem_size, implementation=:python)
             catch exception
-                @warn "Could not read Python measurements" problem_size exception
+                isa(exception, SystemError) || rethrow()
             end
 
             for tfstyle in [true, false]
@@ -182,7 +182,7 @@ function process(dir)
                     metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(problem_size)")
                     add_row!(df, trace, metrics; problem_size=problem_size, implementation=(tfstyle ? :julia_tfstyle : :julia))
                 catch exception
-                    @warn "Could not read Julia measurements" problem_size tfstyle exception
+                    isa(exception, SystemError) || rethrow()
                 end
             end
 
@@ -191,7 +191,7 @@ function process(dir)
                     metrics, trace = read("julia_arity$(arity)_$(problem_size)")
                     add_row!(df, trace, metrics; problem_size=problem_size, implementation=:julia, arity=arity)
                 catch exception
-                    @warn "Could not read arity measurements" problem_size arity exception
+                    isa(exception, SystemError) || rethrow()
                 end
             end
         end
