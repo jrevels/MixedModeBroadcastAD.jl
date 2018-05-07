@@ -1,6 +1,6 @@
 {
     "refs": {
-        "julia":            "f4349c14dcf08e4b4e6e2806c5f389bcabbd0cf2",
+        "julia":            "74af87841b8652e80de10ae4a101de2d6a2f4434",
         "LLVM":             "v0.9.6",
         "CUDAapi":          "v0.4.2",
         "CUDAdrv":          "v0.8.3",
