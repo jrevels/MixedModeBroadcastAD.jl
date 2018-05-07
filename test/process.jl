@@ -140,9 +140,19 @@ function read(tag)
     return read_metrics(tag), read_trace(tag)
 end
 
-function get_metric(df, kernel, metric)
+function get_metric(df, kernel, metric, col) # col: Min, Max or Avg
     mask = (df[:Kernel] .== kernel) .& (df[:Metric_Name] .== metric)
-    return first(eachrow(df[mask, [:Invocations, :Min, :Max, :Avg]]))
+    val = first(eachrow(df[mask, :]))[col]
+    if isa(val, String)
+        if endswith(val, "%")
+            val = val[1:end-1]
+            return parse(Float64, val) / 100
+        else
+            return parse(Float64, val)
+        end
+    else
+        return val
+    end
 end
 
 
@@ -153,7 +163,7 @@ function add_row!(df, trace, metrics; implementation, arity=missing, problem_siz
                trace.runtime,
                length(trace.kernels), maximum(registers.(trace.kernels)),
                sum(runtime, trace.kernels),
-               mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy")[:Avg],
+               mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy", :Avg),
                     trace.kernels),
                trace.transfer_size, trace.transfer_count, trace.transfer_runtime,
                trace.api_count, trace.api_runtime])
