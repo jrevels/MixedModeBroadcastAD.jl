@@ -27,12 +27,12 @@ if __name__ == '__main__':
             b.warmup(sess)
             memory = pycuda.driver.mem_get_info()[0]
             pycuda.driver.start_profiler()
-            nvtx.nvtxMarkA(ctypes.c_char_p(b"Memory usage: %d" % (memory_initial-memory)))
             for i in range(args.iterations):
                 gc.collect()
                 nvtx.nvtxRangePushA(ctypes.c_char_p(b"kernel"))
                 b.run(sess)
                 nvtx.nvtxRangePop()
+            nvtx.nvtxMarkA(ctypes.c_char_p(b"Memory usage: %d" % (memory_initial-memory)))
             pycuda.driver.stop_profiler()
             # # alternatively, use TF's built-in tracer
             # # (this breaks nvprof as it uses CUPTI too, hence commented out)
