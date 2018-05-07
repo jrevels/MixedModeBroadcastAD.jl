@@ -88,7 +88,7 @@ end
 function collect_metrics(cmd)
     @info "Collecting metrics" cmd
     return run_nvprof(cmd, ```
-        --metrics achieved_occupancy
+        --metrics achieved_occupancy,branch_efficiency,warp_execution_efficiency,warp_nonpred_execution_efficiency
     ```) do input_path
         table = mktemp() do temp_path,io
             for (line, contents) in enumerate(eachline(input_path; chomp=false))
