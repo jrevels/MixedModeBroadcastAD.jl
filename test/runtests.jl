@@ -4,7 +4,7 @@ using MixedModeBroadcastAD: unwrt
 include("kernels.jl")
 
 @testset "hmlstm kernels" begin
-    dims = 5
+    dims = 128
     for usegpu in (false, true)
         println("testing hmlstm kernels for usegpu=", usegpu)
         tfkernel!, _, tfderivs, tfbuffers = get_hmlstm_kernel(true, usegpu, dims)
@@ -33,7 +33,7 @@ include("kernels.jl")
 end
 
 @testset "arity scaling kernels" begin
-    dims = 5
+    dims = 128
     for arity in 1:3, usegpu in (false, true)
         println("testing arity scaling kernel for usegpu=", usegpu)
         kernel!, inputs, derivs, buffers = get_arity_scaling_kernel(usegpu, dims, arity)

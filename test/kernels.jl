@@ -12,16 +12,32 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 @noinline broadcast_wrapper(f::F) where {F} = (inputs, derivs, buffers) -> broadcast_gradients!(f, inputs, derivs)
 
 function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
-    @assert dims >= 3
-    # set up control variables to ensure that we hit all three
-    # cases in the HMLSTM update algorithm at least once
-    control = (round.(rand(Float32, dims)), round.(rand(Float32, dims)))
-    control[1][1] = 1.0f0 # FLUSH case
-    control[2][1] = 0.0f0
-    control[1][2] = 0.0f0 # COPY case
-    control[2][2] = 0.0f0
-    control[1][3] = 0.0f0 # UPDATE case
-    control[2][3] = 1.0f0
+    # set up control variables
+    function random_control(dims)
+        control = (round.(rand(Float32, dims)), round.(rand(Float32, dims)))
+
+        # ensure that we hit all three cases in the HMLSTM update algorithm at least once
+        @assert dims >= 3
+        control[1][1] = 1.0f0 # FLUSH case
+        control[2][1] = 0.0f0
+        control[1][2] = 0.0f0 # COPY case
+        control[2][2] = 0.0f0
+        control[1][3] = 0.0f0 # UPDATE case
+        control[2][3] = 1.0f0
+
+        return control
+    end
+    function nondivergent_control(dims)
+        # repeat sequences of warp uniform control values to avoid divergent execution
+        warpsize = 32
+        @assert rem(dims, warpsize) == 0
+        subdim = Int(dims / warpsize)
+
+        control = random_control(subdim)
+        Tuple(collect(Iterators.flatten(fill(x, warpsize) for x in bools)) for bools in control)
+    end
+    control = random_control(dims)
+
     control = (convert(A, control[1]), convert(A, control[2]))
     return (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...,)
 end
