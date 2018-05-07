@@ -40,17 +40,18 @@ function benchmark(kernel!, inputs, derivs, buffers)
     end
 end
 
-benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS) # warmup
+# warmup
+NVTX.mark("Benchmark: $(42)")
+benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS)
 
 memory = CUDAdrv.Mem.free()
 NVTX.@activate CUDAdrv.@profile begin
-    NVTX.mark("Used Memory: $(memory_initial-memory)")
-
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), STDERR.handle)
     for i in 1:ITERATIONS
         GC.gc()
         benchmark(KERNEL!, INPUTS, DERIVS, BUFFERS)
     end
+    NVTX.mark("Used Memory: $(memory_initial-memory)")
     ccall(:jl_dump_compiles, Cvoid, (Ptr{Cvoid},), C_NULL)
 end
 
