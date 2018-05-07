@@ -93,7 +93,7 @@ function collect_metrics(cmd)
         table = mktemp() do temp_path,io
             for (line, contents) in enumerate(eachline(input_path; chomp=false))
                 contains(contents, "No events/metrics were profiled.") && return nothing
-                line < 5 && continue                        # skip nvprof banner
+                startswith(contents, "==") && continue                  # skip nvprof banner
                 write(io, contents)
             end
             flush(io)
