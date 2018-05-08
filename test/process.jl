@@ -142,6 +142,7 @@ end
 
 function get_metric(df, kernel, metric, col) # col: Min, Max or Avg
     mask = (df[:Kernel] .== kernel) .& (df[:Metric_Name] .== metric)
+    any(mask) || return missing
     val = first(eachrow(df[mask, :]))[col]
     if isa(val, String)
         if endswith(val, "%")
@@ -163,8 +164,10 @@ function add_row!(df, trace, metrics; implementation, arity=missing, problem_siz
                trace.runtime,
                length(trace.kernels), maximum(registers.(trace.kernels)),
                sum(runtime, trace.kernels),
-               mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy", :Avg),
-                    trace.kernels),
+               mean(kernel->get_metric(metrics, kernel.name, "achieved_occupancy",                  :Avg), trace.kernels),
+               mean(kernel->get_metric(metrics, kernel.name, "branch_efficiency",                   :Avg), trace.kernels),
+               mean(kernel->get_metric(metrics, kernel.name, "warp_execution_efficiency",           :Avg), trace.kernels),
+               mean(kernel->get_metric(metrics, kernel.name, "warp_nonpred_execution_efficiency",   :Avg), trace.kernels),
                trace.transfer_size, trace.transfer_count, trace.transfer_runtime,
                trace.api_count, trace.api_runtime])
 end
@@ -173,9 +176,17 @@ function process(dir)
     df = DataFrame(implementation = Symbol[], arity=Union{Missing,Int}[],
                    problem_size=Int[],
                    runtime = AbstractFloat[],
+                   # kernel
                    kernel_count = Int[], kernel_registers = Int[],
-                   kernel_runtime = AbstractFloat[],  kernel_occupancy = AbstractFloat[],
+                   kernel_runtime = AbstractFloat[],
+                   ## metrics
+                   kernel_occupancy = Union{Missing,AbstractFloat}[],
+                   kernel_branch_efficiency = Union{Missing,AbstractFloat}[],
+                   kernel_warp_efficiency = Union{Missing,AbstractFloat}[],
+                   kernel_warp_nonpred_efficiency = Union{Missing,AbstractFloat}[],
+                   # memory
                    transfer_size = Float64[], transfer_count = Int[], transfer_runtime = AbstractFloat[],
+                   # api
                    api_count = Int[], api_runtime = AbstractFloat[])
 
     cd(dir) do
