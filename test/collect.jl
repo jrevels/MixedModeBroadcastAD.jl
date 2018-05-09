@@ -120,7 +120,7 @@ function collect(cmd_trace, cmd_metrics, tag, dir)
     end
 end
 
-const ITERATIONS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 1024
+const ITERATIONS = length(ARGS) >= 1 ? parse(Int, ARGS[1]) : 128
 
 dir = if length(ARGS) >= 2
     abspath(ARGS[2])
@@ -145,7 +145,7 @@ cd(@__DIR__) do
                     dir)
         end
 
-        for arity in 1:3:10
+        for arity in 1:10
             collect(`julia --depwarn=no runprofile.jl false $problem_size $ITERATIONS $arity`,
                     `julia --depwarn=no runprofile.jl false $problem_size 1 $arity`,
                     "julia_arity$(arity)_$(problem_size)",
