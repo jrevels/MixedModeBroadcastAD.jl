@@ -159,8 +159,8 @@ end
 
 # basic timings
 
-function add_row!(df, trace, metrics; implementation, arity=missing, problem_size)
-    push!(df, [implementation, arity, problem_size,
+function add_row!(df, trace, metrics; language, fused=missing, control=missing, arity=missing, problem_size)
+    push!(df, [language, fused, control, arity, problem_size,
                trace.runtime,
                length(trace.kernels), maximum(registers.(trace.kernels)),
                sum(runtime, trace.kernels),
@@ -173,10 +173,15 @@ function add_row!(df, trace, metrics; implementation, arity=missing, problem_siz
 end
 
 function process(dir)
-    df = DataFrame(implementation = Symbol[], arity=Union{Missing,Int}[],
+    df = DataFrame(language = Symbol[],
+                   # kernel type
+                   fused=Union{Missing,Bool}[], control=Union{Missing,Symbol}[],
+                   arity=Union{Missing,Int}[],
+                   # parameters
                    problem_size=Int[],
+                   # total
                    runtime = AbstractFloat[],
-                   # kernel
+                   # only kernel
                    kernel_count = Int[], kernel_registers = Int[],
                    kernel_runtime = AbstractFloat[],
                    ## metrics
@@ -184,24 +189,25 @@ function process(dir)
                    kernel_branch_efficiency = Union{Missing,AbstractFloat}[],
                    kernel_warp_efficiency = Union{Missing,AbstractFloat}[],
                    kernel_warp_nonpred_efficiency = Union{Missing,AbstractFloat}[],
-                   # memory
+                   # only memory
                    transfer_size = Float64[], transfer_count = Int[], transfer_runtime = AbstractFloat[],
-                   # api
+                   # only api
                    api_count = Int[], api_runtime = AbstractFloat[])
 
     cd(dir) do
         for problem_size in [512,1024,2048]
             try
                 metrics, trace = read("python_$(problem_size)")
-                add_row!(df, trace, metrics; problem_size=problem_size, implementation=:python)
+                add_row!(df, trace, metrics; problem_size=problem_size, language=:python, fused=false)
             catch exception
                 isa(exception, SystemError) || rethrow()
             end
 
-            for tfstyle in [true, false]
+            for tfstyle in [true, false], uniform in [true, false]
                 try
-                    metrics, trace = read("julia_$(tfstyle ? "tf_" : "")$(problem_size)")
-                    add_row!(df, trace, metrics; problem_size=problem_size, implementation=(tfstyle ? :julia_tfstyle : :julia))
+                    metrics, trace = read("julia_$(tfstyle ? "tfstyle" : "fused")_$(uniform ? "uniform" : "random")_$(problem_size)")
+                    add_row!(df, trace, metrics; problem_size=problem_size, language=:julia,
+                             fused=!tfstyle, control=(uniform ? :uniform : :random))
                 catch exception
                     isa(exception, SystemError) || rethrow()
                 end
@@ -210,7 +216,7 @@ function process(dir)
             for arity in 1:10
                 try
                     metrics, trace = read("julia_arity$(arity)_$(problem_size)")
-                    add_row!(df, trace, metrics; problem_size=problem_size, implementation=:julia, arity=arity)
+                    add_row!(df, trace, metrics; problem_size=problem_size, language=:julia, arity=arity)
                 catch exception
                     isa(exception, SystemError) || rethrow()
                 end
@@ -240,7 +246,7 @@ function process(dir)
     end
 
     let df = df[.!ismissing.(df[:arity]),:]
-        delete!(df, :implementation)
+        delete!(df, :language)
         prepare_properties!(df)
 
         writetable(joinpath(dirname(@__DIR__), "img", "arity.csv"), df)

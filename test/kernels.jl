@@ -11,7 +11,7 @@ cuda_tanh(x) = CUDAnative.tanh(x)
 
 @noinline broadcast_wrapper(f::F) where {F} = (inputs, derivs, buffers) -> broadcast_gradients!(f, inputs, derivs)
 
-function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
+function initialize_inputs(::Type{A}, dims::Int, uniform::Bool) where {A<:AbstractArray}
     # set up control variables
     function random_control(dims)
         control = (round.(rand(Float32, dims)), round.(rand(Float32, dims)))
@@ -36,13 +36,13 @@ function initialize_inputs(::Type{A}, dims::Int) where {A<:AbstractArray}
         control = random_control(subdim)
         Tuple(collect(Iterators.flatten(fill(x, warpsize) for x in bools)) for bools in control)
     end
-    control = random_control(dims)
+    control = (uniform ? nondivergent_control : random_control)(dims)
 
     control = (convert(A, control[1]), convert(A, control[2]))
     return (control..., (convert(A, rand(Float32, dims, dims)) for _ in 1:4)...,)
 end
 
-function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048)
+function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048, uniform::Bool = false)
     if usegpu
         scalar_kernel = gpu_hmlstm_update_c_scalar
         A = CuArray
@@ -50,7 +50,7 @@ function get_hmlstm_kernel(tfstyle::Bool, usegpu::Bool, dims::Int = 2048)
         scalar_kernel = cpu_hmlstm_update_c_scalar
         A = Array
     end
-    inputs = initialize_inputs(A, dims)
+    inputs = initialize_inputs(A, dims, uniform)
     if tfstyle
         kernel! = tf_hmlstm_update_c_gradients!
         derivs = similar.(inputs[3:end])

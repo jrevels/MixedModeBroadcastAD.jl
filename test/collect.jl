@@ -130,25 +130,25 @@ end
 mkpath(dir)
 
 cd(@__DIR__) do
-    for dims in [512,1024,2048]
+    for problem_size in [512,1024,2048]
         let
-            collect(`python3 runprofile.py $dims $ITERATIONS`,
-                    `python3 runprofile.py $dims 1`,
-                    "python_$(dims)",
+            collect(`python3 runprofile.py $problem_size $ITERATIONS`,
+                    `python3 runprofile.py $problem_size 1`,
+                    "python_$(problem_size)",
                     dir)
         end
 
-        for tfstyle in [true, false]
-            collect(`julia --depwarn=no runprofile.jl $tfstyle $dims $ITERATIONS`,
-                    `julia --depwarn=no runprofile.jl $tfstyle $dims 1`,
-                    "julia_$(tfstyle ? "tf_" : "")$(dims)",
+        for tfstyle in [true, false], uniform in [true, false]
+            collect(`julia --depwarn=no runprofile.jl $tfstyle $problem_size $ITERATIONS 0 $uniform`,
+                    `julia --depwarn=no runprofile.jl $tfstyle $problem_size 1 0 $uniform`,
+                    "julia_$(tfstyle ? "tfstyle" : "fused")_$(uniform ? "uniform" : "random")_$(problem_size)",
                     dir)
         end
 
-        for arity in 1:10
-            collect(`julia --depwarn=no runprofile.jl false $dims $ITERATIONS $arity`,
-                    `julia --depwarn=no runprofile.jl false $dims 1 $arity`,
-                    "julia_arity$(arity)_$(dims)",
+        for arity in 1:3:10
+            collect(`julia --depwarn=no runprofile.jl false $problem_size $ITERATIONS $arity`,
+                    `julia --depwarn=no runprofile.jl false $problem_size 1 $arity`,
+                    "julia_arity$(arity)_$(problem_size)",
                     dir)
         end
     end
