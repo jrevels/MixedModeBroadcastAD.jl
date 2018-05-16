@@ -224,41 +224,87 @@ function process(dir)
         end
     end
 
-    function prepare_properties!(df)
-        df[:runtime_err] = Measurements.uncertainty.(df[:runtime])
-        df[:runtime] = Measurements.value.(df[:runtime])
-
-        df[:kernel_runtime_err] = Measurements.uncertainty.(df[:kernel_runtime])
-        df[:kernel_runtime] = Measurements.value.(df[:kernel_runtime])
-
-        df[:transfer_runtime_err] = Measurements.uncertainty.(df[:transfer_runtime])
-        df[:transfer_runtime] = Measurements.value.(df[:transfer_runtime])
-
-        df[:api_runtime_err] = Measurements.uncertainty.(df[:api_runtime])
-        df[:api_runtime] = Measurements.value.(df[:api_runtime])
-    end
-
-    let df = df[ismissing.(df[:arity]),:]
-        delete!(df, :arity)
-        prepare_properties!(df)
-
-        writetable(joinpath(dirname(@__DIR__), "img", "hmlstm.csv"), df)
-    end
-
-    let df = df[.!ismissing.(df[:arity]),:]
-        delete!(df, :language)
-        prepare_properties!(df)
-
-        writetable(joinpath(dirname(@__DIR__), "img", "arity.csv"), df)
-    end
-
     df
 end
 
-dir = if length(ARGS) >= 1
-    ARGS[1]
-else
-    @__DIR__
+
+# main
+
+function expand_properties!(df)
+    df[:runtime_err] = Measurements.uncertainty.(df[:runtime])
+    df[:runtime] = Measurements.value.(df[:runtime])
+
+    df[:kernel_runtime_err] = Measurements.uncertainty.(df[:kernel_runtime])
+    df[:kernel_runtime] = Measurements.value.(df[:kernel_runtime])
+
+    df[:transfer_runtime_err] = Measurements.uncertainty.(df[:transfer_runtime])
+    df[:transfer_runtime] = Measurements.value.(df[:transfer_runtime])
+
+    df[:api_runtime_err] = Measurements.uncertainty.(df[:api_runtime])
+    df[:api_runtime] = Measurements.value.(df[:api_runtime])
 end
 
-println(process(dir))
+function process_all()
+    data = Dict(
+        :v100    => joinpath(@__DIR__, "Tesla V100-PCIE-16GB"),
+        :p100    => joinpath(@__DIR__, "Tesla P100-PCIE-16GB"),
+        :gtx1080 => joinpath(@__DIR__, "GeForce GTX 1080 Ti"))
+    gpus = keys(data)
+
+    output = joinpath(dirname(@__DIR__), "img")
+
+
+    # arity measurements for V100
+
+    let df = process(data[:v100])
+        let df = df[ismissing.(df[:arity]),:]
+            delete!(df, :arity)
+            expand_properties!(df)
+
+            writetable(joinpath(output, "hmlstm.csv"), df)
+        end
+
+        let df = df[.!ismissing.(df[:arity]),:]
+            delete!(df, :language)
+            expand_properties!(df)
+
+            writetable(joinpath(output, "arity.csv"), df)
+        end
+    end
+
+
+    # divergence analysis
+
+    let dfs = DataFrame[]
+        for gpu in gpus
+            let df = process(data[gpu])
+                df = df[.!ismissing.(df[:control]),:]
+
+                # split kernel warp efficiencies into 2 different columns,
+                # based on the value of the control column
+
+                df_random = df[df[:control] .== :random, :]
+                rename!(df_random, :kernel_warp_efficiency => :random_kernel_warp_efficiency)
+
+                df_uniform = df[df[:control] .== :uniform, :]
+                rename!(df_uniform, :kernel_warp_efficiency => :uniform_kernel_warp_efficiency)
+
+                # join and divide those 2 columns to get the ratio
+
+                df = join(df_random, df_uniform, on=[:language, :fused, :problem_size])
+
+                colname = Symbol("$(gpu)_warp_efficiency_ratio")
+                df[colname] = df[:random_kernel_warp_efficiency] ./
+                              df[:uniform_kernel_warp_efficiency]
+
+                # save a df with only relevant columns
+
+                df = df[[:language,:fused,:problem_size,colname]]
+                push!(dfs, df)
+            end
+        end
+
+        df = foldl((a, b) -> join(a, b, on=[:language, :fused, :problem_size]), values(dfs))
+        writetable(joinpath(output, "divergence.csv"), df)
+    end
+end
