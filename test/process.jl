@@ -266,8 +266,8 @@ function process_all()
 
     let df = filter(row -> row[:gpu] == :v100 &&
                            ismissing(row[:arity]) &&
-                           row[:control] !== :random, df)
-        delete!(df, :arity)
+                           row[:control] !== :uniform, df)
+        delete!(df, [:arity, :control])
 
         expand_measurements!(df)
         writetable(joinpath(output, "hmlstm.csv"), df)
