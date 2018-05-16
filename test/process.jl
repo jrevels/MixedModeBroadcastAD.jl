@@ -230,18 +230,15 @@ end
 
 # main
 
-function expand_properties!(df)
-    df[:runtime_err] = Measurements.uncertainty.(df[:runtime])
-    df[:runtime] = Measurements.value.(df[:runtime])
-
-    df[:kernel_runtime_err] = Measurements.uncertainty.(df[:kernel_runtime])
-    df[:kernel_runtime] = Measurements.value.(df[:kernel_runtime])
-
-    df[:transfer_runtime_err] = Measurements.uncertainty.(df[:transfer_runtime])
-    df[:transfer_runtime] = Measurements.value.(df[:transfer_runtime])
-
-    df[:api_runtime_err] = Measurements.uncertainty.(df[:api_runtime])
-    df[:api_runtime] = Measurements.value.(df[:api_runtime])
+"""Expand columns of type Measurement to separate value and error columns for CSV export."""
+function expand_measurements!(df)
+    for col in names(df)
+        # Measurement <: AbstractFloat, so check actual values
+        if any(val -> eltype(val) <: Measurement, df[col])
+            df[Symbol("$(col)_err")] = Measurements.uncertainty.(df[col])
+            df[col]                  = Measurements.value.(df[col])
+        end
+    end
 end
 
 function process_all()
@@ -271,8 +268,8 @@ function process_all()
                            ismissing(row[:arity]) &&
                            row[:control] !== :random, df)
         delete!(df, :arity)
-        expand_properties!(df)
 
+        expand_measurements!(df)
         writetable(joinpath(output, "hmlstm.csv"), df)
     end
 
@@ -282,8 +279,8 @@ function process_all()
     let df = filter(row -> row[:gpu] == :v100 &&
                            !ismissing(row[:arity]), df)
         delete!(df, [:language, :control, :fused])
-        expand_properties!(df)
 
+        expand_measurements!(df)
         writetable(joinpath(output, "arity.csv"), df)
     end
 
@@ -335,6 +332,7 @@ function process_all()
             end
         end
 
+        expand_measurements!(df)
         writetable(joinpath(output, "divergence.csv"), df)
     end
 end
