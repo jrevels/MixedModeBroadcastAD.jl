@@ -276,35 +276,52 @@ function process_all()
     # divergence analysis
 
     let dfs = DataFrame[]
+        join_columns = [:fused, :problem_size]
+
         for gpu in gpus
             let df = process(data[gpu])
                 df = df[.!ismissing.(df[:control]),:]
+                delete!(df, :arity)
+                delete!(df, :language)
+                other_columns = setdiff(names(df), [join_columns; :control])
 
-                # split kernel warp efficiencies into 2 different columns,
-                # based on the value of the control column
 
-                df_random = df[df[:control] .== :random, :]
-                rename!(df_random, :kernel_warp_efficiency => :random_kernel_warp_efficiency)
+                # split columns into separate ones based on the type of control
 
-                df_uniform = df[df[:control] .== :uniform, :]
-                rename!(df_uniform, :kernel_warp_efficiency => :uniform_kernel_warp_efficiency)
+                control_dfs = DataFrame[]
 
-                # join and divide those 2 columns to get the ratio
+                for control in (:random, :uniform)
+                    df_control = df[df[:control] .== control, :]
+                    delete!(df_control, :control)
 
-                df = join(df_random, df_uniform, on=[:language, :fused, :problem_size])
+                    for col in other_columns
+                        rename!(df_control, col => Symbol("$(control)_$(col)"))
+                    end
 
-                colname = Symbol("$(gpu)_warp_efficiency_ratio")
-                df[colname] = df[:random_kernel_warp_efficiency] ./
-                              df[:uniform_kernel_warp_efficiency]
+                    push!(control_dfs, df_control)
+                end
 
-                # save a df with only relevant columns
 
-                df = df[[:language,:fused,:problem_size,colname]]
+                # join and divide control columns to get ratios
+
+                df = join(control_dfs..., on=join_columns)
+
+                for col in other_columns
+                    random = Symbol("random_$(col)")
+                    uniform = Symbol("uniform_$(col)")
+                    ratio = Symbol("$(gpu)_$(col)_ratio")
+
+                    df[ratio] = df[random] ./ df[uniform]
+                    delete!(df, random)
+                    delete!(df, uniform)
+                end
+
+
                 push!(dfs, df)
             end
         end
 
-        df = foldl((a, b) -> join(a, b, on=[:language, :fused, :problem_size]), values(dfs))
+        df = foldl((a, b) -> join(a, b, on=join_columns), values(dfs))
         writetable(joinpath(output, "divergence.csv"), df)
     end
 end
