@@ -245,83 +245,96 @@ function expand_properties!(df)
 end
 
 function process_all()
-    data = Dict(
+    measurements = Dict(
         :v100    => joinpath(@__DIR__, "Tesla V100-PCIE-16GB"),
         :p100    => joinpath(@__DIR__, "Tesla P100-PCIE-16GB"),
         :gtx1080 => joinpath(@__DIR__, "GeForce GTX 1080 Ti"))
-    gpus = keys(data)
 
     output = joinpath(dirname(@__DIR__), "img")
+
+    df = nothing
+    for (gpu, path) in measurements
+        df_gpu = process(path)
+        df_gpu[:gpu] = gpu
+        df_gpu = df_gpu[[end, 1:end-1...]]
+        if df === nothing
+            df = df_gpu
+        else
+            append!(df, df_gpu)
+        end
+    end
+
+
+    # basic HLMSTM timings for V100
+
+    let df = filter(row -> row[:gpu] == :v100 &&
+                           ismissing(row[:arity]) &&
+                           row[:control] !== :random, df)
+        delete!(df, :arity)
+        expand_properties!(df)
+
+        writetable(joinpath(output, "hmlstm.csv"), df)
+    end
 
 
     # arity measurements for V100
 
-    let df = process(data[:v100])
-        let df = df[ismissing.(df[:arity]),:]
-            delete!(df, :arity)
-            expand_properties!(df)
+    let df = filter(row -> row[:gpu] == :v100 &&
+                           !ismissing(row[:arity]), df)
+        delete!(df, [:language, :control, :fused])
+        expand_properties!(df)
 
-            writetable(joinpath(output, "hmlstm.csv"), df)
-        end
-
-        let df = df[.!ismissing.(df[:arity]),:]
-            delete!(df, :language)
-            expand_properties!(df)
-
-            writetable(joinpath(output, "arity.csv"), df)
-        end
+        writetable(joinpath(output, "arity.csv"), df)
     end
 
 
     # divergence analysis
 
-    let dfs = DataFrame[]
-        join_columns = [:fused, :problem_size]
+    let df = filter(row -> !ismissing(row[:control]), df)
+        delete!(df, [:arity, :language])
 
-        for gpu in gpus
-            let df = process(data[gpu])
-                df = df[.!ismissing.(df[:control]),:]
-                delete!(df, :arity)
-                delete!(df, :language)
-                other_columns = setdiff(names(df), [join_columns; :control])
+        join_columns = [:gpu, :fused, :problem_size]
+        other_columns = setdiff(names(df), [join_columns; :control])
 
 
-                # split columns into separate ones based on the type of control
+        # split columns into separate ones based on the type of control
 
-                control_dfs = DataFrame[]
+        control_dfs = DataFrame[]
 
-                for control in (:random, :uniform)
-                    df_control = df[df[:control] .== control, :]
-                    delete!(df_control, :control)
+        for control in (:random, :uniform)
+            df_control = df[df[:control] .== control, :]
+            delete!(df_control, :control)
 
-                    for col in other_columns
-                        rename!(df_control, col => Symbol("$(control)_$(col)"))
-                    end
+            for col in other_columns
+                rename!(df_control, col => Symbol("$(control)_$(col)"))
+            end
 
-                    push!(control_dfs, df_control)
-                end
-
-
-                # join and divide control columns to get ratios
-
-                df = join(control_dfs..., on=join_columns)
-
-                for col in other_columns
-                    random = Symbol("random_$(col)")
-                    uniform = Symbol("uniform_$(col)")
-                    ratio = Symbol("$(gpu)_$(col)_ratio")
-
-                    df[ratio] = df[random] ./ df[uniform]
-                    delete!(df, random)
-                    delete!(df, uniform)
-                end
+            push!(control_dfs, df_control)
+        end
 
 
-                push!(dfs, df)
+        # join and divide control columns to get ratios
+
+        df = join(control_dfs..., on=join_columns)
+
+        for col in other_columns
+            random = Symbol("random_$(col)")
+            uniform = Symbol("uniform_$(col)")
+            ratio = Symbol("$(col)_ratio")
+
+            df[ratio] = df[random] ./ df[uniform]
+            delete!(df, random)
+            delete!(df, uniform)
+        end
+
+
+        # drop all-one columns
+        for col in names(df)
+            if all(val -> val === 1.0, df[col])
+                delete!(df, col)
             end
         end
 
-        df = foldl((a, b) -> join(a, b, on=join_columns), values(dfs))
         writetable(joinpath(output, "divergence.csv"), df)
     end
 end
