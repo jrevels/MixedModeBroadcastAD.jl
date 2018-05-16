@@ -139,6 +139,9 @@ cd(@__DIR__) do
         end
 
         for tfstyle in [true, false], uniform in [true, false]
+            # uniform control doesn't impact tfstyle/non-fused execution
+            (tfstyle && uniform) && continue
+
             collect(`julia --depwarn=no runprofile.jl $tfstyle $problem_size $ITERATIONS 0 $uniform`,
                     `julia --depwarn=no runprofile.jl $tfstyle $problem_size 1 0 $uniform`,
                     "julia_$(tfstyle ? "tfstyle" : "fused")_$(uniform ? "uniform" : "random")_$(problem_size)",

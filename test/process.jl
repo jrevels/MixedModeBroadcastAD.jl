@@ -290,10 +290,10 @@ function process_all()
 
     # divergence analysis
 
-    let df = filter(row -> !ismissing(row[:control]), df)
-        delete!(df, [:arity, :language])
+    let df = filter(row -> !ismissing(row[:control]) && row[:fused], df)
+        delete!(df, [:arity, :language, :fused])
 
-        join_columns = [:gpu, :fused, :problem_size]
+        join_columns = [:gpu, :problem_size]
         other_columns = setdiff(names(df), [join_columns; :control])
 
 
