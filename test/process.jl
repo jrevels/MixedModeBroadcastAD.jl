@@ -262,11 +262,9 @@ function process_all()
     end
 
 
-    # basic HLMSTM timings for V100
+    # basic HLMSTM timings
 
-    let df = filter(row -> row[:gpu] == :v100 &&
-                           ismissing(row[:arity]) &&
-                           row[:control] !== :uniform, df)
+    let df = filter(row -> ismissing(row[:arity]) && row[:control] !== :uniform, df)
         delete!(df, [:arity, :control])
 
         expand_measurements!(df)
@@ -274,10 +272,9 @@ function process_all()
     end
 
 
-    # arity measurements for V100
+    # arity scaling
 
-    let df = filter(row -> row[:gpu] == :v100 &&
-                           !ismissing(row[:arity]), df)
+    let df = filter(row -> !ismissing(row[:arity]), df)
         delete!(df, [:language, :control, :fused])
 
         expand_measurements!(df)
@@ -320,8 +317,7 @@ function process_all()
             ratio = Symbol("$(col)_ratio")
 
             df[ratio] = df[random] ./ df[uniform]
-            delete!(df, random)
-            delete!(df, uniform)
+            delete!(df, [random, uniform])
         end
 
 
