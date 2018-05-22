@@ -243,9 +243,11 @@ end
 
 function process_all()
     measurements = Dict(
-        :v100    => joinpath(@__DIR__, "Tesla V100-PCIE-16GB"),
+        :titan   => joinpath(@__DIR__, "GeForce GTX TITAN"),
         :p100    => joinpath(@__DIR__, "Tesla P100-PCIE-16GB"),
-        :gtx1080 => joinpath(@__DIR__, "GeForce GTX 1080 Ti"))
+        :v100    => joinpath(@__DIR__, "Tesla V100-PCIE-16GB"),
+        # :gtx1080 => joinpath(@__DIR__, "GeForce GTX 1080 Ti"),
+    )
 
     output = joinpath(dirname(@__DIR__), "img")
 
