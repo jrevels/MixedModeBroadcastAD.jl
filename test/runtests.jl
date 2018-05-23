@@ -44,7 +44,7 @@ end
             cpu_kernel_i = x -> begin
                 before = cpu_inputs[1:(i - 1)]
                 after = cpu_inputs[(i + 1):end]
-                return sum(broadcast(arity_scaling, before..., x, after...))
+                return sum(broadcast(cpu_arity_scaling, before..., x, after...))
             end
             @test Array(derivs[i]) ≈ ForwardDiff.gradient(cpu_kernel_i, cpu_input)
         end

@@ -66,7 +66,7 @@ end
 
 function get_arity_scaling_kernel(usegpu::Bool, dims::Int = 1024, arity::Int = 2)
     A = usegpu ? CuArray : Array
-    kernel! = broadcast_wrapper(arity_scaling)
+    kernel! = broadcast_wrapper(usegpu ? gpu_arity_scaling : cpu_arity_scaling)
     inputs = ((convert(A, rand(Float32, dims, dims)) for _ in 1:arity)...,)
     derivs = similar.(inputs)
     buffers = ()
@@ -97,9 +97,22 @@ end
     end
 end
 
-@generated function arity_scaling(args::Vararg{Any,N}) where {N}
+@generated function cpu_arity_scaling(args::Vararg{Any,N}) where {N}
     mapped = [:(args[$i] > 0.5f0 ? args[$i] : -args[$i]) for i in 1:N]
-    return N == 1 ? mapped[1] : Expr(:call, :*, mapped...)
+    ex = :(tanh($(pop!(mapped))))
+    while !isempty(mapped)
+        ex = Expr(:call, :*, ex, :(tanh($(pop!(mapped)))))
+    end
+    return ex
+end
+
+@generated function gpu_arity_scaling(args::Vararg{Any,N}) where {N}
+    mapped = [:(args[$i] > 0.5f0 ? args[$i] : -args[$i]) for i in 1:N]
+    ex = :(cuda_tanh($(pop!(mapped))))
+    while !isempty(mapped)
+        ex = Expr(:call, :*, ex, :(cuda_tanh($(pop!(mapped)))))
+    end
+    return ex
 end
 
 #########################################
